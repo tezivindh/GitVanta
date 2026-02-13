@@ -68,7 +68,7 @@ const ScoreCircle: React.FC<ScoreCircleProps> = ({
             cx="50"
             cy="50"
             r={radius}
-            className="stroke-gray-200"
+            className="stroke-gray-200 dark:stroke-gray-700"
             strokeWidth={config.stroke}
             fill="none"
           />
@@ -92,7 +92,7 @@ const ScoreCircle: React.FC<ScoreCircleProps> = ({
             {Math.round(score)}
           </span>
           {showGrade && (
-            <span className="text-xs text-gray-500 font-medium">
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               {getGrade()}
             </span>
           )}
@@ -100,7 +100,7 @@ const ScoreCircle: React.FC<ScoreCircleProps> = ({
       </div>
       
       {label && (
-        <span className="mt-2 text-sm text-gray-600 font-medium text-center">
+        <span className="mt-2 text-sm text-gray-600 dark:text-gray-400 font-medium text-center">
           {label}
         </span>
       )}

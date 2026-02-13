@@ -119,8 +119,8 @@ const EnhancementsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">AI Enhancements</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Enhancements</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Use AI to generate improvements and content for your portfolio
         </p>
       </div>
@@ -137,17 +137,17 @@ const EnhancementsPage: React.FC = () => {
             }}
             className={`p-4 rounded-xl border-2 text-left transition-all ${
               selectedType === option.type
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
             }`}
           >
             <option.icon
               className={`w-6 h-6 mb-2 ${
-                selectedType === option.type ? 'text-primary-600' : 'text-gray-400'
+                selectedType === option.type ? 'text-primary-600' : 'text-gray-400 dark:text-gray-500'
               }`}
             />
-            <h3 className="font-semibold text-gray-900">{option.title}</h3>
-            <p className="text-sm text-gray-500 mt-1">{option.description}</p>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{option.title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{option.description}</p>
           </button>
         ))}
       </div>
@@ -162,13 +162,13 @@ const EnhancementsPage: React.FC = () => {
         {selectedType === 'readme' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Select Repository
               </label>
               <select
                 value={selectedRepo}
                 onChange={(e) => setSelectedRepo(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2"
+                className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2"
               >
                 <option value="">Choose a repository</option>
                 {repositories.map((repo) => (
@@ -192,13 +192,13 @@ const EnhancementsPage: React.FC = () => {
         {selectedType === 'resume' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Select Repository
               </label>
               <select
                 value={selectedRepo}
                 onChange={(e) => setSelectedRepo(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2"
+                className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2"
               >
                 <option value="">Choose a repository</option>
                 {repositories.map((repo) => (
@@ -208,14 +208,14 @@ const EnhancementsPage: React.FC = () => {
                 ))}
               </select>
             </div>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Generate professional resume bullet points for the selected repository.
             </p>
           </div>
         )}
 
         {selectedType === 'summary' && (
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Create a compelling portfolio summary highlighting your skills, experience,
             and achievements.
           </p>
@@ -223,7 +223,7 @@ const EnhancementsPage: React.FC = () => {
 
         {selectedType === 'roadmap' && (
           <div className="space-y-4">
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Get personalized recommendations based on your current skills and identified
               areas for improvement.
             </p>
@@ -263,8 +263,8 @@ const EnhancementsPage: React.FC = () => {
         <Card className="py-12">
           <div className="flex flex-col items-center">
             <Loader size="lg" />
-            <p className="mt-4 text-gray-600">Generating with AI...</p>
-            <p className="text-sm text-gray-500 mt-1">This may take a moment</p>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Generating with AI...</p>
+            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">This may take a moment</p>
           </div>
         </Card>
       )}
@@ -285,8 +285,8 @@ const EnhancementsPage: React.FC = () => {
               </Button>
             }
           />
-          <div className="bg-gray-50 rounded-lg p-4 overflow-auto">
-            <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">
+          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-auto">
+            <pre className="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-200 font-mono">
               {result}
             </pre>
           </div>

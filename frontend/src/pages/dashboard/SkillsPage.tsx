@@ -110,8 +110,8 @@ const SkillsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Skills</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Skills</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           {skills.length} skills detected across your repositories
         </p>
       </div>
@@ -156,7 +156,7 @@ const SkillsPage: React.FC = () => {
                 {categorySkills.map((skill) => (
                   <span
                     key={skill}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm font-medium"
+                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium"
                   >
                     {skill}
                   </span>
@@ -174,7 +174,7 @@ const SkillsPage: React.FC = () => {
           {skills.map((skill, index) => (
             <span
               key={index}
-              className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm font-medium"
+              className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full text-sm font-medium"
             >
               {skill}
             </span>

@@ -5,3 +5,4 @@
 export { useAuthStore } from './authStore';
 export { useAnalysisStore } from './analysisStore';
 export { useRepositoriesStore } from './repositoriesStore';
+export { useThemeStore } from './themeStore';

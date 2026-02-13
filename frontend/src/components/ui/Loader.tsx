@@ -35,10 +35,10 @@ interface FullPageLoaderProps {
 }
 
 export const FullPageLoader: React.FC<FullPageLoaderProps> = ({ message, text }) => (
-  <div className="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
+  <div className="fixed inset-0 bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-80 flex items-center justify-center z-50">
     <div className="text-center">
       <Loader size="lg" />
-      {(message || text) && <p className="mt-4 text-gray-600">{message || text}</p>}
+      {(message || text) && <p className="mt-4 text-gray-600 dark:text-gray-400">{message || text}</p>}
     </div>
   </div>
 );

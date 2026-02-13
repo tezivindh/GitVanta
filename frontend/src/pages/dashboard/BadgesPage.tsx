@@ -195,8 +195,8 @@ const BadgesPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Badges</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Badges</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           {earned.length} of {allBadges.length} badges earned
         </p>
       </div>
@@ -218,13 +218,13 @@ const BadgesPage: React.FC = () => {
                   icon={badge.icon}
                   size="lg"
                 />
-                <h3 className="font-medium text-gray-900 mt-3">{badge.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{badge.description}</p>
+                <h3 className="font-medium text-gray-900 dark:text-white mt-3">{badge.name}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{badge.description}</p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 text-center py-8">
+          <p className="text-gray-500 dark:text-gray-400 text-center py-8">
             No badges earned yet. Keep improving your portfolio!
           </p>
         )}
@@ -241,15 +241,15 @@ const BadgesPage: React.FC = () => {
             {locked.map((badge) => (
               <div
                 key={badge.id}
-                className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg opacity-60"
+                className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-60"
               >
-                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center shrink-0">
-                  <Lock className="w-5 h-5 text-gray-400" />
+                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">{badge.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">{badge.description}</p>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <h3 className="font-medium text-gray-900 dark:text-white">{badge.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{badge.description}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     How to earn: {badge.criteria}
                   </p>
                 </div>
@@ -267,7 +267,7 @@ const BadgesPage: React.FC = () => {
             {fullBadgeObjects.map((badge, index) => (
               <span
                 key={index}
-                className="px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-sm font-medium"
+                className="px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full text-sm font-medium"
               >
                 {badge.name}
               </span>

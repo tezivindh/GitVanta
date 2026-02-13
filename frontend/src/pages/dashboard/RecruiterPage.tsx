@@ -55,7 +55,7 @@ const RecruiterPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader size="lg" />
-        <p className="mt-4 text-gray-600">Generating recruiter profile...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Generating recruiter profile...</p>
       </div>
     );
   }
@@ -68,8 +68,8 @@ const RecruiterPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Professional Portfolio View</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Professional Portfolio View</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             A polished, shareable profile showcasing your GitHub portfolio to recruiters and hiring managers
           </p>
         </div>
@@ -99,9 +99,9 @@ const RecruiterPage: React.FC = () => {
       )}
 
       {/* Why Professional View Info */}
-      <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-        <h3 className="font-semibold text-primary-800 mb-2">Why a Professional Portfolio View?</h3>
-        <p className="text-primary-700 text-sm">
+      <div className="bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
+        <h3 className="font-semibold text-primary-800 dark:text-primary-300 mb-2">Why a Professional Portfolio View?</h3>
+        <p className="text-primary-700 dark:text-primary-400 text-sm">
           This view presents your GitHub portfolio in a clean, professional format optimized for sharing with recruiters, 
           hiring managers, and potential collaborators. It highlights your best work, technical skills, and coding activity 
           in a single shareable link - no LinkedIn or resume required.
@@ -154,13 +154,13 @@ const RecruiterPage: React.FC = () => {
             result.skills.slice(0, 20).map((skill, index) => (
               <span
                 key={index}
-                className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm font-medium"
+                className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-medium"
               >
                 {skill}
               </span>
             ))
           ) : (
-            <p className="text-gray-500 text-sm">No skills detected yet. Run an analysis to extract skills from your repositories.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No skills detected yet. Run an analysis to extract skills from your repositories.</p>
           )}
         </div>
       </Card>
@@ -176,26 +176,26 @@ const RecruiterPage: React.FC = () => {
               .map((repo, index) => (
                 <div
                   key={index}
-                  className="flex items-start justify-between p-4 bg-gray-50 rounded-lg"
+                  className="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900">{repo.name}</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{repo.name}</h3>
                       <a
                         href={repo.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>
                     </div>
                     {repo.description && (
-                      <p className="text-gray-600 text-sm mt-1 line-clamp-2">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mt-1 line-clamp-2">
                         {repo.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
                       {repo.language && <span className="text-primary-600">{repo.language}</span>}
                       <span className="flex items-center gap-1"><Star className="w-3 h-3" /> {repo.stars || 0}</span>
                       <span className="flex items-center gap-1"><GitFork className="w-3 h-3" /> {repo.forks || 0}</span>
@@ -204,7 +204,7 @@ const RecruiterPage: React.FC = () => {
                 </div>
               ))
           ) : (
-            <p className="text-gray-500 text-sm">No repositories found. Run an analysis to see your projects.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No repositories found. Run an analysis to see your projects.</p>
           )}
         </div>
       </Card>
@@ -212,7 +212,7 @@ const RecruiterPage: React.FC = () => {
       {/* All Repositories */}
       <Card>
         <CardHeader title="All Repositories" icon={<Folder className="w-5 h-5 text-gray-600" />} />
-        <p className="text-gray-500 text-sm mb-4">
+        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
           Complete list of analyzed repositories ({result.repositories.length} total)
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -223,23 +223,23 @@ const RecruiterPage: React.FC = () => {
                 href={repo.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                className="block p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 truncate">{repo.name}</h4>
+                  <h4 className="font-medium text-gray-900 dark:text-white truncate">{repo.name}</h4>
                   <ExternalLink className="w-3 h-3 text-gray-400" />
                 </div>
                 {repo.description && (
-                  <p className="text-gray-500 text-xs mb-2 line-clamp-2">{repo.description}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs mb-2 line-clamp-2">{repo.description}</p>
                 )}
-                <div className="flex items-center gap-3 text-xs text-gray-500">
+                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                   {repo.language && <span className="text-primary-600">{repo.language}</span>}
                   <span className="flex items-center gap-1"><Star className="w-3 h-3" /> {repo.stars || 0}</span>
                 </div>
               </a>
             ))
           ) : (
-            <p className="text-gray-500 text-sm col-span-3">No repositories found.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm col-span-3">No repositories found.</p>
           )}
         </div>
       </Card>
@@ -252,7 +252,7 @@ const RecruiterPage: React.FC = () => {
             {profile.highlights.map((highlight, index) => (
               <li key={index} className="flex items-start gap-2">
                 <span className="text-primary-500 mt-1">•</span>
-                <span className="text-gray-700">{highlight}</span>
+                <span className="text-gray-700 dark:text-gray-300">{highlight}</span>
               </li>
             ))}
           </ul>

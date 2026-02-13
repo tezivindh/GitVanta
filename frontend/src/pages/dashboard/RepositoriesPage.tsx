@@ -78,8 +78,8 @@ const RepositoriesPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Repositories</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Repositories</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           {repositories.length} repositories analyzed
         </p>
       </div>
@@ -108,13 +108,13 @@ const RepositoriesPage: React.FC = () => {
         {showFilters && (
           <div className="mt-4 pt-4 border-t flex flex-wrap gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Sort by
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="block w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
               >
                 <option value="stars">Stars</option>
                 <option value="forks">Forks</option>
@@ -123,13 +123,13 @@ const RepositoriesPage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Language
               </label>
               <select
                 value={filterLanguage}
                 onChange={(e) => setFilterLanguage(e.target.value)}
-                className="block w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
               >
                 <option value="all">All Languages</option>
                 {languages.map((lang) => (
@@ -151,21 +151,21 @@ const RepositoriesPage: React.FC = () => {
               {/* Main Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start gap-2">
-                  <h3 className="font-semibold text-lg text-gray-900 truncate">
+                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white truncate">
                     {repo.name}
                   </h3>
                   <a
                     href={repo.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-gray-600 shrink-0"
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
 
                 {repo.description && (
-                  <p className="text-gray-600 mt-1 line-clamp-2">
+                  <p className="text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
                     {repo.description}
                   </p>
                 )}
@@ -173,14 +173,14 @@ const RepositoriesPage: React.FC = () => {
                 {/* Tags */}
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {repo.language && (
-                    <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded-sm text-sm">
+                    <span className="px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-sm text-sm">
                       {repo.language}
                     </span>
                   )}
                   {repo.topics?.map((topic) => (
                     <span
                       key={topic}
-                      className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-sm text-sm"
+                      className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-sm text-sm"
                     >
                       {topic}
                     </span>
@@ -219,7 +219,7 @@ const RepositoriesPage: React.FC = () => {
       {/* Empty state */}
       {filteredRepos.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-gray-500">No repositories match your filters.</p>
+          <p className="text-gray-500 dark:text-gray-400">No repositories match your filters.</p>
           <Button
             variant="ghost"
             className="mt-2"

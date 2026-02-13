@@ -35,8 +35,8 @@ const DashboardOverview: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader size="lg" />
-        <p className="mt-4 text-gray-600">Analyzing your portfolio...</p>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Analyzing your portfolio...</p>
+        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
           This may take a few minutes depending on the number of repositories.
         </p>
       </div>
@@ -62,10 +62,10 @@ const DashboardOverview: React.FC = () => {
     return (
       <div className="py-20 text-center">
         <div className="max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Welcome to GitVanta
           </h2>
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
             Run your first analysis to get a comprehensive score and insights
             about your GitHub portfolio.
           </p>
@@ -89,8 +89,8 @@ const DashboardOverview: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             Last analyzed:{' '}
             {new Date(currentReport.createdAt).toLocaleDateString('en-US', {
               dateStyle: 'medium',
@@ -118,16 +118,16 @@ const DashboardOverview: React.FC = () => {
           <div className="mt-6 w-full px-6">
             <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {result.repositories.length}
                 </div>
-                <div className="text-sm text-gray-500">Repositories</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Repositories</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {result.skills.length}
                 </div>
-                <div className="text-sm text-gray-500">Skills</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Skills</div>
               </div>
             </div>
           </div>
@@ -177,26 +177,26 @@ const DashboardOverview: React.FC = () => {
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4">
-          <div className="text-sm text-gray-500">Total Stars</div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Total Stars</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {result.repositories.reduce((sum, r) => sum + (r.stars || 0), 0)}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-gray-500">Total Forks</div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Total Forks</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {result.repositories.reduce((sum, r) => sum + (r.forks || 0), 0)}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-gray-500">Languages</div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Languages</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {new Set(result.repositories.map((r) => r.language).filter(Boolean)).size}
           </div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-gray-500">Badges Earned</div>
-          <div className="text-2xl font-bold text-gray-900">
+          <div className="text-sm text-gray-500 dark:text-gray-400">Badges Earned</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">
             {result.badges?.length || 0}
           </div>
         </Card>
@@ -221,7 +221,7 @@ const DashboardOverview: React.FC = () => {
             {result.skills.slice(0, 8).map((skill, index) => (
               <span
                 key={index}
-                className="px-3 py-1.5 bg-primary-50 text-primary-700 rounded-full text-sm font-medium"
+                className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full text-sm font-medium"
               >
                 {skill}
               </span>
@@ -249,13 +249,13 @@ const DashboardOverview: React.FC = () => {
               .map((repo, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
                 >
                   <div>
-                    <div className="font-medium text-gray-900">{repo.name}</div>
-                    <div className="text-sm text-gray-500">{repo.language}</div>
+                    <div className="font-medium text-gray-900 dark:text-white">{repo.name}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{repo.language}</div>
                   </div>
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
                     {repo.stars} stars
                   </div>
                 </div>

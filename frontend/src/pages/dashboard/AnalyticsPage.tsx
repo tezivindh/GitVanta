@@ -42,8 +42,8 @@ const AnalyticsPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Analytics</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Detailed breakdown of your portfolio score
         </p>
       </div>
@@ -77,15 +77,15 @@ const AnalyticsPage: React.FC = () => {
               size="md"
             />
             <div>
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
                 {bestCategory.category.replace(/([A-Z])/g, ' $1').trim()}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {bestCategory.score}/{bestCategory.maxScore} points
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
             Great job! This is your strongest area. Consider mentoring others
             or contributing to projects that highlight this strength.
           </p>
@@ -103,15 +103,15 @@ const AnalyticsPage: React.FC = () => {
               size="md"
             />
             <div>
-              <h3 className="font-semibold text-gray-900">
+              <h3 className="font-semibold text-gray-900 dark:text-white">
                 {worstCategory.category.replace(/([A-Z])/g, ' $1').trim()}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {worstCategory.score}/{worstCategory.maxScore} points
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 mt-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
             This is your biggest opportunity for growth. Focus on improving
             this area to see a significant boost in your overall score.
           </p>
@@ -137,15 +137,15 @@ const AnalyticsPage: React.FC = () => {
           {score.categories.map((category) => (
             <div key={category.category} className="border-b last:border-0 pb-4 last:pb-0">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-900">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
                   {category.category.replace(/([A-Z])/g, ' $1').trim()}
                 </h3>
-                <span className="text-sm font-medium text-gray-600">
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   {category.score}/{category.maxScore}
                 </span>
               </div>
               <ProgressBar value={category.score} max={category.maxScore} />
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 {getCategoryDescription(category.category)}
               </p>
             </div>
@@ -157,23 +157,23 @@ const AnalyticsPage: React.FC = () => {
       <Card>
         <CardHeader title="Portfolio Statistics" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-3xl font-bold text-gray-900">{repositories.length}</div>
-            <div className="text-sm text-gray-500">Repositories</div>
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">{repositories.length}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Repositories</div>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-3xl font-bold text-gray-900">{totalStars}</div>
-            <div className="text-sm text-gray-500">Total Stars</div>
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalStars}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total Stars</div>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-3xl font-bold text-gray-900">{totalForks}</div>
-            <div className="text-sm text-gray-500">Total Forks</div>
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">{totalForks}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Total Forks</div>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <div className="text-3xl font-bold text-gray-900">
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
               {Math.round(avgRepoScore)}
             </div>
-            <div className="text-sm text-gray-500">Avg Repo Score</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Avg Repo Score</div>
           </div>
         </div>
       </Card>

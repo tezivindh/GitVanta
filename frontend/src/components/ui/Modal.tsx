@@ -74,7 +74,7 @@ const Modal: React.FC<ModalProps> = ({
       <div className="flex min-h-screen items-center justify-center p-4">
         <div
           className={clsx(
-            'relative w-full bg-white rounded-xl shadow-2xl',
+            'relative w-full bg-white dark:bg-gray-800 rounded-xl shadow-2xl',
             'transform transition-all',
             'animate-in duration-200',
             sizes[size],
@@ -86,11 +86,11 @@ const Modal: React.FC<ModalProps> = ({
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
               {title && (
                 <h2
                   id="modal-title"
-                  className="text-lg font-semibold text-gray-900"
+                  className="text-lg font-semibold text-gray-900 dark:text-white"
                 >
                   {title}
                 </h2>
@@ -100,8 +100,8 @@ const Modal: React.FC<ModalProps> = ({
                   type="button"
                   onClick={onClose}
                   className={clsx(
-                    'p-1 rounded-md text-gray-400 hover:text-gray-600',
-                    'hover:bg-gray-100 transition-colors',
+                    'p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200',
+                    'hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
                     'focus:outline-hidden focus:ring-2 focus:ring-primary-500',
                     !title && 'ml-auto'
                   )}
@@ -134,7 +134,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
   return (
     <div
       className={clsx(
-        'flex items-center justify-end gap-3 pt-4 border-t -mx-4 px-4 -mb-4 pb-4',
+        'flex items-center justify-end gap-3 pt-4 border-t dark:border-gray-700 -mx-4 px-4 -mb-4 pb-4',
         className
       )}
     >

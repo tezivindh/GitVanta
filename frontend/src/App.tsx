@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './components/layout';
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
 import {
   LandingPage,
   LoginPage,
@@ -20,10 +21,14 @@ import {
   ComparePage,
   RecruiterPage,
   ExportPage,
+  SettingsPage,
 } from './pages';
 
 const App: React.FC = () => {
   const { token, user, fetchUser } = useAuthStore();
+
+  // Initialize theme on mount
+  useThemeStore();
 
   // Fetch user on app load if token exists but user is null
   useEffect(() => {
@@ -52,6 +57,7 @@ const App: React.FC = () => {
           <Route path="compare" element={<ComparePage />} />
           <Route path="recruiter" element={<RecruiterPage />} />
           <Route path="export" element={<ExportPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* Catch all - redirect to home */}

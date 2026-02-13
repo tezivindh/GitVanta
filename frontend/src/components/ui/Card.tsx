@@ -29,7 +29,7 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={clsx(
-        'bg-white rounded-xl shadow-xs border border-gray-200',
+        'bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-200 dark:border-gray-700',
         paddings[padding],
         hover && 'hover:shadow-md transition-shadow',
         className
@@ -59,8 +59,8 @@ const CardHeader: React.FC<CardHeaderProps> = ({
     <div className="flex items-center gap-3">
       {icon && <div className="shrink-0">{icon}</div>}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
+        {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{subtitle}</p>}
       </div>
     </div>
     {action && <div>{action}</div>}

@@ -102,8 +102,8 @@ const ExportPage: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Export Report</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Export Report</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1">
           Download your portfolio analysis as a PDF or JSON file
         </p>
       </div>
@@ -119,8 +119,8 @@ const ExportPage: React.FC = () => {
             onClick={() => setFormat('pdf')}
             className={`p-4 rounded-xl border-2 text-left transition-all ${
               format === 'pdf'
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
             }`}
           >
             <FileText
@@ -128,8 +128,8 @@ const ExportPage: React.FC = () => {
                 format === 'pdf' ? 'text-primary-600' : 'text-gray-400'
               }`}
             />
-            <h3 className="font-semibold text-gray-900">PDF Report</h3>
-            <p className="text-sm text-gray-500 mt-1">
+            <h3 className="font-semibold text-gray-900 dark:text-white">PDF Report</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Professional PDF document ready for sharing
             </p>
           </button>
@@ -138,8 +138,8 @@ const ExportPage: React.FC = () => {
             onClick={() => setFormat('json')}
             className={`p-4 rounded-xl border-2 text-left transition-all ${
               format === 'json'
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
             }`}
           >
             <Settings
@@ -147,8 +147,8 @@ const ExportPage: React.FC = () => {
                 format === 'json' ? 'text-primary-600' : 'text-gray-400'
               }`}
             />
-            <h3 className="font-semibold text-gray-900">JSON Data</h3>
-            <p className="text-sm text-gray-500 mt-1">
+            <h3 className="font-semibold text-gray-900 dark:text-white">JSON Data</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Raw data for integration or analysis
             </p>
           </button>
@@ -162,17 +162,17 @@ const ExportPage: React.FC = () => {
           {options.map((option) => (
             <label
               key={option.id}
-              className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
+              className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
             >
               <input
                 type="checkbox"
                 checked={option.checked}
                 onChange={() => toggleOption(option.id)}
-                className="mt-1 w-4 h-4 rounded-sm border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="mt-1 w-4 h-4 rounded-sm border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
               />
               <div>
-                <div className="font-medium text-gray-900">{option.label}</div>
-                <div className="text-sm text-gray-500">{option.description}</div>
+                <div className="font-medium text-gray-900 dark:text-white">{option.label}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{option.description}</div>
               </div>
             </label>
           ))}
@@ -182,17 +182,17 @@ const ExportPage: React.FC = () => {
       {/* Export Preview */}
       <Card>
         <CardHeader title="Export Preview" />
-        <div className="bg-gray-50 rounded-lg p-6 text-center">
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 text-center">
           <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="font-semibold text-gray-900">
+          <h3 className="font-semibold text-gray-900 dark:text-white">
             Portfolio Analysis Report
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Score: {currentReport.result.score.overall}/100 •{' '}
             {currentReport.result.repositories.length} repositories •{' '}
             {currentReport.result.skills.length} skills
           </p>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
             Generated{' '}
             {new Date(currentReport.createdAt).toLocaleDateString('en-US', {
               dateStyle: 'long',

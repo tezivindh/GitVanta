@@ -16,6 +16,7 @@ import {
   BarChart3,
   GitCompare,
   X,
+  Settings,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ const navigation = [
   { name: 'Compare', href: '/dashboard/compare', icon: GitCompare },
   { name: 'Professional View', href: '/dashboard/recruiter', icon: Users },
   { name: 'Export', href: '/dashboard/export', icon: FileDown },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
@@ -58,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200',
+          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700',
           'transform transition-transform duration-200 ease-in-out z-50',
           'lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -66,10 +68,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       >
         {/* Mobile close button */}
         <div className="flex items-center justify-between p-4 lg:hidden border-b">
-          <span className="font-semibold text-gray-900">Menu</span>
+          <span className="font-semibold text-gray-900 dark:text-white">Menu</span>
           <button
             onClick={onClose}
-            className="p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            className="p-1 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <X className="w-5 h-5" />
           </button>
@@ -87,14 +89,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   active
-                    ? 'bg-primary-50 text-primary-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                 )}
               >
                 <item.icon
                   className={clsx(
                     'w-5 h-5',
-                    active ? 'text-primary-600' : 'text-gray-400'
+                    active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'
                   )}
                 />
                 {item.name}

@@ -54,15 +54,15 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     <div className={className}>
       {(label || showValue) && (
         <div className="flex justify-between mb-1">
-          {label && <span className="text-sm text-gray-600">{label}</span>}
+          {label && <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>}
           {showValue && (
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {Math.round(percentage)}%
             </span>
           )}
         </div>
       )}
-      <div className={clsx('w-full bg-gray-200 rounded-full', sizes[size])}>
+      <div className={clsx('w-full bg-gray-200 dark:bg-gray-700 rounded-full', sizes[size])}>
         <div
           className={clsx(
             'rounded-full transition-all duration-300',
