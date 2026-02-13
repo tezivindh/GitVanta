@@ -7,6 +7,7 @@ import {
   GitHubRepository, 
   GitHubUser, 
   GitHubCommit,
+  GitHubSocialAccount,
 } from '../types';
 import logger from '../utils/logger';
 import { ExternalServiceError } from '../utils/errors';
@@ -232,10 +233,19 @@ export async function getUserByUsername(
   const cached = await cacheGet<GitHubUser>(cacheKey, { prefix: 'github' });
   if (cached) return cached;
 
-  const client = createGitHubClient(accessToken);
-  
   try {
-    const response = await client.get<GitHubUser>(`/users/${username}`);
+    // Use public endpoint (works without auth, just lower rate limit)
+    const response = await axios.get<GitHubUser>(
+      `${GITHUB_API_BASE}/users/${username}`,
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        timeout: 10000,
+      }
+    );
     await cacheSet(cacheKey, response.data, { prefix: 'github', ttl: 3600 });
     return response.data;
   } catch (error: any) {
@@ -297,6 +307,39 @@ export async function getContributorStats(
   }
 }
 
+/**
+ * Get user's social accounts (LinkedIn, Instagram, YouTube, etc.)
+ * This endpoint is public on GitHub — works even without auth.
+ */
+export async function getUserSocialAccounts(
+  accessToken: string,
+  username: string
+): Promise<GitHubSocialAccount[]> {
+  const cacheKey = `social:${username}`;
+  const cached = await cacheGet<GitHubSocialAccount[]>(cacheKey, { prefix: 'github' });
+  if (cached) return cached;
+
+  try {
+    const response = await axios.get<GitHubSocialAccount[]>(
+      `${GITHUB_API_BASE}/users/${username}/social_accounts`,
+      {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        timeout: 10000,
+      }
+    );
+    const accounts = response.data || [];
+    await cacheSet(cacheKey, accounts, { prefix: 'github', ttl: 3600 });
+    return accounts;
+  } catch (error: any) {
+    logger.warn(`Failed to fetch social accounts for ${username}: ${error.message}`);
+    return []; // Non-critical, return empty
+  }
+}
+
 export default {
   getAuthenticatedUser,
   getUserRepositories,
@@ -309,4 +352,5 @@ export default {
   getUserByUsername,
   exchangeCodeForToken,
   getContributorStats,
+  getUserSocialAccounts,
 };

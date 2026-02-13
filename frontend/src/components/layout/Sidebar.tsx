@@ -31,7 +31,7 @@ const navigation = [
   { name: 'Badges', href: '/dashboard/badges', icon: Trophy },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Compare', href: '/dashboard/compare', icon: GitCompare },
-  { name: 'Recruiter View', href: '/dashboard/recruiter', icon: Users },
+  { name: 'Professional View', href: '/dashboard/recruiter', icon: Users },
   { name: 'Export', href: '/dashboard/export', icon: FileDown },
 ];
 

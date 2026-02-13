@@ -48,10 +48,11 @@ export async function analyzePortfolio(
   logger.info(`Starting portfolio analysis for ${username}`);
 
   // Fetch all necessary data from GitHub
-  const [repos, githubUser, hasProfileReadme] = await Promise.all([
+  const [repos, githubUser, hasProfileReadme, socialAccounts] = await Promise.all([
     githubService.getAllUserRepositories(accessToken, username),
     githubService.getUserByUsername(accessToken, username),
     githubService.hasProfileReadme(accessToken, username),
+    githubService.getUserSocialAccounts(accessToken, username),
   ]);
 
   // Filter out forked repositories for analysis
@@ -121,6 +122,9 @@ export async function analyzePortfolio(
       hasLocation: !!githubUser.location,
       hasWebsite: !!githubUser.blog,
       hasEmail: !!githubUser.email,
+      hasTwitter: !!githubUser.twitter_username,
+      blogUrl: githubUser.blog || '',
+      socialAccounts: socialAccounts,
       profileComplete: calculateProfileCompleteness(githubUser),
       repos: ownRepos,
     },
@@ -148,7 +152,9 @@ export async function analyzePortfolio(
     ownRepos,
     skills,
     totalStars,
-    githubUser.followers
+    githubUser.followers,
+    repos,            // all repos including forks for open-source badge
+    hasProfileReadme  // for professional profile badge
   );
 
   // Transform repositories for storage

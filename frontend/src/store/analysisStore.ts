@@ -77,7 +77,7 @@ function transformToCurrentReport(analysis: AnalysisReport): CurrentReport {
       },
       repositories,
       skills: analysis.skills.map(s => s.name),
-      badges: analysis.badges.map(b => b.name),
+      badges: analysis.badges.map(b => b.id),
       weaknesses: analysis.weaknesses.map(w => w.issue),
     },
   };

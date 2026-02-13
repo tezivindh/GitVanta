@@ -7,8 +7,9 @@ import { Trophy, Lock } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { Card, CardHeader, Alert, Badge as BadgeComponent } from '../../components/ui';
 
-// Available badges with their criteria
+// All possible badges - IDs match exactly what the backend generates
 const allBadges = [
+  // === Core badges (easier to earn) ===
   {
     id: 'open-source',
     name: 'Open Source Contributor',
@@ -20,10 +21,10 @@ const allBadges = [
   {
     id: 'polyglot',
     name: 'Polyglot',
-    description: 'Uses multiple programming languages',
+    description: 'Uses 5+ programming languages',
     icon: 'code' as const,
     variant: 'gold' as const,
-    criteria: 'Use 5+ different programming languages',
+    criteria: 'Use 5+ different programming languages in your projects',
   },
   {
     id: 'consistent',
@@ -31,7 +32,7 @@ const allBadges = [
     description: 'Regular commit activity',
     icon: 'flame' as const,
     variant: 'silver' as const,
-    criteria: 'Maintain regular commit activity over time',
+    criteria: 'Achieve an activity score of 60 or higher',
   },
   {
     id: 'documenter',
@@ -39,7 +40,7 @@ const allBadges = [
     description: 'Well-documented repositories',
     icon: 'book' as const,
     variant: 'silver' as const,
-    criteria: 'Have README files in most repositories',
+    criteria: 'Achieve a documentation score of 70 or higher',
   },
   {
     id: 'popular',
@@ -47,15 +48,15 @@ const allBadges = [
     description: 'Repositories with many stars',
     icon: 'star' as const,
     variant: 'gold' as const,
-    criteria: 'Earn 100+ stars across repositories',
+    criteria: 'Earn 50+ stars across your repositories',
   },
   {
     id: 'community',
     name: 'Community Member',
-    description: 'Active in the community',
+    description: 'Active in the developer community',
     icon: 'users' as const,
     variant: 'bronze' as const,
-    criteria: 'Have forks and community engagement',
+    criteria: 'Have 10+ followers, 5+ forks received, or 20+ stars',
   },
   {
     id: 'professional',
@@ -63,7 +64,7 @@ const allBadges = [
     description: 'Complete GitHub profile',
     icon: 'shield' as const,
     variant: 'bronze' as const,
-    criteria: 'Have bio, avatar, and complete profile',
+    criteria: 'Achieve professionalism score of 70+ or have a profile README',
   },
   {
     id: 'innovative',
@@ -71,7 +72,7 @@ const allBadges = [
     description: 'Creates diverse projects',
     icon: 'zap' as const,
     variant: 'special' as const,
-    criteria: 'Have projects across different domains',
+    criteria: 'Achieve a diversity score of 70 or higher',
   },
   {
     id: 'mentor',
@@ -79,27 +80,104 @@ const allBadges = [
     description: 'Helps others learn',
     icon: 'trophy' as const,
     variant: 'special' as const,
-    criteria: 'Create educational or tutorial projects',
+    criteria: 'Create educational/tutorial projects or have 30+ repos',
+  },
+  // === Advanced badges (harder to earn) ===
+  {
+    id: 'quality-coder',
+    name: 'Quality Coder',
+    description: 'Code quality score of 70+',
+    icon: 'award' as const,
+    variant: 'silver' as const,
+    criteria: 'Achieve a code quality score of 70 or higher',
+  },
+  {
+    id: 'code-master',
+    name: 'Code Master',
+    description: 'Code quality score of 90+',
+    icon: 'trophy' as const,
+    variant: 'gold' as const,
+    criteria: 'Achieve a code quality score of 90 or higher',
+  },
+  {
+    id: 'documentation-hero',
+    name: 'Documentation Hero',
+    description: 'Documentation score of 90+',
+    icon: 'book' as const,
+    variant: 'gold' as const,
+    criteria: 'Achieve a documentation score of 90 or higher',
+  },
+  {
+    id: 'active-contributor',
+    name: 'Active Contributor',
+    description: 'Highly active developer',
+    icon: 'flame' as const,
+    variant: 'gold' as const,
+    criteria: 'Achieve an activity score of 80 or higher',
+  },
+  {
+    id: 'star-collector',
+    name: 'Star Collector',
+    description: 'Received 100+ stars',
+    icon: 'star' as const,
+    variant: 'gold' as const,
+    criteria: 'Earn 100+ stars across your repositories',
+  },
+  {
+    id: 'influencer',
+    name: 'Influencer',
+    description: '100+ followers',
+    icon: 'users' as const,
+    variant: 'gold' as const,
+    criteria: 'Have 100 or more GitHub followers',
+  },
+  {
+    id: 'builder',
+    name: 'Builder',
+    description: 'Created 20+ repositories',
+    icon: 'award' as const,
+    variant: 'silver' as const,
+    criteria: 'Create 20 or more public repositories',
+  },
+  {
+    id: 'prolific-creator',
+    name: 'Prolific Creator',
+    description: 'Created 50+ repositories',
+    icon: 'zap' as const,
+    variant: 'gold' as const,
+    criteria: 'Create 50 or more public repositories',
+  },
+  {
+    id: 'skilled-developer',
+    name: 'Skilled Developer',
+    description: 'Overall score of 75+',
+    icon: 'award' as const,
+    variant: 'silver' as const,
+    criteria: 'Achieve an overall portfolio score of 75 or higher',
+  },
+  {
+    id: 'elite-developer',
+    name: 'Elite Developer',
+    description: 'Overall score of 90+',
+    icon: 'trophy' as const,
+    variant: 'special' as const,
+    criteria: 'Achieve an overall portfolio score of 90 or higher',
   },
 ];
 
+// Create a lookup map for badge names by ID
+// const badgeNameMap = new Map(allBadges.map(b => [b.id, b.name]));
+
 const BadgesPage: React.FC = () => {
-  const { currentReport } = useAnalysisStore();
+  const { currentReport, badges: fullBadgeObjects } = useAnalysisStore();
 
-  const earnedBadges = currentReport?.result.badges || [];
-  const badgesSet = new Set(earnedBadges.map((b) => b.toLowerCase()));
+  // earnedBadgeIds contains badge IDs from the backend
+  const earnedBadgeIds = currentReport?.result.badges || [];
+  const earnedIdSet = new Set(earnedBadgeIds);
 
-  // Check if a badge is earned (simple string matching)
-  const isBadgeEarned = (badgeId: string, badgeName: string): boolean => {
-    return (
-      badgesSet.has(badgeId) ||
-      badgesSet.has(badgeName.toLowerCase()) ||
-      earnedBadges.some(
-        (b) =>
-          b.toLowerCase().includes(badgeId) ||
-          badgeName.toLowerCase().includes(b.toLowerCase())
-      )
-    );
+  // Check if a badge is earned by exact ID match
+  const isBadgeEarned = (badgeId: string): boolean => {
+    return earnedIdSet.has(badgeId);
   };
 
   if (!currentReport) {
@@ -110,12 +188,8 @@ const BadgesPage: React.FC = () => {
     );
   }
 
-  const earned = allBadges.filter((badge) =>
-    isBadgeEarned(badge.id, badge.name)
-  );
-  const locked = allBadges.filter(
-    (badge) => !isBadgeEarned(badge.id, badge.name)
-  );
+  const earned = allBadges.filter((badge) => isBadgeEarned(badge.id));
+  const locked = allBadges.filter((badge) => !isBadgeEarned(badge.id));
 
   return (
     <div className="space-y-6">
@@ -157,43 +231,45 @@ const BadgesPage: React.FC = () => {
       </Card>
 
       {/* Locked Badges */}
-      <Card>
-        <CardHeader
-          title="Badges to Earn"
-          icon={<Lock className="w-5 h-5 text-gray-400" />}
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {locked.map((badge) => (
-            <div
-              key={badge.id}
-              className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg opacity-60"
-            >
-              <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center shrink-0">
-                <Lock className="w-5 h-5 text-gray-400" />
+      {locked.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Badges to Earn"
+            icon={<Lock className="w-5 h-5 text-gray-400" />}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {locked.map((badge) => (
+              <div
+                key={badge.id}
+                className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg opacity-60"
+              >
+                <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-gray-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900">{badge.name}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{badge.description}</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    How to earn: {badge.criteria}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium text-gray-900">{badge.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{badge.description}</p>
-                <p className="text-xs text-gray-400 mt-2">
-                  How to earn: {badge.criteria}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      )}
 
-      {/* Raw badges from analysis */}
-      {earnedBadges.length > 0 && (
+      {/* All Detected Achievements (shows full badge objects from store) */}
+      {fullBadgeObjects.length > 0 && (
         <Card>
           <CardHeader title="All Detected Achievements" />
           <div className="flex flex-wrap gap-2">
-            {earnedBadges.map((badge, index) => (
+            {fullBadgeObjects.map((badge, index) => (
               <span
                 key={index}
                 className="px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-sm font-medium"
               >
-                {badge}
+                {badge.name}
               </span>
             ))}
           </div>

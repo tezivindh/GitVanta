@@ -41,10 +41,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
               </button>
             )}
 
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/dashboard" className="flex items-center gap-2">
               <Github className="w-8 h-8 text-primary-600" />
               <span className="font-bold text-xl text-gray-900">
-                Portfolio Analyzer
+                GitVanta
               </span>
             </Link>
           </div>

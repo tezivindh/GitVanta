@@ -3,7 +3,7 @@
 // =====================================================
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import {
   Github,
   BarChart3,
@@ -15,6 +15,8 @@ import {
   GitCompare,
   ArrowRight,
   Check,
+  Share2,
+  Globe,
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Button } from '../components/ui';
@@ -46,15 +48,27 @@ const features = [
   },
   {
     icon: Users,
-    title: 'Recruiter View',
+    title: 'Professional View',
     description:
-      'Generate a recruiter-friendly profile showcasing your best work and skills.',
+      'A shareable public profile page showcasing your scores, skills, badges, and top projects.',
+  },
+  {
+    icon: Share2,
+    title: 'Shareable Profile Link',
+    description:
+      'Copy and share your public portfolio link — perfect for resumes, LinkedIn, and job applications.',
   },
   {
     icon: GitCompare,
     title: 'Profile Comparison',
     description:
       'Compare your portfolio against other developers to identify growth opportunities.',
+  },
+  {
+    icon: Globe,
+    title: 'Social Presence Scoring',
+    description:
+      'Connect your socials on GitHub and earn professionalism points for LinkedIn, Instagram, and more.',
   },
   {
     icon: FileDown,
@@ -68,13 +82,20 @@ const benefits = [
   'Transparent scoring with detailed breakdowns',
   'AI-powered improvement suggestions',
   'Track your progress over time',
-  'Shareable recruiter profiles',
+  'Shareable public portfolio link',
+  'Social presence & professionalism scoring',
+  '19 achievement badges to unlock',
   'Identify skill gaps and weaknesses',
   'Export professional reports',
 ];
 
 const LandingPage: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
+
+  // Redirect logged-in users straight to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -85,7 +106,7 @@ const LandingPage: React.FC = () => {
             <Link to="/" className="flex items-center gap-2">
               <Github className="w-8 h-8 text-primary-600" />
               <span className="font-bold text-xl text-gray-900">
-                Portfolio Analyzer
+                GitVanta
               </span>
             </Link>
 
@@ -110,12 +131,13 @@ const LandingPage: React.FC = () => {
       <section className="pt-20 pb-32 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
           <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 tracking-tight">
-            Analyze & Enhance Your
-            <span className="text-primary-600"> GitHub Portfolio</span>
+            Your GitHub, Scored &
+            <span className="text-primary-600"> Supercharged</span>
           </h1>
           <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
-            Get a comprehensive score for your GitHub profile with transparent metrics,
-            AI-powered enhancements, and actionable insights to improve your developer portfolio.
+            GitVanta gives your GitHub profile a transparent 0-100 score across 6 categories,
+            AI-powered enhancements, a shareable professional portfolio, and actionable insights
+            to level up as a developer.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/login">
@@ -135,10 +157,14 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* Stats */}
-          <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
+          <div className="mt-16 grid grid-cols-4 gap-8 max-w-3xl mx-auto">
             <div>
               <div className="text-4xl font-bold text-primary-600">6</div>
               <div className="text-sm text-gray-500 mt-1">Score Categories</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold text-primary-600">19</div>
+              <div className="text-sm text-gray-500 mt-1">Badges to Earn</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-primary-600">100%</div>
@@ -164,7 +190,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
@@ -189,7 +215,7 @@ const LandingPage: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Why Developers Love Portfolio Analyzer
+                Why Developers Love GitVanta
               </h2>
               <ul className="space-y-4">
                 {benefits.map((benefit, index) => (
@@ -229,10 +255,10 @@ const LandingPage: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Github className="w-6 h-6" />
-              <span className="font-semibold">Portfolio Analyzer</span>
+              <span className="font-semibold">GitVanta</span>
             </div>
             <p className="text-gray-400 text-sm">
-              Built for developers who want to showcase their best work.
+              &copy; {new Date().getFullYear()} GitVanta — Built for developers who want to showcase their best work.
             </p>
           </div>
         </div>

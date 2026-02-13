@@ -10,6 +10,7 @@ import {
   LandingPage,
   LoginPage,
   AuthCallbackPage,
+  PublicProfilePage,
   DashboardOverview,
   RepositoriesPage,
   SkillsPage,
@@ -38,6 +39,7 @@ const App: React.FC = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/profile/:username" element={<PublicProfilePage />} />
 
         {/* Protected dashboard routes */}
         <Route path="/dashboard" element={<DashboardLayout />}>

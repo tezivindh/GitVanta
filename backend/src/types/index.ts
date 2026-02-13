@@ -78,11 +78,18 @@ export interface GitHubUser {
   company: string;
   location: string;
   blog: string;
+  twitter_username: string | null;
+  hireable: boolean | null;
   public_repos: number;
   followers: number;
   following: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface GitHubSocialAccount {
+  provider: string;
+  url: string;
 }
 
 export interface GitHubCommit {

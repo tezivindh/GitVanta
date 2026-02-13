@@ -480,6 +480,9 @@ interface ProfessionalismInput {
   hasLocation: boolean;
   hasWebsite: boolean;
   hasEmail: boolean;
+  hasTwitter: boolean;
+  blogUrl: string;
+  socialAccounts: { provider: string; url: string }[];
   profileComplete: number; // percentage
   repos: GitHubRepository[];
 }
@@ -491,35 +494,103 @@ export function scoreProfessionalism(input: ProfessionalismInput): {
   const breakdown: BreakdownItem[] = [];
   let totalScore = 0;
 
-  // 1. Profile Completeness (30 points max)
+  // 1. Profile Completeness (25 points max)
   let profileItems = 0;
   if (input.hasBio) profileItems++;
   if (input.hasCompany) profileItems++;
   if (input.hasLocation) profileItems++;
   if (input.hasWebsite) profileItems++;
   if (input.hasEmail) profileItems++;
-  const profileScore = (profileItems / 5) * 30;
+  const profileScore = (profileItems / 5) * 25;
   breakdown.push({
     metric: 'Profile Completeness',
     score: Math.round(profileScore),
-    maxScore: 30,
+    maxScore: 25,
     description: `${profileItems}/5 profile fields completed`,
     suggestion: profileItems < 4 ? 'Complete your GitHub profile with bio, location, and website' : undefined,
   });
   totalScore += profileScore;
 
-  // 2. Profile README (25 points max)
-  const profileReadmeScore = input.hasProfileReadme ? 25 : 0;
+  // 2. Profile README (20 points max)
+  const profileReadmeScore = input.hasProfileReadme ? 20 : 0;
   breakdown.push({
     metric: 'Profile README',
     score: profileReadmeScore,
-    maxScore: 25,
+    maxScore: 20,
     description: input.hasProfileReadme ? 'Has profile README' : 'No profile README',
     suggestion: !input.hasProfileReadme ? 'Create a profile README to introduce yourself' : undefined,
   });
   totalScore += profileReadmeScore;
 
-  // 3. Repository Naming (25 points max)
+  // 3. Social Presence (15 points max)
+  const socialLinks: string[] = [];
+  let socialScore = 0;
+
+  // Map of known social providers and their display names
+  const providerNames: Record<string, string> = {
+    linkedin: 'LinkedIn',
+    instagram: 'Instagram',
+    twitter: 'Twitter/X',
+    youtube: 'YouTube',
+    mastodon: 'Mastodon',
+    npm: 'npm',
+    generic: 'Website',
+  };
+
+  // Check GitHub social accounts API (3 points each, up to 4 accounts = 12 pts)
+  const seenProviders = new Set<string>();
+  for (const account of input.socialAccounts) {
+    const provider = account.provider.toLowerCase();
+    if (seenProviders.has(provider)) continue;
+    seenProviders.add(provider);
+
+    const displayName = providerNames[provider] || provider;
+
+    // Detect specific platforms from generic URLs too
+    if (provider === 'generic') {
+      const url = account.url.toLowerCase();
+      if (url.includes('linkedin.com') && !seenProviders.has('linkedin')) {
+        socialLinks.push('LinkedIn');
+        seenProviders.add('linkedin');
+      } else if (url.includes('instagram.com') && !seenProviders.has('instagram')) {
+        socialLinks.push('Instagram');
+        seenProviders.add('instagram');
+      } else if (url.includes('youtube.com') && !seenProviders.has('youtube')) {
+        socialLinks.push('YouTube');
+        seenProviders.add('youtube');
+      } else {
+        socialLinks.push('Website');
+      }
+    } else {
+      socialLinks.push(displayName);
+    }
+
+    socialScore += 3;
+    if (socialScore >= 12) break;
+  }
+
+  // Twitter/X username from profile (3 points, if not already counted)
+  if (input.hasTwitter && !seenProviders.has('twitter')) {
+    socialScore += 3;
+    socialLinks.push('Twitter/X');
+  }
+
+  breakdown.push({
+    metric: 'Social Presence',
+    score: Math.min(15, socialScore),
+    maxScore: 15,
+    description: socialLinks.length > 0
+      ? `Connected: ${socialLinks.join(', ')}`
+      : 'No social links detected',
+    suggestion: socialLinks.length === 0
+      ? 'Link your socials on GitHub — go to your profile and add LinkedIn, Instagram, Twitter, etc.'
+      : socialScore < 9
+        ? 'Add more social accounts to your GitHub profile for a higher score'
+        : undefined,
+  });
+  totalScore += Math.min(15, socialScore);
+
+  // 4. Repository Naming (20 points max)
   const wellNamedRepos = input.repos.filter(repo => {
     const name = repo.name;
     // Check for professional naming conventions
@@ -528,17 +599,17 @@ export function scoreProfessionalism(input: ProfessionalismInput): {
            name.match(/^[A-Z][a-zA-Z0-9]*$/); // PascalCase
   }).length;
   const namingPercentage = input.repos.length > 0 ? (wellNamedRepos / input.repos.length) * 100 : 0;
-  const namingScore = (namingPercentage / 100) * 25;
+  const namingScore = (namingPercentage / 100) * 20;
   breakdown.push({
     metric: 'Repository Naming',
     score: Math.round(namingScore),
-    maxScore: 25,
+    maxScore: 20,
     description: `${Math.round(namingPercentage)}% of repos follow naming conventions`,
     suggestion: namingPercentage < 80 ? 'Use consistent naming conventions for repositories' : undefined,
   });
   totalScore += namingScore;
 
-  // 4. Repository Descriptions (20 points max)
+  // 5. Repository Descriptions (20 points max)
   const reposWithDesc = input.repos.filter(repo => 
     repo.description && repo.description.length >= 20
   ).length;
@@ -801,12 +872,152 @@ export function calculateBadges(
   repos: GitHubRepository[],
   skills: ExtractedSkill[],
   totalStars: number,
-  followers: number
+  followers: number,
+  allReposIncludingForks?: GitHubRepository[],
+  hasProfileReadme?: boolean
 ): Badge[] {
   const badges: Badge[] = [];
   const now = new Date();
+  const totalForks = repos.reduce((sum, r) => sum + r.forks_count, 0);
 
-  // Code Quality Badges
+  // ==========================================
+  // Open Source Contributor
+  // Earned when user has forked repos (contributing to others' projects)
+  // ==========================================
+  const forkedRepos = allReposIncludingForks
+    ? allReposIncludingForks.filter(r => r.fork)
+    : [];
+  if (forkedRepos.length > 0) {
+    badges.push({
+      id: 'open-source',
+      name: 'Open Source Contributor',
+      description: `Contributed to ${forkedRepos.length} open source project${forkedRepos.length > 1 ? 's' : ''}`,
+      icon: '❤️',
+      earnedAt: now,
+      category: 'Community',
+    });
+  }
+
+  // ==========================================
+  // Polyglot - 5+ programming languages
+  // ==========================================
+  if (skills.filter(s => s.category === 'language').length >= 5) {
+    badges.push({
+      id: 'polyglot',
+      name: 'Polyglot',
+      description: 'Proficient in 5+ programming languages',
+      icon: '🌐',
+      earnedAt: now,
+      category: 'Diversity',
+    });
+  }
+
+  // ==========================================
+  // Consistent Coder - regular activity (score >= 60)
+  // ==========================================
+  if (categoryScores.activity >= 60) {
+    badges.push({
+      id: 'consistent',
+      name: 'Consistent Coder',
+      description: 'Maintains regular coding activity',
+      icon: '🔥',
+      earnedAt: now,
+      category: 'Activity',
+    });
+  }
+
+  // ==========================================
+  // Great Documenter - good documentation (score >= 70)
+  // ==========================================
+  if (categoryScores.documentation >= 70) {
+    badges.push({
+      id: 'documenter',
+      name: 'Great Documenter',
+      description: 'Well-documented repositories',
+      icon: '📖',
+      earnedAt: now,
+      category: 'Documentation',
+    });
+  }
+
+  // ==========================================
+  // Popular Developer - 50+ stars
+  // ==========================================
+  if (totalStars >= 50) {
+    badges.push({
+      id: 'popular',
+      name: 'Popular Developer',
+      description: `Earned ${totalStars} stars across repositories`,
+      icon: '🌟',
+      earnedAt: now,
+      category: 'Community',
+    });
+  }
+
+  // ==========================================
+  // Community Member - active engagement
+  // ==========================================
+  if (totalForks >= 5 || followers >= 10 || totalStars >= 20) {
+    badges.push({
+      id: 'community',
+      name: 'Community Member',
+      description: 'Active community engagement',
+      icon: '👥',
+      earnedAt: now,
+      category: 'Community',
+    });
+  }
+
+  // ==========================================
+  // Professional Profile - complete profile
+  // ==========================================
+  if (categoryScores.professionalism >= 70 || hasProfileReadme) {
+    badges.push({
+      id: 'professional',
+      name: 'Professional Profile',
+      description: 'Complete and professional GitHub profile',
+      icon: '🛡️',
+      earnedAt: now,
+      category: 'Professionalism',
+    });
+  }
+
+  // ==========================================
+  // Innovator - diverse projects (diversity >= 70)
+  // ==========================================
+  if (categoryScores.diversity >= 70) {
+    badges.push({
+      id: 'innovative',
+      name: 'Innovator',
+      description: 'Creates diverse and innovative projects',
+      icon: '⚡',
+      earnedAt: now,
+      category: 'Diversity',
+    });
+  }
+
+  // ==========================================
+  // Mentor - educational/tutorial projects
+  // ==========================================
+  const educationalKeywords = ['tutorial', 'learning', 'education', 'course', 'guide', 'example', 'demo', 'starter', 'template', 'boilerplate', 'workshop', 'lesson'];
+  const hasEducationalRepos = repos.some(r =>
+    r.topics.some(t => educationalKeywords.includes(t.toLowerCase())) ||
+    (r.description && educationalKeywords.some(kw => r.description!.toLowerCase().includes(kw)))
+  );
+  if (hasEducationalRepos || repos.length >= 30) {
+    badges.push({
+      id: 'mentor',
+      name: 'Mentor',
+      description: 'Helps others learn through projects',
+      icon: '🏆',
+      earnedAt: now,
+      category: 'Community',
+    });
+  }
+
+  // ==========================================
+  // Code Quality Badges (tiered)
+  // ==========================================
   if (categoryScores.codeQuality >= 90) {
     badges.push({
       id: 'code-master',
@@ -827,7 +1038,9 @@ export function calculateBadges(
     });
   }
 
-  // Documentation Badges
+  // ==========================================
+  // Documentation Hero (high tier)
+  // ==========================================
   if (categoryScores.documentation >= 90) {
     badges.push({
       id: 'documentation-hero',
@@ -839,7 +1052,9 @@ export function calculateBadges(
     });
   }
 
-  // Activity Badges
+  // ==========================================
+  // Active Contributor (high tier activity)
+  // ==========================================
   if (categoryScores.activity >= 80) {
     badges.push({
       id: 'active-contributor',
@@ -851,19 +1066,9 @@ export function calculateBadges(
     });
   }
 
-  // Diversity Badges
-  if (skills.filter(s => s.category === 'language').length >= 5) {
-    badges.push({
-      id: 'polyglot',
-      name: 'Polyglot',
-      description: 'Proficient in 5+ programming languages',
-      icon: '🌐',
-      earnedAt: now,
-      category: 'Diversity',
-    });
-  }
-
-  // Community Badges
+  // ==========================================
+  // Star Collector - 100+ stars (high tier)
+  // ==========================================
   if (totalStars >= 100) {
     badges.push({
       id: 'star-collector',
@@ -873,17 +1078,11 @@ export function calculateBadges(
       earnedAt: now,
       category: 'Community',
     });
-  } else if (totalStars >= 50) {
-    badges.push({
-      id: 'rising-star',
-      name: 'Rising Star',
-      description: 'Received 50+ stars',
-      icon: '🌟',
-      earnedAt: now,
-      category: 'Community',
-    });
   }
 
+  // ==========================================
+  // Influencer - 100+ followers
+  // ==========================================
   if (followers >= 100) {
     badges.push({
       id: 'influencer',
@@ -895,7 +1094,9 @@ export function calculateBadges(
     });
   }
 
-  // Repository Badges
+  // ==========================================
+  // Repository count badges (tiered)
+  // ==========================================
   if (repos.length >= 50) {
     badges.push({
       id: 'prolific-creator',
@@ -916,7 +1117,9 @@ export function calculateBadges(
     });
   }
 
-  // Overall Score Badges
+  // ==========================================
+  // Overall Score Badges (tiered)
+  // ==========================================
   const overallScore = Math.round(
     categoryScores.codeQuality * 0.25 +
     categoryScores.documentation * 0.20 +
