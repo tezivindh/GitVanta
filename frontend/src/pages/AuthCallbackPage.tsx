@@ -1,7 +1,3 @@
-// =====================================================
-// AUTH CALLBACK PAGE - Handle OAuth redirect
-// =====================================================
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';

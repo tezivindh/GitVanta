@@ -1,7 +1,3 @@
-// =====================================================
-// REPOSITORIES ROUTES
-// =====================================================
-
 import { Router } from 'express';
 import * as repositoryController from '../controllers/repositoryController';
 import { authenticateToken, asyncHandler } from '../middleware';

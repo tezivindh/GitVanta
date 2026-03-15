@@ -1,15 +1,8 @@
-// =====================================================
-// ANALYSIS CONTROLLER
-// =====================================================
-
 import { Response } from 'express';
 import { analysisService, pdfService } from '../services';
 import { AuthenticatedRequest } from '../types';
 import logger from '../utils/logger';
 
-/**
- * Perform portfolio analysis
- */
 export async function analyzePortfolio(
   req: AuthenticatedRequest,
   res: Response
@@ -36,9 +29,7 @@ export async function analyzePortfolio(
   }
 }
 
-/**
- * Get latest analysis
- */
+
 export async function getLatestAnalysis(
   req: AuthenticatedRequest,
   res: Response
@@ -69,9 +60,7 @@ export async function getLatestAnalysis(
   }
 }
 
-/**
- * Get repository insights
- */
+
 export async function getRepoInsights(
   req: AuthenticatedRequest,
   res: Response
@@ -94,17 +83,15 @@ export async function getRepoInsights(
   }
 }
 
-/**
- * Generate recruiter profile
- */
-export async function getRecruiterProfile(
+
+export async function getProfessionalProfile(
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> {
   const user = req.user!;
 
   try {
-    const profile = await analysisService.generateRecruiterProfile(
+    const profile = await analysisService.generateProfessionalProfile(
       user._id,
       user.username,
       user.accessToken
@@ -115,17 +102,15 @@ export async function getRecruiterProfile(
       data: profile,
     });
   } catch (error: any) {
-    logger.error('Recruiter profile error:', error.message);
+    logger.error('Professional profile error:', error.message);
     res.status(500).json({
       success: false,
-      error: 'Failed to generate recruiter profile',
+      error: 'Failed to generate professional profile',
     });
   }
 }
 
-/**
- * Compare with another profile
- */
+
 export async function compareProfiles(
   req: AuthenticatedRequest,
   res: Response
@@ -162,9 +147,7 @@ export async function compareProfiles(
   }
 }
 
-/**
- * Export analysis to PDF
- */
+
 export async function exportToPDF(
   req: AuthenticatedRequest,
   res: Response
@@ -211,9 +194,7 @@ export async function exportToPDF(
   }
 }
 
-/**
- * Get score breakdown
- */
+
 export async function getScoreBreakdown(
   req: AuthenticatedRequest,
   res: Response
@@ -248,9 +229,7 @@ export async function getScoreBreakdown(
   }
 }
 
-/**
- * Get skills
- */
+
 export async function getSkills(
   req: AuthenticatedRequest,
   res: Response
@@ -283,9 +262,7 @@ export async function getSkills(
   }
 }
 
-/**
- * Get badges
- */
+
 export async function getBadges(
   req: AuthenticatedRequest,
   res: Response
@@ -318,9 +295,6 @@ export async function getBadges(
   }
 }
 
-/**
- * Get improvements
- */
 export async function getImprovements(
   req: AuthenticatedRequest,
   res: Response

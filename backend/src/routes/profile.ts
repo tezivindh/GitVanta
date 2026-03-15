@@ -1,7 +1,3 @@
-// =====================================================
-// PUBLIC PROFILE ROUTES - No authentication required
-// =====================================================
-
 import { Router, Request, Response } from 'express';
 import { User } from '../models';
 import { AnalysisReport } from '../models';

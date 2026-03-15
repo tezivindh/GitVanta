@@ -1,14 +1,9 @@
-// =====================================================
-// ENHANCEMENT ROUTES (AI)
-// =====================================================
-
 import { Router } from 'express';
 import * as enhancementController from '../controllers/enhancementController';
 import { authenticateToken, asyncHandler, aiLimiter } from '../middleware';
 
 const router = Router();
 
-// All routes require authentication
 router.use(authenticateToken);
 
 // AI status

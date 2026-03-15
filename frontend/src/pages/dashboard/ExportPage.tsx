@@ -1,7 +1,3 @@
-// =====================================================
-// EXPORT PAGE - Export reports as PDF
-// =====================================================
-
 import React, { useState } from 'react';
 import { FileDown, Download, FileText, Settings } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';

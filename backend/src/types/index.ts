@@ -1,14 +1,8 @@
-// =====================================================
-// GITHUB PORTFOLIO ANALYZER - TYPE DEFINITIONS
-// =====================================================
-
+// GITVANTA - TYPE DEFINITIONS
 import { Request } from 'express';
 import { Document, Types } from 'mongoose';
 
-// =====================================================
 // USER TYPES
-// =====================================================
-
 export interface IUser extends Document {
   _id: Types.ObjectId;
   githubId: string;
@@ -34,10 +28,7 @@ export interface AuthenticatedRequest extends Request {
   userId?: string;
 }
 
-// =====================================================
 // GITHUB API TYPES
-// =====================================================
-
 export interface GitHubRepository {
   id: number;
   name: string;
@@ -117,10 +108,7 @@ export interface GitHubContribution {
   }>;
 }
 
-// =====================================================
 // ANALYSIS TYPES
-// =====================================================
-
 export interface AnalyzedRepository {
   name: string;
   url: string;
@@ -204,10 +192,7 @@ export interface Badge {
   category: string;
 }
 
-// =====================================================
 // REPO INSIGHT TYPES
-// =====================================================
-
 export interface RepoInsight extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
@@ -228,10 +213,7 @@ export interface RepoInsight extends Document {
   analyzedAt: Date;
 }
 
-// =====================================================
 // AI ENHANCEMENT TYPES
-// =====================================================
-
 export interface ReadmeEnhancement {
   originalContent: string;
   enhancedContent: string;
@@ -268,10 +250,7 @@ export interface RoadmapItem {
   resources: string[];
 }
 
-// =====================================================
 // COMPARISON TYPES
-// =====================================================
-
 export interface CategoryScore {
   category: string;
   score: number;
@@ -310,11 +289,8 @@ export interface ComparisonBreakdown {
   professionalism: { winner: string; difference: number };
 }
 
-// =====================================================
-// RECRUITER MODE TYPES
-// =====================================================
-
-export interface RecruiterProfile {
+// PROFESSIONAL PROFILE VIEW TYPES
+export interface ProfessionalProfile {
   username: string;
   displayName: string;
   avatarUrl: string;
@@ -322,7 +298,7 @@ export interface RecruiterProfile {
   summary: string;
   overallScore: number;
   topSkills: ExtractedSkill[];
-  topProjects: RecruiterProject[];
+  topProjects: ProfessionalProject[];
   badges: Badge[];
   strengths: string[];
   contact: {
@@ -332,7 +308,7 @@ export interface RecruiterProfile {
   };
 }
 
-export interface RecruiterProject {
+export interface ProfessionalProject {
   name: string;
   description: string;
   technologies: string[];
@@ -341,10 +317,7 @@ export interface RecruiterProject {
   highlights: string[];
 }
 
-// =====================================================
 // API RESPONSE TYPES
-// =====================================================
-
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -363,10 +336,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-// =====================================================
 // JWT TYPES
-// =====================================================
-
 export interface JWTPayload {
   userId: string;
   username: string;
@@ -374,10 +344,7 @@ export interface JWTPayload {
   exp?: number;
 }
 
-// =====================================================
 // CACHE TYPES
-// =====================================================
-
 export interface CacheOptions {
   ttl?: number;
   prefix?: string;

@@ -1,7 +1,3 @@
-// =====================================================
-// REPOSITORIES PAGE - List and analyze repositories
-// =====================================================
-
 import React, { useState, useMemo } from 'react';
 import { ExternalLink, Star, GitFork, Search, Filter, ChevronDown } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';

@@ -1,7 +1,3 @@
-// =====================================================
-// LOGIN PAGE - GitHub OAuth login
-// =====================================================
-
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { Github, Shield, Zap, Lock } from 'lucide-react';

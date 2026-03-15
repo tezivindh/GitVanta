@@ -1,7 +1,3 @@
-// =====================================================
-// BADGES PAGE - Achievement badges display
-// =====================================================
-
 import React from 'react';
 import { Trophy, Lock } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';

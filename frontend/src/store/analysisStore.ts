@@ -1,7 +1,3 @@
-// =====================================================
-// ANALYSIS STORE
-// =====================================================
-
 import { create } from 'zustand';
 import {
   AnalysisReport,
@@ -10,13 +6,12 @@ import {
   Weakness,
   Improvement,
   RepoInsight,
-  RecruiterProfile,
+  ProfessionalProfile,
   ProfileComparison,
   CategoryScore,
 } from '../types';
 import { analysisApi } from '../api';
 
-// Report structure expected by pages
 export interface CurrentReport {
   _id: string;
   userId: string;
@@ -92,7 +87,7 @@ export interface AnalysisState {
   weaknesses: Weakness[];
   improvements: Improvement[];
   repoInsights: RepoInsight[];
-  recruiterProfile: RecruiterProfile | null;
+  professionalProfile: ProfessionalProfile | null;
   comparison: ProfileComparison | null;
 
   // Loading states
@@ -102,7 +97,7 @@ export interface AnalysisState {
   isLoadingBadges: boolean;
   isLoadingImprovements: boolean;
   isLoadingInsights: boolean;
-  isLoadingRecruiter: boolean;
+  isLoadingProfessionalProfile: boolean;
   isComparing: boolean;
   isExporting: boolean;
 
@@ -117,7 +112,7 @@ export interface AnalysisState {
   fetchBadges: () => Promise<void>;
   fetchImprovements: () => Promise<void>;
   fetchRepoInsights: () => Promise<void>;
-  fetchRecruiterProfile: () => Promise<void>;
+  fetchProfessionalProfile: () => Promise<void>;
   compareWithUser: (username: string) => Promise<void>;
   exportPDF: () => Promise<void>;
   clearError: () => void;
@@ -133,7 +128,7 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
   weaknesses: [],
   improvements: [],
   repoInsights: [],
-  recruiterProfile: null,
+  professionalProfile: null,
   comparison: null,
 
   isAnalyzing: false,
@@ -142,7 +137,7 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
   isLoadingBadges: false,
   isLoadingImprovements: false,
   isLoadingInsights: false,
-  isLoadingRecruiter: false,
+  isLoadingProfessionalProfile: false,
   isComparing: false,
   isExporting: false,
 
@@ -271,15 +266,15 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
     }
   },
 
-  fetchRecruiterProfile: async () => {
-    set({ isLoadingRecruiter: true, error: null });
+  fetchProfessionalProfile: async () => {
+    set({ isLoadingProfessionalProfile: true, error: null });
     try {
-      const recruiterProfile = await analysisApi.getRecruiterProfile();
-      set({ recruiterProfile, isLoadingRecruiter: false });
+      const professionalProfile = await analysisApi.getProfessionalProfile();
+      set({ professionalProfile, isLoadingProfessionalProfile: false });
     } catch (error: any) {
       set({
-        error: error.response?.data?.error || 'Failed to fetch recruiter profile',
-        isLoadingRecruiter: false,
+        error: error.response?.data?.error || 'Failed to fetch professional profile',
+        isLoadingProfessionalProfile: false,
       });
     }
   },
@@ -327,7 +322,7 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
     weaknesses: [],
     improvements: [],
     repoInsights: [],
-    recruiterProfile: null,
+    professionalProfile: null,
     comparison: null,
     error: null,
   }),

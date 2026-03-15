@@ -1,10 +1,3 @@
-// =====================================================
-// GOOGLE GEMINI AI PROVIDER
-// =====================================================
-// Uses Google's Gemini API
-// Get API key: https://makersuite.google.com/app/apikey
-// =====================================================
-
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { IAIProvider, AIResponse, AIMessage, AIModelConfig } from '../types';
 import logger from '../../utils/logger';
@@ -66,7 +59,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explana
     const response = await this.generateContent(jsonPrompt);
     
     try {
-      // Clean the response - remove markdown code blocks if present
+      // remove markdown code blocks if present - cleaning the response
       let cleanContent = response.content.trim();
       if (cleanContent.startsWith('```json')) {
         cleanContent = cleanContent.slice(7);
@@ -91,7 +84,7 @@ IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explana
     }
 
     try {
-      // Gemini uses a different format - combine messages into a single prompt
+      //combine messages into a single prompt (for gemini)
       const combinedPrompt = messages
         .map(m => `${m.role.toUpperCase()}: ${m.content}`)
         .join('\n\n');

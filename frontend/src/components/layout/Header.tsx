@@ -1,7 +1,3 @@
-// =====================================================
-// HEADER COMPONENT - Top navigation bar
-// =====================================================
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Github, Menu, X, User, LogOut, Settings } from 'lucide-react';

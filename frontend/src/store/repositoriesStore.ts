@@ -1,7 +1,3 @@
-// =====================================================
-// REPOSITORIES STORE
-// =====================================================
-
 import { create } from 'zustand';
 import { Repository, RepositoryStats } from '../types';
 import { repositoriesApi } from '../api';

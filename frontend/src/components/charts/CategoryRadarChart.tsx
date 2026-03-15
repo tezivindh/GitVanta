@@ -1,7 +1,3 @@
-// =====================================================
-// CATEGORY SCORES RADAR CHART
-// =====================================================
-
 import React from 'react';
 import {
   RadarChart,

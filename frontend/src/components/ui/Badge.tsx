@@ -1,7 +1,3 @@
-// =====================================================
-// BADGE COMPONENT - Display achievement badges
-// =====================================================
-
 import React from 'react';
 import clsx from 'clsx';
 import { Award, Star, Zap, Trophy, Code, Heart, Users, Book, Flame, Shield } from 'lucide-react';

@@ -1,16 +1,10 @@
-// =====================================================
-// RATE LIMITING MIDDLEWARE
-// =====================================================
-
 import rateLimit from 'express-rate-limit';
 import config from '../config';
 
-/**
- * General API rate limiter
- */
+
 export const apiLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
+  max: config.rateLimit.maxRequest,
   message: {
     success: false,
     error: 'Too many requests, please try again later.',
@@ -22,9 +16,7 @@ export const apiLimiter = rateLimit({
   },
 });
 
-/**
- * Strict rate limiter for auth endpoints
- */
+//strict for auth
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10,
@@ -36,11 +28,8 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-/**
- * Rate limiter for AI endpoints (more restrictive)
- */
 export const aiLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000, // 1 hr
   max: 50,
   message: {
     success: false,
@@ -50,9 +39,6 @@ export const aiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-/**
- * Rate limiter for analysis endpoints
- */
 export const analysisLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 20,
@@ -64,11 +50,8 @@ export const analysisLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-/**
- * Rate limiter for export endpoints
- */
 export const exportLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000, // 1 hr
   max: 30,
   message: {
     success: false,

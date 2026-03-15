@@ -1,14 +1,7 @@
-// =====================================================
-// DATABASE CONFIGURATION
-// =====================================================
-
 import mongoose from 'mongoose';
 import config from './index';
 import logger from '../utils/logger';
 
-/**
- * Connect to MongoDB database
- */
 export async function connectDatabase(): Promise<void> {
   try {
     const options: mongoose.ConnectOptions = {

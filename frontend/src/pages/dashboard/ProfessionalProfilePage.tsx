@@ -1,39 +1,35 @@
-// =====================================================
-// RECRUITER PAGE - Recruiter-friendly profile view
-// =====================================================
-
 import React, { useState, useEffect } from 'react';
 import { Copy, Check, ExternalLink, RefreshCw, Code, Star, GitFork, Folder } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
 import { useAuthStore } from '../../store/authStore';
 import { analysisApi } from '../../api/analysis';
 import { Card, CardHeader, Button, Alert, ScoreCircle, Loader } from '../../components/ui';
-import { RecruiterProfile } from '../../types';
+import { ProfessionalProfile } from '../../types';
 
-const RecruiterPage: React.FC = () => {
+const ProfessionalProfilePage: React.FC = () => {
   const { currentReport } = useAnalysisStore();
   const { user } = useAuthStore();
-  const [profile, setProfile] = useState<RecruiterProfile | null>(null);
+  const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const fetchRecruiterProfile = async () => {
+  const fetchProfessionalProfile = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await analysisApi.getRecruiterProfile();
+      const response = await analysisApi.getProfessionalProfile();
       setProfile(response);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to generate recruiter profile');
+      setError(err.response?.data?.message || 'Failed to generate professional profile');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRecruiterProfile();
+    fetchProfessionalProfile();
   }, []);
 
   const handleCopyLink = async () => {
@@ -46,7 +42,7 @@ const RecruiterPage: React.FC = () => {
   if (!currentReport) {
     return (
       <Alert variant="info" title="No Analysis Found">
-        Run an analysis from the dashboard first to generate your recruiter profile.
+        Run an analysis from the dashboard first to generate your professional profile.
       </Alert>
     );
   }
@@ -55,7 +51,7 @@ const RecruiterPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader size="lg" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Generating recruiter profile...</p>
+        <p className="mt-4 text-gray-600 dark:text-gray-400">Generating professional profile...</p>
       </div>
     );
   }
@@ -83,7 +79,7 @@ const RecruiterPage: React.FC = () => {
           </Button>
           <Button
             variant="outline"
-            onClick={fetchRecruiterProfile}
+            onClick={fetchProfessionalProfile}
             leftIcon={<RefreshCw className="w-4 h-4" />}
           >
             Refresh
@@ -280,4 +276,4 @@ const RecruiterPage: React.FC = () => {
   );
 };
 
-export default RecruiterPage;
+export default ProfessionalProfilePage;

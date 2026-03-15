@@ -1,15 +1,8 @@
-// =====================================================
-// REPOSITORIES CONTROLLER
-// =====================================================
-
 import { Response } from 'express';
 import { githubService } from '../services';
 import { AuthenticatedRequest } from '../types';
 import logger from '../utils/logger';
 
-/**
- * Get all repositories
- */
 export async function getRepositories(
   req: AuthenticatedRequest,
   res: Response
@@ -25,7 +18,6 @@ export async function getRepositories(
       user.username
     );
 
-    // Filter and sort
     let filteredRepos = repos.filter(r => !r.fork);
 
     switch (sort) {
@@ -69,9 +61,6 @@ export async function getRepositories(
   }
 }
 
-/**
- * Get single repository
- */
 export async function getRepository(
   req: AuthenticatedRequest,
   res: Response
@@ -119,9 +108,7 @@ export async function getRepository(
   }
 }
 
-/**
- * Get repository languages
- */
+
 export async function getRepositoryLanguages(
   req: AuthenticatedRequest,
   res: Response
@@ -149,9 +136,7 @@ export async function getRepositoryLanguages(
   }
 }
 
-/**
- * Get repository README
- */
+
 export async function getRepositoryReadme(
   req: AuthenticatedRequest,
   res: Response
@@ -190,9 +175,6 @@ export async function getRepositoryReadme(
   }
 }
 
-/**
- * Get repository commits
- */
 export async function getRepositoryCommits(
   req: AuthenticatedRequest,
   res: Response
@@ -222,9 +204,7 @@ export async function getRepositoryCommits(
   }
 }
 
-/**
- * Get repository statistics summary
- */
+
 export async function getRepositoriesStats(
   req: AuthenticatedRequest,
   res: Response

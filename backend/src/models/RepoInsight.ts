@@ -1,7 +1,3 @@
-// =====================================================
-// REPO INSIGHT MODEL
-// =====================================================
-
 import mongoose, { Schema } from 'mongoose';
 import { RepoInsight as IRepoInsight } from '../types';
 

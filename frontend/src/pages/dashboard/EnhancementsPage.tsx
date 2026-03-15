@@ -1,7 +1,3 @@
-// =====================================================
-// ENHANCEMENTS PAGE - AI-powered improvements
-// =====================================================
-
 import React, { useState } from 'react';
 import { Sparkles, FileText, Lightbulb, Map, Copy, Check, FileStack } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';

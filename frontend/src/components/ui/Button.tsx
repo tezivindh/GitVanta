@@ -1,7 +1,3 @@
-// =====================================================
-// BUTTON COMPONENT
-// =====================================================
-
 import React from 'react';
 import clsx from 'clsx';
 import { Loader2 } from 'lucide-react';

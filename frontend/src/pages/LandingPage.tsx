@@ -1,7 +1,3 @@
-// =====================================================
-// LANDING PAGE - Home page with features showcase
-// =====================================================
-
 import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import {

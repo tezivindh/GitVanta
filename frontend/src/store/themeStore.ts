@@ -1,7 +1,3 @@
-// =====================================================
-// THEME STORE - Dark mode persistence
-// =====================================================
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 

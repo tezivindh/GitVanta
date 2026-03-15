@@ -47,7 +47,7 @@ Earn achievement badges across multiple tiers:
 | 🎯 Skilled Developer | Overall score ≥ 75 | Overall |
 
 ### Professional View & Sharing
-- **Recruiter View**: Generate a recruiter-friendly portfolio with AI-powered headline, summary, and highlights
+- **Professional Profile View**: Generate a polished portfolio with AI-powered headline, summary, and highlights
 - **Public Profile Page**: Shareable link at `/profile/:username` — standalone dark-themed page with hero section, scores, badges, skills, featured repos, and social pills
 - **Social Presence Scoring**: Detects linked social accounts (Twitter/X, LinkedIn, etc.) via GitHub's social accounts API and awards up to 15 points
 
@@ -117,7 +117,7 @@ Earn achievement badges across multiple tiers:
 │   │   │   └── ui/          # Card, Button, Input, Modal, ScoreCircle, Badge, etc.
 │   │   ├── pages/
 │   │   │   ├── dashboard/   # Overview, Analytics, Repos, Skills, Badges,
-│   │   │   │                # Enhancements, Compare, Recruiter, Export, Settings
+│   │   │   │                # Enhancements, Compare, Professional Profile, Export, Settings
 │   │   │   ├── LandingPage.tsx
 │   │   │   ├── LoginPage.tsx
 │   │   │   ├── AuthCallbackPage.tsx
@@ -237,7 +237,7 @@ npm run preview
 - `POST /api/analysis/full/:username` — Run full portfolio analysis
 - `GET /api/analysis/latest` — Get latest analysis report
 - `GET /api/analysis/history` — Get analysis history
-- `GET /api/analysis/recruiter-profile` — Get recruiter profile
+- `GET /api/analysis/professional-profile` — Get professional profile view
 - `POST /api/analysis/compare/:username` — Compare with another profile
 
 ### Enhancements (AI-powered)

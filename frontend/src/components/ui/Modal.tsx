@@ -1,7 +1,3 @@
-// =====================================================
-// MODAL COMPONENT - Dialog/modal window
-// =====================================================
-
 import React, { useEffect, useCallback } from 'react';
 import clsx from 'clsx';
 import { X } from 'lucide-react';

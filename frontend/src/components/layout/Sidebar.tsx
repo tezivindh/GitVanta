@@ -1,7 +1,3 @@
-// =====================================================
-// SIDEBAR COMPONENT - Dashboard navigation
-// =====================================================
-
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
@@ -32,7 +28,7 @@ const navigation = [
   { name: 'Badges', href: '/dashboard/badges', icon: Trophy },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Compare', href: '/dashboard/compare', icon: GitCompare },
-  { name: 'Professional View', href: '/dashboard/recruiter', icon: Users },
+  { name: 'Professional View', href: '/dashboard/professional-profile', icon: Users },
   { name: 'Export', href: '/dashboard/export', icon: FileDown },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];

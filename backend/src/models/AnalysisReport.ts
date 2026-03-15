@@ -1,7 +1,3 @@
-// =====================================================
-// ANALYSIS REPORT MODEL
-// =====================================================
-
 import mongoose, { Schema } from 'mongoose';
 import { AnalysisReport as IAnalysisReport } from '../types';
 

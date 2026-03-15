@@ -1,47 +1,38 @@
-// =====================================================
-// AI SERVICE - Universal AI Provider Integration
-// =====================================================
-// Uses the configured AI provider (Groq, Gemini, OpenAI, etc.)
-// Change provider in .env: AI_PROVIDER=groq|gemini|openai
-// =====================================================
-
-import { generateContent, generateStructuredContent, isAIAvailable } from '../ai';
-import { 
-  ReadmeEnhancement, 
-  ResumeBullet, 
-  PortfolioSummary, 
+import {
+  generateContent,
+  generateStructuredContent,
+  isAIAvailable,
+} from "../ai";
+import {
+  ReadmeEnhancement,
+  ResumeBullet,
+  PortfolioSummary,
   ImprovementRoadmap,
   GitHubRepository,
   ExtractedSkill,
-} from '../types';
-import logger from '../utils/logger';
+} from "../types";
+import logger from "../utils/logger";
 
-/**
- * Check if AI features are available
- */
 export function isAiAvailable(): boolean {
   return isAIAvailable();
 }
 
-/**
- * Enhance README content using AI
- */
 export async function enhanceReadme(
   repoName: string,
   currentReadme: string,
   repoDescription: string,
   languages: string[],
-  topics: string[]
+  topics: string[],
 ): Promise<ReadmeEnhancement> {
   const prompt = `You are a technical writing expert. Enhance the following README for a GitHub repository.
 
 Repository: ${repoName}
-Description: ${repoDescription || 'No description provided'}
-Languages: ${languages.join(', ') || 'Not specified'}
-Topics: ${topics.join(', ') || 'None'}
+Description: ${repoDescription || "No description provided"}
+Languages: ${languages.join(", ") || "Not specified"}
+Topics: ${topics.join(", ") || "None"}
 
 Current README:
-${currentReadme || 'No README exists'}
+${currentReadme || "No README exists"}
 
 Please provide an enhanced README that includes:
 1. A clear and engaging title with badges
@@ -73,33 +64,30 @@ Return your response in this JSON format:
       addedSections: result.addedSections,
     };
   } catch (error) {
-    logger.error('Failed to enhance README:', error);
-    throw new Error('Failed to enhance README with AI');
+    logger.error("Failed to enhance README:", error);
+    throw new Error("Failed to enhance README with AI");
   }
 }
 
-/**
- * Generate resume bullet points for a repository
- */
 export async function generateResumeBullets(
   repo: GitHubRepository,
   languages: Record<string, number>,
-  readmeContent: string | null
+  readmeContent: string | null,
 ): Promise<ResumeBullet> {
   const languageList = Object.keys(languages).slice(0, 5);
-  
+
   const prompt = `You are a professional resume writer specializing in tech resumes.
 
 Generate impactful resume bullet points for this GitHub project:
 
 Repository: ${repo.name}
-Description: ${repo.description || 'No description'}
-Languages: ${languageList.join(', ')}
+Description: ${repo.description || "No description"}
+Languages: ${languageList.join(", ")}
 Stars: ${repo.stargazers_count}
 Forks: ${repo.forks_count}
-Topics: ${repo.topics.join(', ')}
+Topics: ${repo.topics.join(", ")}
 
-${readmeContent ? `README excerpt: ${readmeContent.substring(0, 500)}` : ''}
+${readmeContent ? `README excerpt: ${readmeContent.substring(0, 500)}` : ""}
 
 Create 3-4 strong action-oriented bullet points that:
 - Start with strong action verbs (Developed, Implemented, Architected, etc.)
@@ -128,25 +116,26 @@ Return your response in this JSON format:
       impact: result.impact,
     };
   } catch (error) {
-    logger.error('Failed to generate resume bullets:', error);
-    throw new Error('Failed to generate resume bullets with AI');
+    logger.error("Failed to generate resume bullets:", error);
+    throw new Error("Failed to generate resume bullets with AI");
   }
 }
 
-/**
- * Generate portfolio summary
- */
 export async function generatePortfolioSummary(
   username: string,
   repos: GitHubRepository[],
   skills: ExtractedSkill[],
-  overallScore: number
+  overallScore: number,
 ): Promise<PortfolioSummary> {
-  const topSkills = skills.slice(0, 10).map(s => s.name);
+  const topSkills = skills.slice(0, 10).map((s) => s.name);
   const topRepos = repos
     .sort((a, b) => b.stargazers_count - a.stargazers_count)
     .slice(0, 5)
-    .map(r => ({ name: r.name, description: r.description, stars: r.stargazers_count }));
+    .map((r) => ({
+      name: r.name,
+      description: r.description,
+      stars: r.stargazers_count,
+    }));
 
   const prompt = `You are a professional career consultant specializing in tech profiles.
 
@@ -154,11 +143,11 @@ Create a compelling portfolio summary for this developer:
 
 Username: ${username}
 Overall Score: ${overallScore}/100
-Top Skills: ${topSkills.join(', ')}
+Top Skills: ${topSkills.join(", ")}
 Number of Repositories: ${repos.length}
 
 Top Projects:
-${topRepos.map(r => `- ${r.name}: ${r.description || 'No description'} (${r.stars} stars)`).join('\n')}
+${topRepos.map((r) => `- ${r.name}: ${r.description || "No description"} (${r.stars} stars)`).join("\n")}
 
 Generate a professional portfolio summary that includes:
 1. A catchy headline (e.g., "Full-Stack Developer | Open Source Contributor")
@@ -193,20 +182,17 @@ Return your response in this JSON format:
       softSkills: result.softSkills,
     };
   } catch (error) {
-    logger.error('Failed to generate portfolio summary:', error);
-    throw new Error('Failed to generate portfolio summary with AI');
+    logger.error("Failed to generate portfolio summary:", error);
+    throw new Error("Failed to generate portfolio summary with AI");
   }
 }
 
-/**
- * Generate improvement roadmap
- */
 export async function generateImprovementRoadmap(
   username: string,
   currentScore: number,
   skills: ExtractedSkill[],
   weaknesses: string[],
-  repos: GitHubRepository[]
+  repos: GitHubRepository[],
 ): Promise<ImprovementRoadmap> {
   const prompt = `You are a senior software engineering mentor.
 
@@ -214,8 +200,11 @@ Create a detailed improvement roadmap for this developer:
 
 Username: ${username}
 Current Score: ${currentScore}/100
-Current Skills: ${skills.slice(0, 10).map(s => `${s.name} (${s.proficiency})`).join(', ')}
-Identified Weaknesses: ${weaknesses.join(', ')}
+Current Skills: ${skills
+    .slice(0, 10)
+    .map((s) => `${s.name} (${s.proficiency})`)
+    .join(", ")}
+Identified Weaknesses: ${weaknesses.join(", ")}
 Number of Repositories: ${repos.length}
 
 Create a structured improvement plan with:
@@ -247,14 +236,11 @@ Return your response in this JSON format:
     const result = await generateStructuredContent<ImprovementRoadmap>(prompt);
     return result;
   } catch (error) {
-    logger.error('Failed to generate improvement roadmap:', error);
-    throw new Error('Failed to generate improvement roadmap with AI');
+    logger.error("Failed to generate improvement roadmap:", error);
+    throw new Error("Failed to generate improvement roadmap with AI");
   }
 }
 
-/**
- * Analyze README quality
- */
 export async function analyzeReadmeQuality(readmeContent: string): Promise<{
   score: number;
   feedback: string[];
@@ -263,8 +249,8 @@ export async function analyzeReadmeQuality(readmeContent: string): Promise<{
   if (!readmeContent) {
     return {
       score: 0,
-      feedback: ['No README file found'],
-      missingElements: ['README file'],
+      feedback: ["No README file found"],
+      missingElements: ["README file"],
     };
   }
 
@@ -295,51 +281,46 @@ Return your response in this JSON format:
     }>(prompt);
     return result;
   } catch (error) {
-    logger.error('Failed to analyze README:', error);
+    logger.error("Failed to analyze README:", error);
     // Return basic analysis on failure
     const score = calculateBasicReadmeScore(readmeContent);
     return {
       score,
-      feedback: ['Basic analysis performed'],
+      feedback: ["Basic analysis performed"],
       missingElements: [],
     };
   }
 }
 
-/**
- * Basic README score calculation (fallback)
- */
 function calculateBasicReadmeScore(content: string): number {
   let score = 0;
-  
+
   if (content.length > 100) score += 10;
   if (content.length > 500) score += 15;
   if (content.length > 1000) score += 10;
-  if (content.includes('#')) score += 10; // Has headers
-  if (content.includes('```')) score += 15; // Has code blocks
-  if (content.includes('install')) score += 10; // Has installation info
-  if (content.includes('usage') || content.includes('example')) score += 10;
-  if (content.includes('license') || content.includes('License')) score += 10;
-  if (content.includes('contributing') || content.includes('Contributing')) score += 10;
-  
+  if (content.includes("#")) score += 10; // Has headers
+  if (content.includes("```")) score += 15; // Has code blocks
+  if (content.includes("install")) score += 10; // Has installation info
+  if (content.includes("usage") || content.includes("example")) score += 10;
+  if (content.includes("license") || content.includes("License")) score += 10;
+  if (content.includes("contributing") || content.includes("Contributing"))
+    score += 10;
+
   return Math.min(100, score);
 }
 
-/**
- * Generate project description
- */
 export async function generateProjectDescription(
   repoName: string,
   languages: string[],
   topics: string[],
-  currentDescription: string | null
+  currentDescription: string | null,
 ): Promise<string> {
   const prompt = `Generate a concise, professional GitHub repository description (max 160 characters).
 
 Repository: ${repoName}
-Languages: ${languages.join(', ')}
-Topics: ${topics.join(', ')}
-Current Description: ${currentDescription || 'None'}
+Languages: ${languages.join(", ")}
+Topics: ${topics.join(", ")}
+Current Description: ${currentDescription || "None"}
 
 The description should:
 - Be clear and informative
@@ -353,8 +334,8 @@ Return ONLY the description text, no JSON or formatting.`;
     const description = await generateContent(prompt);
     return description.trim().substring(0, 160);
   } catch (error) {
-    logger.error('Failed to generate project description:', error);
-    throw new Error('Failed to generate project description with AI');
+    logger.error("Failed to generate project description:", error);
+    throw new Error("Failed to generate project description with AI");
   }
 }
 

@@ -1,15 +1,9 @@
-// =====================================================
-// ENHANCEMENT CONTROLLER (AI)
-// =====================================================
-
 import { Response } from 'express';
 import { aiService, githubService, analysisService } from '../services';
 import { AuthenticatedRequest } from '../types';
 import logger from '../utils/logger';
 
-/**
- * Check AI availability
- */
+
 export async function checkAiStatus(
   req: AuthenticatedRequest,
   res: Response
@@ -25,9 +19,7 @@ export async function checkAiStatus(
   });
 }
 
-/**
- * Enhance README
- */
+
 export async function enhanceReadme(
   req: AuthenticatedRequest,
   res: Response
@@ -44,14 +36,12 @@ export async function enhanceReadme(
   }
 
   try {
-    // Get current README
     const currentReadme = await githubService.getReadmeContent(
       user.accessToken,
       user.username,
       repoName
     );
 
-    // Get repo info
     const repos = await githubService.getAllUserRepositories(
       user.accessToken,
       user.username
@@ -66,14 +56,12 @@ export async function enhanceReadme(
       return;
     }
 
-    // Get languages
     const languages = await githubService.getRepositoryLanguages(
       user.accessToken,
       user.username,
       repoName
     );
 
-    // Enhance README
     const enhancement = await aiService.enhanceReadme(
       repoName,
       currentReadme || '',
@@ -95,9 +83,7 @@ export async function enhanceReadme(
   }
 }
 
-/**
- * Generate resume bullets
- */
+
 export async function generateResumeBullets(
   req: AuthenticatedRequest,
   res: Response
@@ -114,7 +100,6 @@ export async function generateResumeBullets(
   }
 
   try {
-    // Get repo info
     const repos = await githubService.getAllUserRepositories(
       user.accessToken,
       user.username
@@ -150,9 +135,7 @@ export async function generateResumeBullets(
   }
 }
 
-/**
- * Generate all resume bullets
- */
+
 export async function generateAllResumeBullets(
   req: AuthenticatedRequest,
   res: Response
@@ -163,13 +146,12 @@ export async function generateAllResumeBullets(
   if (!aiService.isAiAvailable()) {
     res.status(503).json({
       success: false,
-      error: 'AI features are not available. Please configure Google API key.',
+      error: 'AI features are not available. Please configure LLM API key.',
     });
     return;
   }
 
   try {
-    // Get top repos
     const repos = await githubService.getAllUserRepositories(
       user.accessToken,
       user.username
@@ -179,7 +161,6 @@ export async function generateAllResumeBullets(
       .sort((a, b) => b.stargazers_count - a.stargazers_count)
       .slice(0, limit);
 
-    // Generate bullets for each repo
     const results = await Promise.all(
       topRepos.map(async (repo) => {
         try {
@@ -207,9 +188,6 @@ export async function generateAllResumeBullets(
   }
 }
 
-/**
- * Generate portfolio summary
- */
 export async function generatePortfolioSummary(
   req: AuthenticatedRequest,
   res: Response
@@ -219,7 +197,7 @@ export async function generatePortfolioSummary(
   if (!aiService.isAiAvailable()) {
     res.status(503).json({
       success: false,
-      error: 'AI features are not available. Please configure Google API key.',
+      error: 'AI features are not available. Please configure LLM API key.',
     });
     return;
   }
@@ -235,7 +213,6 @@ export async function generatePortfolioSummary(
       );
     }
 
-    // Get repos
     const repos = await githubService.getAllUserRepositories(
       user.accessToken,
       user.username
@@ -261,9 +238,6 @@ export async function generatePortfolioSummary(
   }
 }
 
-/**
- * Generate improvement roadmap
- */
 export async function generateImprovementRoadmap(
   req: AuthenticatedRequest,
   res: Response
@@ -273,13 +247,12 @@ export async function generateImprovementRoadmap(
   if (!aiService.isAiAvailable()) {
     res.status(503).json({
       success: false,
-      error: 'AI features are not available. Please configure Google API key.',
+      error: 'AI features are not available. Please configure LLM API key.',
     });
     return;
   }
 
   try {
-    // Get analysis
     let analysis = await analysisService.getLatestAnalysis(user._id);
     if (!analysis) {
       analysis = await analysisService.analyzePortfolio(
@@ -289,7 +262,6 @@ export async function generateImprovementRoadmap(
       );
     }
 
-    // Get repos
     const repos = await githubService.getAllUserRepositories(
       user.accessToken,
       user.username
@@ -316,9 +288,6 @@ export async function generateImprovementRoadmap(
   }
 }
 
-/**
- * Analyze README quality
- */
 export async function analyzeReadmeQuality(
   req: AuthenticatedRequest,
   res: Response
@@ -352,7 +321,6 @@ export async function analyzeReadmeQuality(
         data: analysis,
       });
     } else {
-      // Basic analysis without AI
       const score = calculateBasicReadmeScore(readme);
       res.json({
         success: true,
@@ -372,9 +340,7 @@ export async function analyzeReadmeQuality(
   }
 }
 
-/**
- * Generate project description
- */
+
 export async function generateProjectDescription(
   req: AuthenticatedRequest,
   res: Response
@@ -391,7 +357,6 @@ export async function generateProjectDescription(
   }
 
   try {
-    // Get repo info
     const repos = await githubService.getAllUserRepositories(
       user.accessToken,
       user.username
@@ -406,7 +371,6 @@ export async function generateProjectDescription(
       return;
     }
 
-    // Get languages
     const languages = await githubService.getRepositoryLanguages(
       user.accessToken,
       user.username,
@@ -435,7 +399,6 @@ export async function generateProjectDescription(
   }
 }
 
-// Helper function
 function calculateBasicReadmeScore(content: string): number {
   let score = 0;
   if (content.length > 100) score += 10;

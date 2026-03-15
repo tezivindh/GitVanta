@@ -1,7 +1,3 @@
-// =====================================================
-// COMPARISON PAGE - Compare profiles
-// =====================================================
-
 import React, { useState } from 'react';
 import { GitCompare, ArrowRight, Trophy, AlertCircle } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';

@@ -9,6 +9,6 @@ export { default as EnhancementsPage } from './EnhancementsPage';
 export { default as BadgesPage } from './BadgesPage';
 export { default as AnalyticsPage } from './AnalyticsPage';
 export { default as ComparePage } from './ComparePage';
-export { default as RecruiterPage } from './RecruiterPage';
+export { default as ProfessionalProfilePage } from './ProfessionalProfilePage';
 export { default as ExportPage } from './ExportPage';
 export { default as SettingsPage } from './SettingsPage';

@@ -1,7 +1,3 @@
-// =====================================================
-// USER MODEL
-// =====================================================
-
 import mongoose, { Schema } from 'mongoose';
 import { IUser } from '../types';
 
@@ -66,7 +62,7 @@ const userSchema = new Schema<IUser>(
     accessToken: {
       type: String,
       required: true,
-      select: false, // Don't include in queries by default
+      select: false, //don't include in queries by default
     },
   },
   {
@@ -81,7 +77,7 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Indexes for better query performance
+//Indexes for better query performance
 userSchema.index({ createdAt: -1 });
 userSchema.index({ username: 'text', displayName: 'text' });
 

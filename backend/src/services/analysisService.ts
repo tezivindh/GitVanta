@@ -1,7 +1,3 @@
-// =====================================================
-// ANALYSIS SERVICE
-// =====================================================
-
 import { Types } from 'mongoose';
 import { AnalysisReport, RepoInsight, User } from '../models';
 import githubService from './githubService';
@@ -22,15 +18,12 @@ import {
   Improvement,
   CategoryScores,
   DetailedBreakdown,
-  RecruiterProfile,
+  ProfessionalProfile,
   ProfileComparison,
   AnalyzedRepository,
 } from '../types';
 import logger from '../utils/logger';
 
-/**
- * Perform full portfolio analysis
- */
 export async function analyzePortfolio(
   userId: Types.ObjectId,
   username: string,
@@ -47,7 +40,7 @@ export async function analyzePortfolio(
 }> {
   logger.info(`Starting portfolio analysis for ${username}`);
 
-  // Fetch all necessary data from GitHub
+  //Fetch all necessary data from GitHub
   const [repos, githubUser, hasProfileReadme, socialAccounts] = await Promise.all([
     githubService.getAllUserRepositories(accessToken, username),
     githubService.getUserByUsername(accessToken, username),
@@ -55,10 +48,10 @@ export async function analyzePortfolio(
     githubService.getUserSocialAccounts(accessToken, username),
   ]);
 
-  // Filter out forked repositories for analysis
+  //Filtering out forked repositories for analysis
   const ownRepos = repos.filter(r => !r.fork);
 
-  // Fetch detailed data for each repository
+  //Fetch detailed data for each repository
   const repoDetails = await Promise.all(
     ownRepos.slice(0, 30).map(async (repo) => {
       const [languages, readme, hasContributing, hasTests] = await Promise.all([
@@ -78,7 +71,6 @@ export async function analyzePortfolio(
     })
   );
 
-  // Prepare scoring input
   const scoringInput: FullScoringInput = {
     codeQuality: {
       repos: ownRepos,
@@ -157,7 +149,6 @@ export async function analyzePortfolio(
     hasProfileReadme  // for professional profile badge
   );
 
-  // Transform repositories for storage
   const repositories = ownRepos.map(repo => ({
     name: repo.name,
     url: repo.html_url,
@@ -223,9 +214,6 @@ async function checkForTests(
   return false;
 }
 
-/**
- * Calculate profile completeness percentage
- */
 function calculateProfileCompleteness(user: any): number {
   let complete = 0;
   const fields = ['bio', 'company', 'location', 'blog', 'email', 'name'];
@@ -237,9 +225,6 @@ function calculateProfileCompleteness(user: any): number {
   return (complete / fields.length) * 100;
 }
 
-/**
- * Save repository insights to database
- */
 async function saveRepoInsights(
   userId: Types.ObjectId,
   repoDetails: Array<{
@@ -278,51 +263,40 @@ async function saveRepoInsights(
   }
 }
 
-/**
- * Get latest analysis report for user
- */
+
 export async function getLatestAnalysis(userId: Types.ObjectId): Promise<any | null> {
   return await AnalysisReport.findOne({ userId })
     .sort({ generatedAt: -1 })
     .lean();
 }
 
-/**
- * Get repository insights for user
- */
 export async function getRepoInsights(userId: Types.ObjectId): Promise<any[]> {
   return await RepoInsight.find({ userId })
     .sort({ analyzedAt: -1 })
     .lean();
 }
 
-/**
- * Generate recruiter profile
- */
-export async function generateRecruiterProfile(
+
+export async function generateProfessionalProfile(
   userId: Types.ObjectId,
   username: string,
   accessToken: string
-): Promise<RecruiterProfile> {
-  // Get or create analysis
+): Promise<ProfessionalProfile> {
   let analysis = await getLatestAnalysis(userId);
   
   if (!analysis) {
     analysis = await analyzePortfolio(userId, username, accessToken);
   }
 
-  // Get user info
   const user = await User.findById(userId);
   if (!user) throw new Error('User not found');
 
-  // Get top repos
   const repos = await githubService.getAllUserRepositories(accessToken, username);
   const topRepos = repos
     .filter(r => !r.fork)
     .sort((a, b) => b.stargazers_count - a.stargazers_count)
     .slice(0, 5);
 
-  // Generate AI summary if available
   let headline = `${user.displayName} | Software Developer`;
   let summary = `Experienced developer with ${repos.length} public repositories and a portfolio score of ${analysis.overallScore}/100.`;
 
@@ -370,9 +344,6 @@ export async function generateRecruiterProfile(
   };
 }
 
-/**
- * Compare two profiles
- */
 export async function compareProfiles(
   userId: Types.ObjectId,
   username: string,
@@ -492,7 +463,6 @@ export async function compareProfiles(
   };
 }
 
-// Helper functions for comparison
 function calculateActivityScore(repos: GitHubRepository[]): number {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -526,6 +496,6 @@ export default {
   analyzePortfolio,
   getLatestAnalysis,
   getRepoInsights,
-  generateRecruiterProfile,
+  generateProfessionalProfile,
   compareProfiles,
 };

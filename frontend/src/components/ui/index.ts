@@ -1,7 +1,3 @@
-// =====================================================
-// UI COMPONENTS INDEX - Export all components
-// =====================================================
-
 export { default as Button } from './Button';
 export { default as Card, CardHeader } from './Card';
 export { default as Loader, FullPageLoader } from './Loader';

@@ -1,7 +1,3 @@
-// =====================================================
-// ALERT COMPONENT - Notifications and messages
-// =====================================================
-
 import React from 'react';
 import clsx from 'clsx';
 import { Info, CheckCircle, AlertTriangle, XCircle, X } from 'lucide-react';

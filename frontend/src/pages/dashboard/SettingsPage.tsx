@@ -1,7 +1,3 @@
-// =====================================================
-// SETTINGS PAGE - User preferences
-// =====================================================
-
 import React from 'react';
 import { Settings, Moon, Sun, Monitor } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';

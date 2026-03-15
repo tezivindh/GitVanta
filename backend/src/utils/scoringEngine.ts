@@ -1,11 +1,4 @@
 // =====================================================
-// SCORING ENGINE - TRANSPARENT & EXPLAINABLE
-// =====================================================
-//
-// This scoring engine provides a comprehensive, modular,
-// and transparent scoring system for GitHub portfolios.
-// Each category is scored independently with detailed breakdowns.
-//
 // Categories:
 // 1. Code Quality (25% weight)
 // 2. Documentation (20% weight)
@@ -13,7 +6,6 @@
 // 4. Diversity (15% weight)
 // 5. Community (10% weight)
 // 6. Professionalism (10% weight)
-//
 // =====================================================
 
 import {

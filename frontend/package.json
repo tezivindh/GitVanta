@@ -1,5 +1,6 @@
 {
-  "name": "github-portfolio-analyzer-frontend",
+  "name": "gitvanta-frontend",
+  "description": "GitVanta - GitHub Portfolio Analyzer & Enhancer -  Frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",

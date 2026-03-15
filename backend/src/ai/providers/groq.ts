@@ -1,10 +1,3 @@
-// =====================================================
-// GROQ AI PROVIDER
-// =====================================================
-// Uses Groq's fast inference API with Llama models
-// Get API key: https://console.groq.com/keys
-// =====================================================
-
 import Groq from 'groq-sdk';
 import { IAIProvider, AIResponse, AIMessage, AIModelConfig } from '../types';
 import logger from '../../utils/logger';

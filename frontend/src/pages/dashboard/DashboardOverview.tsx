@@ -1,7 +1,3 @@
-// =====================================================
-// DASHBOARD OVERVIEW PAGE - Main dashboard view
-// =====================================================
-
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RefreshCw, TrendingUp, ArrowRight } from 'lucide-react';

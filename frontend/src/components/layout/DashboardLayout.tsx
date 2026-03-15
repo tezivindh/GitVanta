@@ -1,7 +1,3 @@
-// =====================================================
-// DASHBOARD LAYOUT COMPONENT - Main dashboard wrapper
-// =====================================================
-
 import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';

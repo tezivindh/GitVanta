@@ -1,7 +1,3 @@
-// =====================================================
-// ANALYTICS PAGE - Detailed score analysis
-// =====================================================
-
 import React from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Target, Info } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';

@@ -1,7 +1,3 @@
-// =====================================================
-// APP COMPONENT - Main application with routing
-// =====================================================
-
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './components/layout';
@@ -19,7 +15,7 @@ import {
   BadgesPage,
   AnalyticsPage,
   ComparePage,
-  RecruiterPage,
+  ProfessionalProfilePage,
   ExportPage,
   SettingsPage,
 } from './pages';
@@ -55,7 +51,7 @@ const App: React.FC = () => {
           <Route path="badges" element={<BadgesPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="compare" element={<ComparePage />} />
-          <Route path="recruiter" element={<RecruiterPage />} />
+          <Route path="professional-profile" element={<ProfessionalProfilePage />} />
           <Route path="export" element={<ExportPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>

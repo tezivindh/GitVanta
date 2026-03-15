@@ -1,18 +1,10 @@
-// =====================================================
-// AUTHENTICATION MIDDLEWARE
-// =====================================================
-
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models';
 import { AuthenticatedRequest, JWTPayload } from '../types';
 import { AuthenticationError } from '../utils/errors';
 import config from '../config';
-import logger from '../utils/logger';
 
-/**
- * Verify JWT token and attach user to request
- */
 export async function authenticateToken(
   req: AuthenticatedRequest,
   res: Response,
@@ -21,7 +13,6 @@ export async function authenticateToken(
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
     if (!token) {
       throw new AuthenticationError('Access token is required');
     }
@@ -49,9 +40,6 @@ export async function authenticateToken(
   }
 }
 
-/**
- * Optional authentication - doesn't fail if no token
- */
 export async function optionalAuth(
   req: AuthenticatedRequest,
   res: Response,
@@ -78,9 +66,7 @@ export async function optionalAuth(
   }
 }
 
-/**
- * Generate JWT token
- */
+// Generate JWT token
 export function generateToken(userId: string, username: string): string {
   const payload: JWTPayload = {
     userId,
@@ -92,9 +78,7 @@ export function generateToken(userId: string, username: string): string {
   } as jwt.SignOptions);
 }
 
-/**
- * Verify token without middleware
- */
+//Verify token without middleware
 export function verifyToken(token: string): JWTPayload | null {
   try {
     return jwt.verify(token, config.jwtSecret) as JWTPayload;

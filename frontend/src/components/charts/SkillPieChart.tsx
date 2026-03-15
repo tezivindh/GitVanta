@@ -1,7 +1,3 @@
-// =====================================================
-// SKILL DISTRIBUTION PIE CHART
-// =====================================================
-
 import React from 'react';
 import {
   PieChart,

@@ -1,7 +1,3 @@
-// =====================================================
-// CHARTS INDEX - Export all chart components
-// =====================================================
-
 export { default as CategoryRadarChart } from './CategoryRadarChart';
 export { default as ScoreBreakdownChart } from './ScoreBreakdownChart';
 export { default as SkillPieChart } from './SkillPieChart';

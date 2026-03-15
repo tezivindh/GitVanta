@@ -1,7 +1,3 @@
-// =====================================================
-// GITHUB API SERVICE
-// =====================================================
-
 import axios, { AxiosInstance } from 'axios';
 import { 
   GitHubRepository, 
@@ -15,9 +11,6 @@ import { cacheGet, cacheSet } from '../config/redis';
 
 const GITHUB_API_BASE = 'https://api.github.com';
 
-/**
- * Create an authenticated GitHub API client
- */
 function createGitHubClient(accessToken: string): AxiosInstance {
   return axios.create({
     baseURL: GITHUB_API_BASE,
@@ -30,9 +23,6 @@ function createGitHubClient(accessToken: string): AxiosInstance {
   });
 }
 
-/**
- * Get authenticated user profile
- */
 export async function getAuthenticatedUser(accessToken: string): Promise<GitHubUser> {
   const client = createGitHubClient(accessToken);
   
@@ -45,9 +35,6 @@ export async function getAuthenticatedUser(accessToken: string): Promise<GitHubU
   }
 }
 
-/**
- * Get user repositories
- */
 export async function getUserRepositories(
   accessToken: string,
   username: string,
@@ -63,7 +50,7 @@ export async function getUserRepositories(
   try {
     const response = await client.get<GitHubRepository[]>(`/users/${username}/repos`, {
       params: {
-        type: 'owner',
+        type: 'all',
         sort: 'updated',
         direction: 'desc',
         per_page: perPage,
@@ -79,9 +66,6 @@ export async function getUserRepositories(
   }
 }
 
-/**
- * Get all user repositories (handles pagination)
- */
 export async function getAllUserRepositories(
   accessToken: string,
   username: string
@@ -114,9 +98,6 @@ export async function getAllUserRepositories(
   }
 }
 
-/**
- * Get repository languages
- */
 export async function getRepositoryLanguages(
   accessToken: string,
   owner: string,
@@ -138,9 +119,6 @@ export async function getRepositoryLanguages(
   }
 }
 
-/**
- * Get repository commits
- */
 export async function getRepositoryCommits(
   accessToken: string,
   owner: string,
@@ -167,9 +145,6 @@ export async function getRepositoryCommits(
   }
 }
 
-/**
- * Get README content
- */
 export async function getReadmeContent(
   accessToken: string,
   owner: string,
@@ -193,9 +168,6 @@ export async function getReadmeContent(
   }
 }
 
-/**
- * Check if file exists in repository
- */
 export async function checkFileExists(
   accessToken: string,
   owner: string,
@@ -212,9 +184,6 @@ export async function checkFileExists(
   }
 }
 
-/**
- * Check if user has profile README
- */
 export async function hasProfileReadme(
   accessToken: string,
   username: string
@@ -222,9 +191,6 @@ export async function hasProfileReadme(
   return await checkFileExists(accessToken, username, username, 'README.md');
 }
 
-/**
- * Get user by username
- */
 export async function getUserByUsername(
   accessToken: string,
   username: string
@@ -254,9 +220,6 @@ export async function getUserByUsername(
   }
 }
 
-/**
- * Exchange OAuth code for access token
- */
 export async function exchangeCodeForToken(
   code: string,
   clientId: string,
@@ -288,9 +251,7 @@ export async function exchangeCodeForToken(
   }
 }
 
-/**
- * Get repository contribution statistics
- */
+
 export async function getContributorStats(
   accessToken: string,
   owner: string,
@@ -307,10 +268,7 @@ export async function getContributorStats(
   }
 }
 
-/**
- * Get user's social accounts (LinkedIn, Instagram, YouTube, etc.)
- * This endpoint is public on GitHub — works even without auth.
- */
+
 export async function getUserSocialAccounts(
   accessToken: string,
   username: string

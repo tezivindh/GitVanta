@@ -1,7 +1,3 @@
-// =====================================================
-// AUTHENTICATION ROUTES
-// =====================================================
-
 import { Router } from 'express';
 import * as authController from '../controllers/authController';
 import { authenticateToken, asyncHandler, authLimiter } from '../middleware';

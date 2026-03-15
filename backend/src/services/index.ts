@@ -1,7 +1,3 @@
-// =====================================================
-// SERVICES INDEX
-// =====================================================
-
 export { default as githubService } from './githubService';
 export { default as aiService } from './aiService';
 export { default as analysisService } from './analysisService';

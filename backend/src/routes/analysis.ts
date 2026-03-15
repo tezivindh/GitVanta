@@ -1,14 +1,9 @@
-// =====================================================
-// ANALYSIS ROUTES
-// =====================================================
-
 import { Router } from 'express';
 import * as analysisController from '../controllers/analysisController';
 import { authenticateToken, asyncHandler, analysisLimiter, exportLimiter } from '../middleware';
 
 const router = Router();
 
-// All routes require authentication
 router.use(authenticateToken);
 
 // Analysis endpoints
@@ -20,8 +15,8 @@ router.get('/badges', asyncHandler(analysisController.getBadges));
 router.get('/improvements', asyncHandler(analysisController.getImprovements));
 router.get('/insights', asyncHandler(analysisController.getRepoInsights));
 
-// Recruiter profile
-router.get('/recruiter', asyncHandler(analysisController.getRecruiterProfile));
+// Professional profile view
+router.get('/professional-profile', asyncHandler(analysisController.getProfessionalProfile));
 
 // Comparison
 router.get('/compare/:username', asyncHandler(analysisController.compareProfiles));

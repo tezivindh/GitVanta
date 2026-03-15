@@ -1,7 +1,3 @@
-// =====================================================
-// ROUTES INDEX
-// =====================================================
-
 import { Router } from 'express';
 import authRoutes from './auth';
 import analysisRoutes from './analysis';

@@ -1,7 +1,3 @@
-// =====================================================
-// SKILLS PAGE - Skills visualization and breakdown
-// =====================================================
-
 import React, { useMemo } from 'react';
 import { Brain, Code, Database, Cloud, Wrench, Palette } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';

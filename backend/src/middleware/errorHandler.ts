@@ -1,22 +1,15 @@
-// =====================================================
-// ERROR HANDLING MIDDLEWARE
-// =====================================================
-
 import { Request, Response, NextFunction } from 'express';
 import { AppError, ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 import config from '../config';
 
-/**
- * Global error handler
- */
+
 export function errorHandler(
   err: Error,
   req: Request,
   res: Response,
   next: NextFunction
 ): void {
-  // Log error
   logger.error('Error:', {
     message: err.message,
     stack: err.stack,
@@ -80,10 +73,7 @@ export function errorHandler(
   });
 }
 
-/**
- * 404 handler
- */
-export function notFoundHandler(
+export function  notFoundHandler(
   req: Request,
   res: Response,
   next: NextFunction
@@ -94,9 +84,7 @@ export function notFoundHandler(
   });
 }
 
-/**
- * Async handler wrapper
- */
+
 export function asyncHandler(
   fn: (req: Request, res: Response, next: NextFunction) => Promise<any>
 ) {

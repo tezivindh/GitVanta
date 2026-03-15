@@ -1,7 +1,3 @@
-// =====================================================
-// SCORE CIRCLE COMPONENT - Visual score display
-// =====================================================
-
 import React from 'react';
 import clsx from 'clsx';
 

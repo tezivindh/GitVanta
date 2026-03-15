@@ -1,7 +1,3 @@
-// =====================================================
-// INPUT COMPONENT - Form input with label and error
-// =====================================================
-
 import React from 'react';
 import clsx from 'clsx';
 

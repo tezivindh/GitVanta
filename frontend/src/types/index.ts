@@ -1,7 +1,3 @@
-// =====================================================
-// FRONTEND TYPE DEFINITIONS
-// =====================================================
-
 // User types
 export interface User {
   _id: string;
@@ -225,8 +221,8 @@ export interface ProfileComparison {
   insights?: string[];
 }
 
-// Recruiter types
-export interface RecruiterProject {
+// Professional profile types
+export interface ProfessionalProject {
   name: string;
   description: string;
   technologies: string[];
@@ -235,7 +231,7 @@ export interface RecruiterProject {
   highlights: string[];
 }
 
-export interface RecruiterProfile {
+export interface ProfessionalProfile {
   username: string;
   displayName: string;
   avatarUrl: string;
@@ -243,7 +239,7 @@ export interface RecruiterProfile {
   summary: string;
   overallScore: number;
   topSkills: ExtractedSkill[];
-  topProjects: RecruiterProject[];
+  topProjects: ProfessionalProject[];
   badges: Badge[];
   strengths: string[];
   highlights?: string[];

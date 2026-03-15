@@ -1,7 +1,3 @@
-// =====================================================
-// AUTHENTICATION CONTROLLER
-// =====================================================
-
 import { Request, Response } from 'express';
 import { User } from '../models';
 import { githubService } from '../services';
@@ -10,19 +6,14 @@ import { AuthenticatedRequest } from '../types';
 import config from '../config';
 import logger from '../utils/logger';
 
-/**
- * Initiate GitHub OAuth flow
- */
+
 export async function initiateOAuth(req: Request, res: Response): Promise<void> {
   const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${config.github.clientId}&redirect_uri=${encodeURIComponent(config.github.callbackUrl)}&scope=read:user,repo`;
   
-  // Redirect directly to GitHub OAuth
   res.redirect(githubAuthUrl);
 }
 
-/**
- * Handle GitHub OAuth callback
- */
+
 export async function handleCallback(req: Request, res: Response): Promise<void> {
   const { code } = req.query;
 
@@ -32,21 +23,17 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
   }
 
   try {
-    // Exchange code for access token
     const accessToken = await githubService.exchangeCodeForToken(
       code,
       config.github.clientId,
       config.github.clientSecret
     );
 
-    // Get user info from GitHub
     const githubUser = await githubService.getAuthenticatedUser(accessToken);
 
-    // Find or create user
     let user = await User.findOne({ githubId: githubUser.id.toString() });
 
     if (user) {
-      // Update existing user
       user.username = githubUser.login;
       user.displayName = githubUser.name || githubUser.login;
       user.email = githubUser.email || '';
@@ -62,7 +49,6 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
       user.accessToken = accessToken;
       await user.save();
     } else {
-      // Create new user
       user = await User.create({
         githubId: githubUser.id.toString(),
         username: githubUser.login,
@@ -81,12 +67,10 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
       });
     }
 
-    // Generate JWT
     const token = generateToken(user._id.toString(), user.username);
 
     logger.info(`User ${user.username} logged in successfully`);
 
-    // Redirect to frontend with token
     res.redirect(`${config.frontendUrl}/auth/callback?token=${token}`);
   } catch (error: any) {
     logger.error('OAuth callback error:', error.message);
@@ -94,9 +78,6 @@ export async function handleCallback(req: Request, res: Response): Promise<void>
   }
 }
 
-/**
- * Get current user
- */
 export async function getCurrentUser(req: AuthenticatedRequest, res: Response): Promise<void> {
   res.json({
     success: true,
@@ -106,9 +87,7 @@ export async function getCurrentUser(req: AuthenticatedRequest, res: Response): 
   });
 }
 
-/**
- * Logout user
- */
+
 export async function logout(req: AuthenticatedRequest, res: Response): Promise<void> {
   res.json({
     success: true,
@@ -116,9 +95,7 @@ export async function logout(req: AuthenticatedRequest, res: Response): Promise<
   });
 }
 
-/**
- * Refresh token
- */
+
 export async function refreshToken(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const token = generateToken(user._id.toString(), user.username);
