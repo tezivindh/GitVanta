@@ -13,6 +13,9 @@ const logger = winston.createLogger({
     errors({ stack: true }),
     logFormat
   ),
+  transports:[
+    new winston.transports.Console()
+  ]
  
 });
 
