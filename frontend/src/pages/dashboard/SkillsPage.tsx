@@ -33,7 +33,7 @@ const SkillBars: React.FC<{ skills: ExtractedSkill[] }> = ({ skills }) => {
             {s.name}
           </span>
           <span className="h-2 rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true">
-            <span className="block h-2 rounded-full bg-primary-500" style={{ width: `${(s.projectCount / max) * 100}%` }} />
+            <span className="block h-2 rounded-full bg-heat-3" style={{ width: `${(s.projectCount / max) * 100}%` }} />
           </span>
           <span className="tabular-nums text-gray-600 dark:text-gray-400">
             {s.projectCount} {s.projectCount === 1 ? 'project' : 'projects'}
@@ -102,8 +102,8 @@ const SkillsContent: React.FC<{
             className={clsx(
               'rounded-full px-3 py-1 text-sm',
               category === key
-                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                : 'border border-gray-200 text-gray-700 hover:bg-white dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900'
+                ? 'bg-gray-900 text-white dark:bg-paper dark:text-gray-900'
+                : 'border border-gray-200 text-gray-700 hover:bg-paper dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900'
             )}
           >
             {key === 'all' ? `All (${skills.length})` : `${CATEGORY_LABELS[key]} (${byCategory.find((g) => g.key === key)!.skills.length})`}
@@ -149,7 +149,7 @@ const SkillsContent: React.FC<{
                 {g.skills.map((s) => (
                   <li
                     key={s.name}
-                    className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-800 dark:bg-primary-950 dark:text-primary-200"
+                    className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                     title={`${PROFICIENCY_LABEL[s.proficiency]}, ${s.projectCount} projects`}
                   >
                     {s.name}

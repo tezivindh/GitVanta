@@ -23,10 +23,10 @@ const Alert: React.FC<AlertProps> = ({
 }) => {
   const variants = {
     info: {
-      container: 'bg-primary-50 border-primary-200 dark:bg-primary-950/40 dark:border-primary-900',
+      container: 'bg-gray-100 border-gray-200 dark:bg-gray-800/60 dark:border-gray-700',
       icon: 'text-primary-600 dark:text-primary-400',
-      title: 'text-primary-900 dark:text-primary-200',
-      text: 'text-primary-800 dark:text-primary-300',
+      title: 'text-primary-900 dark:text-gray-200',
+      text: 'text-gray-800 dark:text-primary-300',
       Icon: Info,
     },
     success: {

@@ -42,8 +42,8 @@ const Badge: React.FC<BadgeProps> = ({
   // One quiet style for every badge; the icon and name tell them apart.
   void variant;
   const variantStyles = {
-    bg: 'bg-primary-50 dark:bg-primary-950',
-    border: 'border-primary-200 dark:border-primary-800',
+    bg: 'bg-gray-100 dark:bg-gray-800',
+    border: 'border-gray-200 dark:border-gray-700',
     text: 'text-primary-700 dark:text-primary-300',
   };
 

@@ -54,7 +54,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon: Icon, title, descr
     )}
   >
     {Icon && (
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400">
+      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-primary-600 dark:bg-gray-800 dark:text-primary-400">
         <Icon className="h-6 w-6" />
       </div>
     )}

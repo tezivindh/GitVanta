@@ -6,27 +6,30 @@ import { useThemeStore } from '../store/themeStore';
  * (dataviz validate_palette: all checks pass in light and dark).
  */
 const LIGHT = {
-  you: '#0F8A72',
-  them: '#B86E12',
-  grid: '#E7ECEA',
-  axis: '#5B6D68',
-  surface: '#FFFFFF',
-  tooltipBg: '#FFFFFF',
-  tooltipBorder: '#D5DEDB',
-  ink: '#12201E',
-  muted: '#5B6D68',
+  you: '#D95434',
+  /** One-series magnitude bars. */
+  bar: '#2E3A5A',
+  them: '#3F5FA8',
+  grid: '#EEE7D9',
+  axis: '#646C82',
+  surface: '#FBF8F2',
+  tooltipBg: '#FBF8F2',
+  tooltipBorder: '#E0D6C4',
+  ink: '#172039',
+  muted: '#646C82',
 };
 
 const DARK = {
-  you: '#1A9C83',
-  them: '#C9831F',
-  grid: '#1D2C29',
-  axis: '#84968F',
-  surface: '#12201E',
-  tooltipBg: '#0A1416',
-  tooltipBorder: '#33433F',
-  ink: '#F3F5F4',
-  muted: '#84968F',
+  you: '#E8603C',
+  bar: '#B8B1A3',
+  them: '#6F8BD6',
+  grid: '#222D49',
+  axis: '#9AA0B0',
+  surface: '#172039',
+  tooltipBg: '#0E1629',
+  tooltipBorder: '#34405D',
+  ink: '#F6F1E7',
+  muted: '#9AA0B0',
 };
 
 export type ChartTheme = typeof LIGHT;
@@ -43,7 +46,7 @@ export function tooltipStyle(t: ChartTheme) {
       backgroundColor: t.tooltipBg,
       border: `1px solid ${t.tooltipBorder}`,
       borderRadius: 8,
-      boxShadow: '0 8px 24px -12px rgb(10 20 22 / 0.35)',
+      boxShadow: '0 8px 24px -12px rgb(14 22 41 / 0.35)',
       color: t.ink,
       fontSize: 13,
     },

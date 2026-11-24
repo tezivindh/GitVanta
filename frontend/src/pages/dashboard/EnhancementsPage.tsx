@@ -246,8 +246,8 @@ const EnhancementsPage: React.FC = () => {
                 className={clsx(
                   'rounded-lg border p-4 text-left transition-colors',
                   tool === t.type
-                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-950'
-                    : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700'
+                    ? 'border-primary-500 bg-gray-100 dark:bg-gray-800'
+                    : 'border-gray-200 bg-paper hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700'
                 )}
               >
                 <t.icon
@@ -325,7 +325,7 @@ const EnhancementsPage: React.FC = () => {
                 error.settings ? (
                   <Link
                     to="/dashboard/settings#ai-provider"
-                    className="inline-flex h-8 items-center rounded-lg px-3 text-sm font-medium text-primary-700 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-950"
+                    className="inline-flex h-8 items-center rounded-lg px-3 text-sm font-medium text-primary-700 hover:bg-gray-100 dark:text-primary-400 dark:hover:bg-primary-950"
                   >
                     Open AI settings
                   </Link>

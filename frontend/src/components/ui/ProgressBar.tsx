@@ -25,7 +25,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
   const getColor = () => {
     if (color !== 'auto') {
       const colors = {
-        primary: 'bg-primary-500',
+        primary: 'bg-heat-3',
         success: 'bg-green-500',
         warning: 'bg-yellow-500',
         danger: 'bg-red-500',
@@ -36,7 +36,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     // Auto color based on percentage
     // One hue for magnitude; the number itself carries the value.
     void percentage;
-    return 'bg-primary-500';
+    return 'bg-heat-3';
   };
 
   const sizes = {

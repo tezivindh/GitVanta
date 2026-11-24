@@ -45,7 +45,7 @@ const SettingsPage: React.FC = () => {
           <a
             key={href}
             href={href}
-            className="rounded-full border border-gray-200 px-3 py-1 text-gray-700 hover:bg-white dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900"
+            className="rounded-full border border-gray-200 px-3 py-1 text-gray-700 hover:bg-paper dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900"
           >
             {label}
           </a>
@@ -78,7 +78,7 @@ const SettingsPage: React.FC = () => {
                 className={clsx(
                   'flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary-500',
                   mode === m
-                    ? 'border-primary-500 bg-primary-50 text-primary-900 dark:bg-primary-950 dark:text-primary-100'
+                    ? 'border-primary-500 bg-gray-100 text-primary-900 dark:bg-gray-800 dark:text-primary-100'
                     : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800/60'
                 )}
               >

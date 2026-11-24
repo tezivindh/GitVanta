@@ -21,7 +21,7 @@ const DashboardLayout: React.FC = () => {
     <div className="min-h-dvh bg-gray-50 dark:bg-gray-950">
       <a
         href="#dashboard-main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow dark:focus:bg-gray-900"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-paper focus:px-3 focus:py-2 focus:text-sm focus:shadow dark:focus:bg-gray-900"
       >
         Skip to content
       </a>

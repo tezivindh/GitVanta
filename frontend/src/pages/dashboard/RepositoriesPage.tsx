@@ -15,7 +15,7 @@ type SortOption = 'rating' | 'stars' | 'name' | 'updated';
 
 const RatingPill: React.FC<{ rating: number }> = ({ rating }) => (
   <span
-    className="inline-flex h-7 min-w-[3.25rem] items-center justify-center rounded-full bg-primary-50 px-2 text-sm font-semibold tabular-nums text-primary-800 dark:bg-primary-950 dark:text-primary-200"
+    className="inline-flex h-7 min-w-[3.25rem] items-center justify-center rounded-full bg-gray-100 px-2 text-sm font-semibold tabular-nums text-gray-800 dark:bg-gray-800 dark:text-gray-200"
     aria-label={`AI rating ${rating} out of 10`}
   >
     {rating}/10

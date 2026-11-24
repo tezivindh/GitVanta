@@ -22,7 +22,7 @@ const ScoreBreakdownChart: React.FC<ScoreBreakdownChartProps> = ({ categoryScore
           <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12, fill: t.axis }} tickLine={false} axisLine={false} />
           <YAxis type="category" dataKey="name" width={112} tick={{ fontSize: 12, fill: t.axis }} tickLine={false} axisLine={false} />
           <Tooltip {...tooltipStyle(t)} cursor={{ fill: t.grid }} formatter={(v: number) => [`${v} / 100`, 'Score']} />
-          <Bar dataKey="score" fill={t.you} radius={[0, 4, 4, 0]} isAnimationActive={false}>
+          <Bar dataKey="score" fill={t.bar} radius={[0, 4, 4, 0]} isAnimationActive={false}>
             <LabelList dataKey="score" position="right" style={{ fontSize: 12, fill: t.muted }} />
           </Bar>
         </BarChart>

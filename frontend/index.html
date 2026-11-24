@@ -8,8 +8,8 @@
     <meta name="description" content="GitVanta scores your GitHub portfolio from 0 to 100 across six categories, shows exactly how the score was calculated, and lists the fixes that raise it. Free, with a shareable public profile." />
     <link rel="canonical" href="__SITE_URL__/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#f3f5f4" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a1416" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#0e1629" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e1629" media="(prefers-color-scheme: dark)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="GitVanta" />
@@ -40,7 +40,7 @@
           if (dark) document.documentElement.classList.add('dark');
           // The browser chrome follows the in-app theme, not only the OS one.
           document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
-            m.setAttribute('content', dark ? '#0a1416' : '#f3f5f4');
+            m.setAttribute('content', '#0e1629');
           });
         } catch (e) {}
       })();

@@ -25,7 +25,7 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={clsx(
-        'rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900',
+        'rounded-lg border border-gray-200 bg-paper dark:border-gray-800 dark:bg-gray-900',
         paddings[padding],
         hover && 'hover:shadow-md transition-shadow',
         className

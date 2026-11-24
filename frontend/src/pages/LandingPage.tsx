@@ -80,8 +80,7 @@ const SignInButton: React.FC<{ className?: string }> = ({ className }) => (
   <Link
     to="/login"
     className={clsx(
-      'inline-flex h-12 items-center gap-2.5 rounded-md bg-gray-950 px-5 text-[15px] font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-800 active:scale-[0.97]',
-      'dark:bg-primary-400 dark:text-gray-950 dark:hover:bg-primary-300',
+      'inline-flex h-12 items-center gap-2.5 rounded-md bg-primary-400 px-5 text-[15px] font-semibold text-gray-950 transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-primary-300 active:scale-[0.97]',
       className
     )}
   >
@@ -128,7 +127,7 @@ const CopySnippet: React.FC<{ text: string }> = ({ text }) => {
     }
   };
   return (
-    <div className="flex items-stretch overflow-hidden rounded-md border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+    <div className="flex items-stretch overflow-hidden rounded-md border border-gray-200 bg-paper dark:border-gray-800 dark:bg-gray-950">
       <code
         tabIndex={0}
         aria-label="Badge Markdown"
@@ -231,7 +230,7 @@ const ScoreLog: React.FC = () => {
 const ProfilePreview: React.FC = () => (
   <figure
     aria-label="Example public profile"
-    className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"
+    className="overflow-hidden rounded-lg border border-gray-200 bg-paper dark:border-gray-800 dark:bg-gray-900"
   >
     <div className="flex items-center gap-4 border-b border-gray-200 p-5 dark:border-gray-800">
       <div className="grid h-12 w-12 shrink-0 grid-cols-3 gap-[2px] rounded-md bg-gray-100 p-1.5 dark:bg-gray-800" aria-hidden="true">
@@ -258,7 +257,7 @@ const ProfilePreview: React.FC = () => (
       ].map((r) => (
         <li key={r.name} className="flex items-start gap-3 px-5 py-3">
           <div className="min-w-0 flex-1">
-            <p className={clsx('font-medium', r.link ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-gray-100')}>
+            <p className={clsx('font-medium', r.link ? 'text-gray-950 underline decoration-gray-300 underline-offset-4 dark:text-white dark:decoration-gray-600' : 'text-gray-900 dark:text-gray-100')}>
               {r.name}
               {!r.link && <Lock className="ml-1.5 inline h-3.5 w-3.5 -translate-y-px text-gray-500" aria-label="Private" />}
             </p>
@@ -289,12 +288,12 @@ const LandingPage: React.FC = () => {
     <div className="min-h-dvh overflow-x-clip bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow dark:focus:bg-gray-900"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-paper focus:px-3 focus:py-2 focus:text-sm focus:shadow dark:focus:bg-gray-900"
       >
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-50 border-b border-gray-200/70 bg-gray-50/85 pt-[env(safe-area-inset-top)] backdrop-blur-md dark:border-gray-800/70 dark:bg-gray-950/85">
+      <header className="dark sticky top-0 z-50 border-b border-gray-800/70 bg-gray-950/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Logo />
           <nav aria-label="Main" className="hidden items-center gap-7 text-sm text-gray-600 md:flex dark:text-gray-400">
@@ -318,6 +317,7 @@ const LandingPage: React.FC = () => {
 
       <main id="main">
         {/* ---------------------------------------------------------- Hero */}
+        <div className="dark bg-gray-950 pb-16 sm:pb-24">
         <section className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
           <div className="grid gap-8 lg:grid-cols-12 lg:items-end lg:gap-12">
             <h1 className="font-display text-[3rem] leading-[0.95] text-gray-950 sm:text-[4.5rem] lg:col-span-7 lg:text-[5.75rem] dark:text-white">
@@ -355,9 +355,10 @@ const LandingPage: React.FC = () => {
             </div>
           </div>
         </section>
+        </div>
 
         {/* --------------------------------------------- Every point explained */}
-        <section className="mx-auto mt-24 max-w-7xl px-4 sm:mt-32 sm:px-6 lg:px-8" aria-labelledby="explained">
+        <section className="mx-auto max-w-7xl px-4 pt-24 sm:px-6 sm:pt-32 lg:px-8" aria-labelledby="explained">
           <div className="grid gap-12 lg:grid-cols-12 lg:gap-12">
             <div className="lg:col-span-5">
               <SectionHeading id="explained">Every point comes with a reason.</SectionHeading>
@@ -372,7 +373,7 @@ const LandingPage: React.FC = () => {
 
             <figure
               aria-label="Example category breakdown"
-              className="overflow-hidden rounded-lg border border-gray-200 bg-white lg:col-span-7 dark:border-gray-800 dark:bg-gray-900"
+              className="overflow-hidden rounded-lg border border-gray-200 bg-paper lg:col-span-7 dark:border-gray-800 dark:bg-gray-900"
             >
               <div className="flex items-end justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:px-6 dark:border-gray-800">
                 <div>
@@ -432,7 +433,7 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* ------------------------------------------------------- Scoring */}
-        <section id="scoring" className="mt-24 scroll-mt-20 border-y border-gray-200 bg-white py-20 sm:mt-32 sm:py-24 dark:border-gray-800 dark:bg-gray-900">
+        <section id="scoring" className="dark mt-24 scroll-mt-20 bg-gray-950 py-20 sm:mt-32 sm:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
               <SectionHeading className="lg:col-span-7">Six categories, one weighted score.</SectionHeading>
@@ -487,7 +488,7 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* ------------------------------------------------------- Sharing */}
-        <section id="sharing" className="scroll-mt-20 border-y border-gray-200 bg-white py-20 sm:py-24 dark:border-gray-800 dark:bg-gray-900">
+        <section id="sharing" className="scroll-mt-20 border-y border-gray-200 bg-paper py-20 sm:py-24 dark:border-gray-800 dark:bg-gray-900">
           <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-12 lg:gap-16 lg:px-8">
             <div className="min-w-0 lg:col-span-5">
               <SectionHeading>A profile worth linking to.</SectionHeading>
@@ -512,7 +513,8 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* ------------------------------------------------------------- AI */}
-        <section id="ai" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
+        <section id="ai" className="dark scroll-mt-20 bg-gray-950 py-24 sm:py-32">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-12">
             <div className="lg:col-span-6">
               <SectionHeading>AI help, on our key or yours.</SectionHeading>
@@ -547,6 +549,7 @@ const LandingPage: React.FC = () => {
               </div>
             </dl>
           </div>
+          </div>
         </section>
 
         {/* ------------------------------------------------------------ FAQ */}
@@ -571,7 +574,7 @@ const LandingPage: React.FC = () => {
         </section>
 
         {/* -------------------------------------------------------- Closing */}
-        <section className="bg-gray-950 text-white dark:bg-gray-900">
+        <section className="dark bg-gray-950 text-white">
           <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-20 sm:px-6 sm:py-28 lg:flex-row lg:items-end lg:justify-between lg:px-8">
             <div>
               <h2 className="font-display text-[3rem] leading-[0.92] sm:text-[4.5rem]">What’s your number?</h2>
@@ -590,7 +593,7 @@ const LandingPage: React.FC = () => {
         </section>
       </main>
 
-      <footer className="border-t border-gray-200 dark:border-gray-800">
+      <footer className="dark border-t border-gray-800 bg-gray-950">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div className="flex items-center gap-4">
             <Logo />

@@ -161,7 +161,7 @@ const ShowcaseSection: React.FC = () => {
               aria-pressed={filter === key}
               className={
                 filter === key
-                  ? 'rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white dark:bg-white dark:text-gray-900'
+                  ? 'rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white dark:bg-paper dark:text-gray-900'
                   : 'rounded-md px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
               }
             >
@@ -204,7 +204,7 @@ const ShowcaseSection: React.FC = () => {
                 <span className="sr-only">{visible ? 'Shown on profile' : 'Hidden from profile'}</span>
                 <span
                   aria-hidden="true"
-                  className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${visible ? 'translate-x-6' : 'translate-x-1'}`}
+                  className={`inline-block h-4 w-4 rounded-full bg-paper shadow transition-transform ${visible ? 'translate-x-6' : 'translate-x-1'}`}
                 />
               </button>
             </li>

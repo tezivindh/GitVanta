@@ -9,47 +9,44 @@
   - Teal is the brand colour; amber is reserved for score gains.
 */
 @theme {
-  /* Spruce-tinted neutrals. */
-  --color-gray-50: #f3f5f4;
-  --color-gray-100: #e7ecea;
-  --color-gray-200: #d5dedb;
-  --color-gray-300: #b5c3bf;
-  --color-gray-400: #84968f;
-  --color-gray-500: #5b6d68;
-  --color-gray-600: #455752;
-  --color-gray-700: #33433f;
-  --color-gray-800: #1d2c29;
-  --color-gray-900: #12201e;
-  --color-gray-950: #0a1416;
+  /* Neutrals run from cream (50) to navy (950), so every mid-tone sits
+     between the two brand colours instead of drifting grey. */
+  --color-gray-50: #f6f1e7;
+  --color-gray-100: #eee7d9;
+  --color-gray-200: #e0d6c4;
+  --color-gray-300: #c5bcad;
+  --color-gray-400: #9aa0b0;
+  --color-gray-500: #646c82;
+  --color-gray-600: #4a5470;
+  --color-gray-700: #34405d;
+  --color-gray-800: #222d49;
+  --color-gray-900: #172039;
+  --color-gray-950: #0e1629;
 
-  /* Brand: the contribution-graph teal. */
-  --color-primary-50: #e9f7f3;
-  --color-primary-100: #c9ede3;
-  --color-primary-200: #a7dccf;
-  --color-primary-300: #6fcbb5;
-  --color-primary-400: #3db89c;
-  --color-primary-500: #1a9c83;
-  --color-primary-600: #13806c;
-  --color-primary-700: #0f6657;
-  --color-primary-800: #0d5247;
-  --color-primary-900: #0c433b;
-  --color-primary-950: #062824;
+  /* Card surface on cream. */
+  --color-paper: #fbf8f2;
 
-  /* Amber is reserved for score gains. */
-  --color-gain-50: #fdf6ea;
-  --color-gain-100: #fae8c8;
-  --color-gain-300: #f2c46f;
-  --color-gain-400: #edb053;
-  --color-gain-500: #e8a33d;
-  --color-gain-600: #b86e12;
-  --color-gain-700: #94570e;
+  /* Coral: the accent. Actions, links, focus, the score's gains. */
+  --color-primary-50: #fff3ee;
+  --color-primary-100: #ffe3d8;
+  --color-primary-200: #ffc6b1;
+  --color-primary-300: #ffa486;
+  --color-primary-400: #ff8461;
+  --color-primary-500: #f36a45;
+  --color-primary-600: #d95434;
+  --color-primary-700: #b54127;
+  --color-primary-800: #8f3420;
+  --color-primary-900: #6e2a1b;
+  --color-primary-950: #3d140a;
 
-  /* Heat ramp, five levels like a contribution graph. Flipped for dark below. */
-  --color-heat-0: var(--heat-0);
-  --color-heat-1: var(--heat-1);
-  --color-heat-2: var(--heat-2);
-  --color-heat-3: var(--heat-3);
-  --color-heat-4: var(--heat-4);
+  /* Gains share the coral: a gain is the thing you act on. */
+  --color-gain-50: #fff3ee;
+  --color-gain-100: #ffe3d8;
+  --color-gain-300: #ffa486;
+  --color-gain-400: #ff8461;
+  --color-gain-500: #f36a45;
+  --color-gain-600: #d95434;
+  --color-gain-700: #b54127;
 
   --color-github: #24292f;
 
@@ -86,20 +83,31 @@
   }
 }
 
+/* Inline: bg-heat-* resolves var(--heat-*) on the element itself, so a navy
+   band marked .dark inside a light page gets the dark ramp. */
+@theme inline {
+  --color-heat-0: var(--heat-0);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+
+}
+
 @layer base {
   :root {
-    --heat-0: #e1e8e5;
-    --heat-1: #a7dccf;
-    --heat-2: #4dbfa6;
-    --heat-3: #13917a;
-    --heat-4: #0a5c4e;
+    --heat-0: #e6ddcc;
+    --heat-1: #b9bcc6;
+    --heat-2: #7c849a;
+    --heat-3: #2e3a5a;
+    --heat-4: #e5582f;
   }
   .dark {
-    --heat-0: #16272a;
-    --heat-1: #0e4a44;
-    --heat-2: #127a6c;
-    --heat-3: #1faf95;
-    --heat-4: #5ee6c6;
+    --heat-0: #212c4a;
+    --heat-1: #36446b;
+    --heat-2: #59627c;
+    --heat-3: #b8b1a3;
+    --heat-4: #ff8461;
   }
   *,
   ::after,
@@ -212,11 +220,11 @@
 }
 
 @utility card {
-  @apply rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900;
+  @apply rounded-lg border border-gray-200 bg-paper dark:border-gray-800 dark:bg-gray-900;
 }
 
 @utility input {
-  @apply block w-full rounded-lg border border-gray-300 bg-white text-gray-900 shadow-xs;
+  @apply block w-full rounded-lg border border-gray-300 bg-paper text-gray-900 shadow-xs;
   @apply dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100;
   @apply focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 focus:outline-none;
   @apply placeholder:text-gray-400 dark:placeholder:text-gray-500;

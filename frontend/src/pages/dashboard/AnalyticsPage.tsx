@@ -24,7 +24,7 @@ const MetricRow: React.FC<{ item: BreakdownItem }> = ({ item }) => {
         aria-valuemin={0}
         aria-valuemax={item.maxScore}
       >
-        <div className="h-1.5 rounded-full bg-primary-500" style={{ width: `${pct}%` }} />
+        <div className="h-1.5 rounded-full bg-heat-3" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-1.5 text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
       {item.suggestion && (

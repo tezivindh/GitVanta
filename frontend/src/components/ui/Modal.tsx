@@ -99,7 +99,7 @@ const Modal: React.FC<ModalProps> = ({
           ref={dialogRef}
           tabIndex={-1}
           className={clsx(
-            'relative w-full bg-white dark:bg-gray-900 dark:ring-1 dark:ring-gray-800 rounded-lg shadow-2xl focus:outline-none',
+            'relative w-full bg-paper dark:bg-gray-900 dark:ring-1 dark:ring-gray-800 rounded-lg shadow-2xl focus:outline-none',
             // Centered, so it scales from the center (modals are the exception to origin-aware).
             'animate-dialog-in',
             sizes[size],

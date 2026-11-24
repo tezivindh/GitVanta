@@ -66,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         id="dashboard-sidebar"
         aria-label="Dashboard"
         className={clsx(
-          'fixed top-16 left-0 h-[calc(100dvh-4rem)] w-64 bg-gray-50 dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800',
+          'dark fixed top-16 left-0 h-[calc(100dvh-4rem)] w-64 bg-gray-950 border-r border-gray-800',
           'transform transition-transform duration-300 ease-[var(--ease-drawer)] z-50',
           'lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full invisible lg:visible'
@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 className={clsx(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-[15px] transition-colors pointer-coarse:py-3',
                   active
-                    ? 'bg-white font-semibold text-gray-950 shadow-[inset_3px_0_0_var(--heat-3)] dark:bg-gray-900 dark:text-white'
+                    ? 'bg-paper font-semibold text-gray-950 shadow-[inset_3px_0_0_var(--color-primary-400)] dark:bg-gray-900 dark:text-white'
                     : 'font-medium text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-900'
                 )}
               >

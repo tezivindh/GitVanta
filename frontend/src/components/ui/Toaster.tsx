@@ -27,7 +27,7 @@ const Toaster: React.FC = () => {
           <div
             key={t.id}
             role={t.kind === 'error' ? 'alert' : 'status'}
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 transition-[opacity,transform] duration-400 ease-[ease] starting:translate-y-full starting:opacity-0 rounded-lg border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 transition-[opacity,transform] duration-400 ease-[ease] starting:translate-y-full starting:opacity-0 rounded-lg border border-gray-200 bg-paper p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900"
           >
             <Icon className={clsx('mt-0.5 h-5 w-5 shrink-0', tones[t.kind])} aria-hidden="true" />
             <div className="min-w-0 flex-1">

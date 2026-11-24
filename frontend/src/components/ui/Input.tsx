@@ -50,7 +50,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               'py-2.5',
               error
                 ? 'border-red-300 bg-red-50 text-red-900 focus:ring-red-500'
-                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
+                : 'border-gray-300 dark:border-gray-600 bg-paper dark:bg-gray-800 text-gray-900 dark:text-gray-100',
               disabled && 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
             )}
             {...props}
@@ -106,7 +106,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             'placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 py-2.5',
             error
               ? 'border-red-300 bg-red-50 text-red-900 focus:ring-red-500'
-              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
+              : 'border-gray-300 dark:border-gray-600 bg-paper dark:bg-gray-800 text-gray-900 dark:text-gray-100',
             disabled && 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
           )}
           {...props}

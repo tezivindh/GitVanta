@@ -80,7 +80,7 @@ const RepoRow: React.FC<{ repo: PublicRepo }> = ({ repo }) => (
           href={repo.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="truncate text-primary-700 underline-offset-4 hover:underline dark:text-primary-300"
+          className="truncate text-gray-950 underline decoration-gray-300 underline-offset-4 transition-colors hover:decoration-primary-500 dark:text-white dark:decoration-gray-600"
         >
           {repo.name}
         </a>
@@ -111,8 +111,16 @@ const RepoRow: React.FC<{ repo: PublicRepo }> = ({ repo }) => (
 );
 
 /** One band of the résumé layout: heading on the left, content on the right. */
-const Band: React.FC<{ id: string; title: React.ReactNode; children: React.ReactNode }> = ({ id, title, children }) => (
-  <section aria-labelledby={id} className="grid gap-4 border-t border-gray-200 py-10 lg:grid-cols-12 lg:gap-8 dark:border-gray-800">
+const Band: React.FC<{ id: string; title: React.ReactNode; children: React.ReactNode; first?: boolean }> = ({
+  id,
+  title,
+  children,
+  first,
+}) => (
+  <section
+    aria-labelledby={id}
+    className={`grid gap-4 py-10 lg:grid-cols-12 lg:gap-8 ${first ? '' : 'border-t border-gray-200 dark:border-gray-800'}`}
+  >
     <h2 id={id} className="font-display text-xl text-gray-950 lg:col-span-3 dark:text-white">
       {title}
     </h2>
@@ -173,7 +181,7 @@ const PublicProfilePage: React.FC = () => {
   };
 
   const nav = (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 pt-[env(safe-area-inset-top)] backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
+    <header className="dark sticky top-0 z-40 border-b border-gray-800 bg-gray-950/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo />
         <div className="flex items-center gap-1 sm:gap-2">
@@ -191,7 +199,7 @@ const PublicProfilePage: React.FC = () => {
           {!viewer && (
             <Link
               to="/"
-              className="hidden h-10 items-center rounded-md bg-gray-950 px-3.5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-800 active:scale-[0.97] sm:inline-flex dark:bg-primary-400 dark:text-gray-950 dark:hover:bg-primary-300"
+              className="hidden h-10 items-center rounded-md bg-primary-400 px-3.5 text-sm font-semibold text-gray-950 transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-primary-300 active:scale-[0.97] sm:inline-flex"
             >
               Get your score
             </Link>
@@ -250,7 +258,9 @@ const PublicProfilePage: React.FC = () => {
   return (
     <div className="min-h-dvh bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       {nav}
-      <main className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+      <main>
+      <div className="dark bg-gray-950 text-gray-100">
+      <div className="mx-auto max-w-6xl px-4 pt-10 sm:px-6 sm:pt-14">
         {/* Identity and score */}
         <section className="grid gap-10 pb-10 lg:grid-cols-12 lg:gap-8">
           <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start lg:col-span-8">
@@ -332,9 +342,12 @@ const PublicProfilePage: React.FC = () => {
             }))}
           />
         </section>
+      </div>
+      </div>
 
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-4 sm:px-6">
         {profile.summary && (
-          <Band id="about-title" title="About">
+          <Band id="about-title" title="About" first>
             <p className="max-w-3xl text-lg leading-relaxed text-gray-800 dark:text-gray-200">{profile.summary}</p>
           </Band>
         )}
@@ -363,7 +376,7 @@ const PublicProfilePage: React.FC = () => {
             {profile.skills.slice(0, 30).map((s) => (
               <li
                 key={s.name}
-                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-sm text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                className="rounded-md border border-gray-200 bg-paper px-2.5 py-1 text-sm text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
               >
                 {s.name}
               </li>
@@ -390,6 +403,7 @@ const PublicProfilePage: React.FC = () => {
             </dl>
           </Band>
         )}
+      </div>
       </main>
 
       <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-600 dark:border-gray-800 dark:text-gray-400">

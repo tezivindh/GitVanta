@@ -270,7 +270,7 @@ const ProfessionalContent: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Top skills</h2>
           <ul className="mt-3 flex flex-wrap gap-2">
             {profile.topSkills.map((s) => (
-              <li key={s.name} className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-800 dark:bg-primary-950 dark:text-primary-200">
+              <li key={s.name} className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200">
                 {s.name}
               </li>
             ))}
