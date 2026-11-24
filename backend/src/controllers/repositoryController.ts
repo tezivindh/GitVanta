@@ -13,7 +13,7 @@ export async function getRepositories(
   const sort = (req.query.sort as string) || 'updated';
 
   try {
-    const repos = await githubService.getAllUserRepositories(
+    const repos = await githubService.getOwnRepositories(
       user.accessToken,
       user.username
     );
@@ -69,7 +69,7 @@ export async function getRepository(
   const { repoName } = req.params;
 
   try {
-    const repos = await githubService.getAllUserRepositories(
+    const repos = await githubService.getOwnRepositories(
       user.accessToken,
       user.username
     );
@@ -212,7 +212,7 @@ export async function getRepositoriesStats(
   const user = req.user!;
 
   try {
-    const repos = await githubService.getAllUserRepositories(
+    const repos = await githubService.getOwnRepositories(
       user.accessToken,
       user.username
     );

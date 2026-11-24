@@ -101,6 +101,9 @@ const analyzedRepositorySchema = new Schema(
     stars: { type: Number, default: 0 },
     forks: { type: Number, default: 0 },
     topics: [{ type: String }],
+    isPrivate: { type: Boolean, default: false },
+    homepage: { type: String, default: null },
+    pushedAt: { type: String },
   },
   { _id: false }
 );

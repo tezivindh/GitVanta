@@ -98,6 +98,38 @@ export async function getAllUserRepositories(
   }
 }
 
+/**
+ * Every repository the signed-in user owns, public and private.
+ * Uses /user/repos, so it only works with that user's own token.
+ */
+export async function getOwnRepositories(
+  accessToken: string,
+  username: string
+): Promise<GitHubRepository[]> {
+  const cacheKey = `own-repos:${username}`;
+  const cached = await cacheGet<GitHubRepository[]>(cacheKey, { prefix: 'github' });
+  if (cached) return cached;
+
+  const client = createGitHubClient(accessToken);
+  const allRepos: GitHubRepository[] = [];
+  const perPage = 100;
+
+  try {
+    for (let page = 1; page <= 10; page++) {
+      const response = await client.get<GitHubRepository[]>('/user/repos', {
+        params: { affiliation: 'owner', visibility: 'all', sort: 'updated', per_page: perPage, page },
+      });
+      allRepos.push(...response.data);
+      if (response.data.length < perPage) break;
+    }
+    await cacheSet(cacheKey, allRepos, { prefix: 'github', ttl: 3600 });
+    return allRepos;
+  } catch (error: any) {
+    logger.error(`Failed to get own repositories for ${username}: ${error.message}`);
+    throw new ExternalServiceError('GitHub', 'Failed to fetch your repositories');
+  }
+}
+
 export async function getRepositoryLanguages(
   accessToken: string,
   owner: string,
@@ -302,6 +334,7 @@ export default {
   getAuthenticatedUser,
   getUserRepositories,
   getAllUserRepositories,
+  getOwnRepositories,
   getRepositoryLanguages,
   getRepositoryCommits,
   getReadmeContent,

@@ -1,7 +1,9 @@
 import dotenv from "dotenv";
 import path from "path";
 
-dotenv.config({path:path.join(__dirname,"../../.env")})
+// .env.local (developer overrides) wins over .env; real env vars win over both.
+dotenv.config({ path: path.join(__dirname, "../../.env.local") });
+dotenv.config({ path: path.join(__dirname, "../../.env") });
 
 interface Config {
     port : number;

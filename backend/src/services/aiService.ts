@@ -1,8 +1,4 @@
-import {
-  generateContent,
-  generateStructuredContent,
-  isAIAvailable,
-} from "../ai";
+import { generateJson, generateText, ResolvedAI, AIProviderError } from "../ai";
 import {
   ReadmeEnhancement,
   ResumeBullet,
@@ -13,11 +9,14 @@ import {
 } from "../types";
 import logger from "../utils/logger";
 
-export function isAiAvailable(): boolean {
-  return isAIAvailable();
+/** Keep provider errors (already user-safe); wrap anything else. */
+function rethrow(error: unknown, fallback: string): never {
+  if (error instanceof AIProviderError) throw error;
+  throw new AIProviderError("unknown", fallback);
 }
 
 export async function enhanceReadme(
+  ai: ResolvedAI,
   repoName: string,
   currentReadme: string,
   repoDescription: string,
@@ -51,11 +50,11 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       enhancedContent: string;
       suggestions: string[];
       addedSections: string[];
-    }>(prompt);
+    }>(ai, prompt);
 
     return {
       originalContent: currentReadme,
@@ -65,11 +64,12 @@ Return your response in this JSON format:
     };
   } catch (error) {
     logger.error("Failed to enhance README:", error);
-    throw new Error("Failed to enhance README with AI");
+    rethrow(error, "Failed to enhance README with AI");
   }
 }
 
 export async function generateResumeBullets(
+  ai: ResolvedAI,
   repo: GitHubRepository,
   languages: Record<string, number>,
   readmeContent: string | null,
@@ -103,11 +103,11 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       bullets: string[];
       skills: string[];
       impact: string;
-    }>(prompt);
+    }>(ai, prompt);
 
     return {
       repoName: repo.name,
@@ -117,11 +117,12 @@ Return your response in this JSON format:
     };
   } catch (error) {
     logger.error("Failed to generate resume bullets:", error);
-    throw new Error("Failed to generate resume bullets with AI");
+    rethrow(error, "Failed to generate resume bullets with AI");
   }
 }
 
 export async function generatePortfolioSummary(
+  ai: ResolvedAI,
   username: string,
   repos: GitHubRepository[],
   skills: ExtractedSkill[],
@@ -166,13 +167,13 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       headline: string;
       summary: string;
       highlights: string[];
       technicalSkills: string[];
       softSkills: string[];
-    }>(prompt);
+    }>(ai, prompt);
 
     return {
       headline: result.headline,
@@ -183,11 +184,12 @@ Return your response in this JSON format:
     };
   } catch (error) {
     logger.error("Failed to generate portfolio summary:", error);
-    throw new Error("Failed to generate portfolio summary with AI");
+    rethrow(error, "Failed to generate portfolio summary with AI");
   }
 }
 
 export async function generateImprovementRoadmap(
+  ai: ResolvedAI,
   username: string,
   currentScore: number,
   skills: ExtractedSkill[],
@@ -233,15 +235,15 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<ImprovementRoadmap>(prompt);
+    const result = await generateJson<ImprovementRoadmap>(ai, prompt);
     return result;
   } catch (error) {
     logger.error("Failed to generate improvement roadmap:", error);
-    throw new Error("Failed to generate improvement roadmap with AI");
+    rethrow(error, "Failed to generate improvement roadmap with AI");
   }
 }
 
-export async function analyzeReadmeQuality(readmeContent: string): Promise<{
+export async function analyzeReadmeQuality(ai: ResolvedAI, readmeContent: string): Promise<{
   score: number;
   feedback: string[];
   missingElements: string[];
@@ -274,11 +276,11 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       score: number;
       feedback: string[];
       missingElements: string[];
-    }>(prompt);
+    }>(ai, prompt);
     return result;
   } catch (error) {
     logger.error("Failed to analyze README:", error);
@@ -310,6 +312,7 @@ function calculateBasicReadmeScore(content: string): number {
 }
 
 export async function generateProjectDescription(
+  ai: ResolvedAI,
   repoName: string,
   languages: string[],
   topics: string[],
@@ -331,16 +334,15 @@ The description should:
 Return ONLY the description text, no JSON or formatting.`;
 
   try {
-    const description = await generateContent(prompt);
+    const description = await generateText(ai, prompt);
     return description.trim().substring(0, 160);
   } catch (error) {
     logger.error("Failed to generate project description:", error);
-    throw new Error("Failed to generate project description with AI");
+    rethrow(error, "Failed to generate project description with AI");
   }
 }
 
 export default {
-  isAiAvailable,
   enhanceReadme,
   generateResumeBullets,
   generatePortfolioSummary,

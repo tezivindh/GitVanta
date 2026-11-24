@@ -2,7 +2,7 @@ import { createApp } from './app';
 import config from './config';
 import { connectDatabase } from './config/database';
 import { initializeRedis } from './config/redis';
-import { initializeAI, isAIAvailable, getAIConfig } from './ai';
+import { initializeAI } from './ai';
 import logger from './utils/logger';
 
 async function startServer(): Promise<void> {
@@ -14,18 +14,7 @@ async function startServer(): Promise<void> {
 
     initializeRedis();
 
-    try {
-      initializeAI();
-      if (isAIAvailable()) {
-        const aiConfig = getAIConfig();
-        logger.info(`AI Provider: ${aiConfig.provider} (${aiConfig.model})`);
-      } else {
-        logger.warn('AI provider not properly configured. AI features will be unavailable.');
-        logger.warn('To enable AI, set AI_PROVIDER and the corresponding API key in .env');
-      }
-    } catch (error: any) {
-      logger.warn(`AI initialization failed: ${error.message}`);
-    }
+    initializeAI();
 
     const app = createApp();
 

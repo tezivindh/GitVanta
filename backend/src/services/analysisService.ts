@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { AnalysisReport, RepoInsight, User } from '../models';
 import githubService from './githubService';
 import aiService from './aiService';
+import { resolveAIForUser } from './userAIService';
 import scoringEngine, {
   calculateFullScore,
   extractSkills,
@@ -42,7 +43,7 @@ export async function analyzePortfolio(
 
   //Fetch all necessary data from GitHub
   const [repos, githubUser, hasProfileReadme, socialAccounts] = await Promise.all([
-    githubService.getAllUserRepositories(accessToken, username),
+    githubService.getOwnRepositories(accessToken, username),
     githubService.getUserByUsername(accessToken, username),
     githubService.hasProfileReadme(accessToken, username),
     githubService.getUserSocialAccounts(accessToken, username),
@@ -157,6 +158,9 @@ export async function analyzePortfolio(
     stars: repo.stargazers_count,
     forks: repo.forks_count,
     topics: repo.topics || [],
+    isPrivate: !!repo.private,
+    homepage: repo.homepage,
+    pushedAt: repo.pushed_at,
   }));
 
   // Save analysis report
@@ -291,27 +295,30 @@ export async function generateProfessionalProfile(
   const user = await User.findById(userId);
   if (!user) throw new Error('User not found');
 
-  const repos = await githubService.getAllUserRepositories(accessToken, username);
+  const repos = await githubService.getOwnRepositories(accessToken, username);
   const topRepos = repos
-    .filter(r => !r.fork)
+    .filter(r => !r.fork && !r.private)
     .sort((a, b) => b.stargazers_count - a.stargazers_count)
     .slice(0, 5);
 
   let headline = `${user.displayName} | Software Developer`;
   let summary = `Experienced developer with ${repos.length} public repositories and a portfolio score of ${analysis.overallScore}/100.`;
 
-  if (aiService.isAiAvailable()) {
+  {
     try {
+      const ai = resolveAIForUser(user);
       const aiSummary = await aiService.generatePortfolioSummary(
+        ai,
         username,
-        repos,
+        repos.filter(r => !r.fork && !r.private),
         analysis.skills,
         analysis.overallScore
       );
       headline = aiSummary.headline;
       summary = aiSummary.summary;
-    } catch (error) {
-      logger.error('Failed to generate AI summary:', error);
+    } catch (error: any) {
+      // Fall back to the plain headline when AI isn't set up or fails.
+      logger.warn(`AI summary unavailable for ${username}: ${error.message}`);
     }
   }
 

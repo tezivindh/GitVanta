@@ -52,6 +52,8 @@ export interface GitHubRepository {
   has_issues: boolean;
   fork: boolean;
   archived: boolean;
+  private: boolean;
+  visibility?: 'public' | 'private' | 'internal';
   license: {
     key: string;
     name: string;
@@ -117,6 +119,10 @@ export interface AnalyzedRepository {
   stars: number;
   forks: number;
   topics: string[];
+  /** True for private repos. Never exposed publicly unless the owner opts in, and then without a URL. */
+  isPrivate: boolean;
+  homepage?: string | null;
+  pushedAt?: string;
 }
 
 export interface AnalysisReport extends Document {
