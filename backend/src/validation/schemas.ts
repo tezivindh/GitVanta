@@ -38,3 +38,24 @@ export const badgeQuery = z.object({
   style: z.enum(['flat', 'flat-square']).default('flat'),
   label: z.string().trim().max(30).regex(/^[\w .\-]*$/).optional(),
 });
+
+const providerIds = [
+  'openai', 'anthropic', 'gemini', 'groq', 'openrouter', 'mistral', 'deepseek', 'together', 'custom',
+] as const;
+
+const aiConfigFields = {
+  provider: z.enum(providerIds, { errorMap: () => ({ message: 'Choose a supported provider' }) }),
+  model: z.string().trim().max(200).regex(/^[\w.:/@+-]*$/, 'Model name has invalid characters').optional(),
+  baseUrl: z.string().trim().max(500).url('Base URL must be a full URL').optional().or(z.literal('').transform(() => undefined)),
+  apiKey: z
+    .string()
+    .trim()
+    .max(500, 'That API key is too long')
+    .regex(/^[\x21-\x7e]*$/, 'API key contains invalid characters (spaces or non-ASCII)')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+};
+
+export const aiSettingsBody = z.object({ ...aiConfigFields, enabled: z.boolean().optional() }).strict();
+export const aiTestBody = z.object(aiConfigFields).strict();
+export const aiToggleBody = z.object({ enabled: z.boolean() }).strict();

@@ -66,6 +66,8 @@ export class OpenAICompatibleProvider implements IAIProvider {
         headers,
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+        // A redirect could point a vetted public URL at an internal host.
+        redirect: 'error',
       });
     } catch (error: any) {
       const reason = error?.name === 'TimeoutError' ? 'timed out' : 'could not be reached';

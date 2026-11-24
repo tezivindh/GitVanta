@@ -372,7 +372,7 @@ export async function generateProfessionalProfile(
 
   {
     try {
-      const ai = resolveAIForUser(user);
+      const ai = await resolveAIForUser(user);
       const aiSummary = await aiService.generatePortfolioSummary(
         ai,
         username,

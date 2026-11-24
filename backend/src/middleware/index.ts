@@ -7,4 +7,5 @@ export {
   analysisLimiter, 
   exportLimiter,
   compareLimiter,
+  aiTestLimiter,
 } from './rateLimiter';

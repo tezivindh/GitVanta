@@ -24,7 +24,7 @@ export async function checkAiStatus(req: AuthenticatedRequest, res: Response): P
 export async function enhanceReadme(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const { repoName } = req.params;
-  const ai = resolveAIForUser(user);
+  const ai = await resolveAIForUser(user);
 
   const repo = await findOwnRepo(user, repoName);
   const [currentReadme, languages] = await Promise.all([
@@ -46,7 +46,7 @@ export async function enhanceReadme(req: AuthenticatedRequest, res: Response): P
 export async function generateResumeBullets(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const { repoName } = req.params;
-  const ai = resolveAIForUser(user);
+  const ai = await resolveAIForUser(user);
 
   const repo = await findOwnRepo(user, repoName);
   const [languages, readme] = await Promise.all([
@@ -61,7 +61,7 @@ export async function generateResumeBullets(req: AuthenticatedRequest, res: Resp
 export async function generateAllResumeBullets(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const limit = Number(req.query.limit ?? 5);
-  const ai = resolveAIForUser(user);
+  const ai = await resolveAIForUser(user);
 
   const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
   const topRepos = repos
@@ -88,7 +88,7 @@ export async function generateAllResumeBullets(req: AuthenticatedRequest, res: R
 
 export async function generatePortfolioSummary(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const ai = resolveAIForUser(user);
+  const ai = await resolveAIForUser(user);
 
   const analysis = await latestOrFreshAnalysis(user);
   const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
@@ -105,7 +105,7 @@ export async function generatePortfolioSummary(req: AuthenticatedRequest, res: R
 
 export async function generateImprovementRoadmap(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const ai = resolveAIForUser(user);
+  const ai = await resolveAIForUser(user);
 
   const analysis = await latestOrFreshAnalysis(user);
   const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
@@ -136,7 +136,7 @@ export async function analyzeReadmeQuality(req: AuthenticatedRequest, res: Respo
 
   let ai;
   try {
-    ai = resolveAIForUser(user);
+    ai = await resolveAIForUser(user);
   } catch {
     res.json({
       success: true,
@@ -156,7 +156,7 @@ export async function analyzeReadmeQuality(req: AuthenticatedRequest, res: Respo
 export async function generateProjectDescription(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const { repoName } = req.params;
-  const ai = resolveAIForUser(user);
+  const ai = await resolveAIForUser(user);
 
   const repo = await findOwnRepo(user, repoName);
   const languages = await githubService.getRepositoryLanguages(user.accessToken, user.username, repoName);

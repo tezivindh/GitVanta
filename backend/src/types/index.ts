@@ -19,8 +19,25 @@ export interface IUser extends Document {
   followers: number;
   following: number;
   accessToken: string;
+  aiSettings?: IUserAISettings;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** A user's own AI provider ("bring your own key"). */
+export interface IUserAISettings {
+  /** When false the saved key is kept but the server key is used. */
+  enabled: boolean;
+  provider: string;
+  model: string;
+  baseUrl?: string;
+  /** AES-256-GCM ciphertext; never selected by default, never returned. */
+  encryptedKey?: string;
+  /** Masked form for display, e.g. "sk-…a1b2". */
+  keyHint?: string;
+  updatedAt?: Date;
+  lastTestedAt?: Date;
+  lastTestOk?: boolean;
 }
 
 export interface AuthenticatedRequest extends Request {
