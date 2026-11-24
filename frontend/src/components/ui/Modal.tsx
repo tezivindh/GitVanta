@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useId, useRef } from 'react';
 import clsx from 'clsx';
 import { X } from 'lucide-react';
 
@@ -25,27 +25,54 @@ const Modal: React.FC<ModalProps> = ({
   showCloseButton = true,
   className,
 }) => {
-  // Handle escape key
-  const handleEscape = useCallback(
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Escape closes; Tab stays inside the dialog.
+  const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape' && closeOnEscape) {
         onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     },
     [closeOnEscape, onClose]
   );
 
   useEffect(() => {
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    // Focus the first field, else the dialog itself.
+    const target =
+      dialogRef.current?.querySelector<HTMLElement>('input,textarea,select') ??
+      dialogRef.current?.querySelector<HTMLElement>('button:not([aria-label="Close dialog"])') ??
+      dialogRef.current;
+    target?.focus();
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+      previouslyFocused?.focus?.();
     };
-  }, [isOpen, handleEscape]);
+  }, [isOpen, handleKeyDown]);
 
   if (!isOpen) return null;
 
@@ -61,7 +88,7 @@ const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-gray-950/60 backdrop-blur-xs transition-opacity"
         onClick={closeOnOverlay ? onClose : undefined}
         aria-hidden="true"
       />
@@ -69,8 +96,10 @@ const Modal: React.FC<ModalProps> = ({
       {/* Modal container */}
       <div className="flex min-h-screen items-center justify-center p-4">
         <div
+          ref={dialogRef}
+          tabIndex={-1}
           className={clsx(
-            'relative w-full bg-white dark:bg-gray-800 rounded-xl shadow-2xl',
+            'relative w-full bg-white dark:bg-gray-900 dark:ring-1 dark:ring-gray-800 rounded-xl shadow-2xl focus:outline-none',
             'transform transition-all',
             'animate-in duration-200',
             sizes[size],
@@ -78,14 +107,14 @@ const Modal: React.FC<ModalProps> = ({
           )}
           role="dialog"
           aria-modal="true"
-          aria-labelledby={title ? 'modal-title' : undefined}
+          aria-labelledby={title ? titleId : undefined}
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
               {title && (
                 <h2
-                  id="modal-title"
+                  id={titleId}
                   className="text-lg font-semibold text-gray-900 dark:text-white"
                 >
                   {title}
@@ -95,6 +124,7 @@ const Modal: React.FC<ModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
+                  aria-label="Close dialog"
                   className={clsx(
                     'p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200',
                     'hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
@@ -102,8 +132,7 @@ const Modal: React.FC<ModalProps> = ({
                     !title && 'ml-auto'
                   )}
                 >
-                  <X className="w-5 h-5" />
-                  <span className="sr-only">Close</span>
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               )}
             </div>
@@ -130,7 +159,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
   return (
     <div
       className={clsx(
-        'flex items-center justify-end gap-3 pt-4 border-t dark:border-gray-700 -mx-4 px-4 -mb-4 pb-4',
+        'flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800 -mx-4 px-4 -mb-4 pb-4',
         className
       )}
     >

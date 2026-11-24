@@ -64,11 +64,11 @@ const AuthCallbackPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950">
         <div className="max-w-md w-full">
-          <Alert variant="error" title="Authentication Failed">
+          <Alert variant="error" title="Sign-in did not complete">
             {error}
-            <p className="mt-2 text-sm">Redirecting to login page...</p>
+            <p className="mt-2 text-sm">Taking you back to the sign-in page…</p>
           </Alert>
         </div>
       </div>

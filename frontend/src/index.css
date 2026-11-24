@@ -2,34 +2,63 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+  GitVanta design tokens
+  - Ink/paper neutrals are navy-tinted (the gray scale is overridden so every
+    page picks them up in both themes).
+  - Teal is the brand colour; amber is reserved for score gains.
+*/
 @theme {
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
+  --color-gray-50: #f7f9fc;
+  --color-gray-100: #eef2f7;
+  --color-gray-200: #dce3ec;
+  --color-gray-300: #c3cdda;
+  --color-gray-400: #8d9bb0;
+  --color-gray-500: #64748b;
+  --color-gray-600: #4a5871;
+  --color-gray-700: #33415a;
+  --color-gray-800: #1c2a40;
+  --color-gray-900: #0f1b2d;
+  --color-gray-950: #0a1322;
+
+  --color-primary-50: #eaf7f7;
+  --color-primary-100: #ccedec;
+  --color-primary-200: #9bdad9;
+  --color-primary-300: #5fc2c0;
+  --color-primary-400: #2bb3b1;
+  --color-primary-500: #14989a;
+  --color-primary-600: #0e7c7b;
+  --color-primary-700: #0c6363;
+  --color-primary-800: #0d4f50;
+  --color-primary-900: #0d4143;
+  --color-primary-950: #062a2b;
+
+  --color-gain-50: #fdf6ea;
+  --color-gain-100: #fae8c8;
+  --color-gain-300: #f2c46f;
+  --color-gain-400: #edb053;
+  --color-gain-500: #e8a33d;
+  --color-gain-600: #c9831f;
+  --color-gain-700: #a1661a;
 
   --color-github: #24292f;
-  --color-github-dark: #0d1117;
-  --color-github-light: #f6f8fa;
 
-  --font-sans: Inter, system-ui, sans-serif;
-  --font-mono: JetBrains Mono, monospace;
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-toast-in: toast-in 0.18s ease-out;
+
+  @keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
   *,
   ::after,
@@ -44,124 +73,101 @@
   .dark ::before {
     border-color: var(--color-gray-700, currentcolor);
   }
+
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100;
+    font-feature-settings: 'kern', 'liga';
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
+  /* One visible focus style everywhere, keyboard only. */
+  :focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--color-primary-200);
+    color: var(--color-gray-900);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-gray-300);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: var(--color-gray-700);
+    background-clip: content-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
-@utility animate-in {
-  animation: animate-in 0.2s ease-out;
-}
-@utility fade-in {
-  animation: fade-in 0.2s ease-out;
-}
-@utility zoom-in-95 {
-  animation: zoom-in-95 0.2s ease-out;
-}
-@utility btn {
-  @apply inline-flex items-center justify-center rounded-lg font-medium transition-colors;
-  @apply focus:outline-hidden focus:ring-2 focus:ring-offset-2;
-  @apply disabled:opacity-60 disabled:cursor-not-allowed;
-}
 @utility card {
-  @apply bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-200 dark:border-gray-700;
+  @apply rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900;
 }
+
 @utility input {
-  @apply block w-full rounded-lg border border-gray-300 dark:border-gray-600 shadow-xs;
-  @apply bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
-  @apply focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+  @apply block w-full rounded-lg border border-gray-300 bg-white text-gray-900 shadow-xs;
+  @apply dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100;
+  @apply focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 focus:outline-none;
   @apply placeholder:text-gray-400 dark:placeholder:text-gray-500;
 }
 
-@layer utilities {
-  /* =====================================================
-   GLOBAL STYLES - Base styling
-   ===================================================== */
-
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
-
-  /* Focus styles */
-  *:focus-visible {
-    outline: 2px solid #6366f1;
-    outline-offset: 2px;
-  }
-
-  /* Smooth animations */
-}
-@layer utilities {
-  
-  @keyframes animate-in {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  
-  @keyframes zoom-in-95 {
-    from {
-      transform: scale(0.95);
-    }
-    to {
-      transform: scale(1);
-    }
+@utility skeleton {
+  @apply rounded-md bg-gray-200 dark:bg-gray-800;
+  background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / 0.45) 50%, transparent 100%);
+  background-size: 400px 100%;
+  background-repeat: no-repeat;
+  animation: var(--animate-shimmer);
+  .dark & {
+    background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / 0.06) 50%, transparent 100%);
   }
 }
 
-@layer utilities {
-  /* Line clamp utilities */
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  /* Custom component styles */
+@utility animate-in {
+  animation: toast-in 0.18s ease-out;
+}
+@utility fade-in {
+  animation: toast-in 0.18s ease-out;
+}
+@utility zoom-in-95 {
+  animation: toast-in 0.18s ease-out;
 }
 
-/* Typography */
-body {
-  @apply text-gray-900 dark:text-gray-100 antialiased;
-  @apply bg-white dark:bg-gray-900;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-}
-
-/* Selection color */
-::selection {
-  @apply bg-primary-100 text-primary-900;
+/* Content rendered from Markdown-ish AI output */
+@utility prose-gv {
+  @apply text-gray-700 dark:text-gray-300;
+  line-height: 1.65;
 }

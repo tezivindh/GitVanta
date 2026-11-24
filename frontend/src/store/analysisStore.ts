@@ -9,8 +9,10 @@ import {
   ProfessionalProfile,
   ProfileComparison,
   CategoryScore,
+  ScoreHistory,
 } from '../types';
 import { analysisApi } from '../api';
+import { useAuthStore } from './authStore';
 
 export interface CurrentReport {
   _id: string;
@@ -104,10 +106,17 @@ export interface AnalysisState {
   // Error
   error: string | null;
 
+  /** True once the latest analysis has been requested at least once. */
+  hasFetched: boolean;
+  history: ScoreHistory | null;
+
   // Actions
   runAnalysis: (username?: string) => Promise<void>;
   fetchLatestAnalysis: () => Promise<void>;
   fetchLatestReport: () => Promise<void>;
+  /** Load the latest analysis if no page has loaded it yet. */
+  ensureLatest: () => Promise<void>;
+  fetchHistory: () => Promise<void>;
   fetchSkills: () => Promise<void>;
   fetchBadges: () => Promise<void>;
   fetchImprovements: () => Promise<void>;
@@ -119,7 +128,7 @@ export interface AnalysisState {
   reset: () => void;
 }
 
-export const useAnalysisStore = create<AnalysisState>((set) => ({
+export const useAnalysisStore = create<AnalysisState>((set, get) => ({
   // Initial state
   analysis: null,
   currentReport: null,
@@ -142,6 +151,23 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
   isExporting: false,
 
   error: null,
+  hasFetched: false,
+  history: null,
+
+  ensureLatest: async () => {
+    const { hasFetched, isLoadingAnalysis } = get();
+    if (hasFetched || isLoadingAnalysis) return;
+    await get().fetchLatestReport();
+  },
+
+  fetchHistory: async () => {
+    try {
+      const history = await analysisApi.getHistory(30);
+      set({ history });
+    } catch {
+      // History is a nice-to-have; the overview still renders without it.
+    }
+  },
 
   runAnalysis: async (_username?: string) => {
     set({ isAnalyzing: true, error: null });
@@ -155,7 +181,9 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
         weaknesses: response.weaknesses,
         improvements: response.improvements,
         isAnalyzing: false,
+        hasFetched: true,
       });
+      get().fetchHistory();
     } catch (error: any) {
       set({
         error: error.response?.data?.error || 'Failed to run analysis',
@@ -177,14 +205,16 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
           weaknesses: analysis.weaknesses,
           improvements: analysis.improvements,
           isLoadingAnalysis: false,
+          hasFetched: true,
         });
       } else {
-        set({ analysis: null, currentReport: null, isLoadingAnalysis: false });
+        set({ analysis: null, currentReport: null, isLoadingAnalysis: false, hasFetched: true });
       }
     } catch (error: any) {
       set({
         error: error.response?.data?.error || 'Failed to fetch analysis',
         isLoadingAnalysis: false,
+        hasFetched: true,
       });
     }
   },
@@ -202,14 +232,16 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
           weaknesses: analysis.weaknesses,
           improvements: analysis.improvements,
           isLoadingAnalysis: false,
+          hasFetched: true,
         });
       } else {
-        set({ analysis: null, currentReport: null, isLoadingAnalysis: false });
+        set({ analysis: null, currentReport: null, isLoadingAnalysis: false, hasFetched: true });
       }
     } catch (error: any) {
       set({
         error: error.response?.data?.error || 'Failed to fetch analysis',
         isLoadingAnalysis: false,
+        hasFetched: true,
       });
     }
   },
@@ -317,6 +349,9 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
 
   reset: () => set({
     analysis: null,
+    currentReport: null,
+    history: null,
+    hasFetched: false,
     skills: [],
     badges: [],
     weaknesses: [],
@@ -327,3 +362,9 @@ export const useAnalysisStore = create<AnalysisState>((set) => ({
     error: null,
   }),
 }));
+
+// Clear one user's data from memory when they sign out (or their session ends),
+// so the next account in this tab never sees it.
+useAuthStore.subscribe((state, prev) => {
+  if (prev.token && !state.token) useAnalysisStore.getState().reset();
+});

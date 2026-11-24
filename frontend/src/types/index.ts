@@ -92,6 +92,24 @@ export interface AnalyzedRepository {
   stars: number;
   forks: number;
   topics: string[];
+  isPrivate?: boolean;
+  homepage?: string | null;
+  pushedAt?: string;
+}
+
+export interface QuickWin {
+  repo: string;
+  isPrivate: boolean;
+  action: 'add_readme' | 'expand_readme' | 'add_license' | 'add_tests' | 'add_contributing' | 'add_topics';
+  title: string;
+  detail: string;
+  category: keyof CategoryScores;
+  gain: number;
+}
+
+export interface QuickWins {
+  items: QuickWin[];
+  totalGain: number;
 }
 
 export interface AnalysisReport {
@@ -105,8 +123,8 @@ export interface AnalysisReport {
   improvements: Improvement[];
   badges: Badge[];
   repositories: AnalyzedRepository[];
+  quickWins?: QuickWins;
   generatedAt: string;
-  expiresAt: string;
 }
 
 // Repository types
@@ -226,8 +244,12 @@ export interface ProfessionalProject {
   name: string;
   description: string;
   technologies: string[];
+  language: string | null;
   stars: number;
-  url: string;
+  /** null for private repos: shown but not linkable. */
+  url: string | null;
+  homepage: string | null;
+  isPrivate: boolean;
   highlights: string[];
 }
 
@@ -242,12 +264,120 @@ export interface ProfessionalProfile {
   topProjects: ProfessionalProject[];
   badges: Badge[];
   strengths: string[];
-  highlights?: string[];
+  highlights: string[];
   contact: {
     email: string;
     github: string;
     website: string;
   };
+  ai: AIMeta | null;
+  summaryGeneratedAt: string | null;
+  publicUrl: string;
+}
+
+// AI provider types
+export type AIProviderId =
+  | 'openai' | 'anthropic' | 'gemini' | 'groq' | 'openrouter'
+  | 'mistral' | 'deepseek' | 'together' | 'custom';
+
+/** Which provider produced an AI result. */
+export interface AIMeta {
+  provider: AIProviderId;
+  providerLabel: string;
+  model: string;
+  source: 'user' | 'server';
+}
+
+export interface AIProviderInfo {
+  id: AIProviderId;
+  label: string;
+  description: string;
+  models: string[];
+  defaultModel: string;
+  baseUrl: string | null;
+  requiresBaseUrl: boolean;
+  requiresKey: boolean;
+  keyPlaceholder: string;
+  keyUrl: string | null;
+}
+
+export interface AISettings {
+  enabled: boolean;
+  provider: AIProviderId;
+  providerLabel: string;
+  model: string;
+  baseUrl: string | null;
+  keyHint: string | null;
+  hasKey: boolean;
+  updatedAt: string | null;
+  lastTestedAt: string | null;
+  lastTestOk: boolean | null;
+}
+
+export interface AIStatus {
+  available: boolean;
+  source: 'user' | 'server' | null;
+  provider: { provider: string; label: string; model: string } | null;
+  message: string;
+}
+
+export interface AITestResult {
+  ok: boolean;
+  provider: AIProviderId;
+  providerLabel: string;
+  model: string;
+  latencyMs: number;
+  reply: string;
+  warning?: string;
+}
+
+/** An AI result plus the provider that produced it. */
+export interface WithAI<T> {
+  data: T;
+  ai: AIMeta | null;
+}
+
+// Score history
+export interface HistoryPoint {
+  id: string;
+  overallScore: number;
+  categoryScores: CategoryScores;
+  badgeCount: number;
+  generatedAt: string;
+}
+
+export interface ScoreHistory {
+  points: HistoryPoint[];
+  change: number | null;
+}
+
+// Public profile showcase settings
+export interface ShowcaseRepo {
+  name: string;
+  description: string | null;
+  language: string | null;
+  stars: number;
+  isPrivate: boolean;
+  visible: boolean;
+}
+
+export interface ShowcaseSettings {
+  hasAnalysis: boolean;
+  repos: ShowcaseRepo[];
+  hiddenRepos: string[];
+  shownPrivateRepos: string[];
+}
+
+export interface PublicRepo {
+  name: string;
+  description: string | null;
+  language: string | null;
+  stars: number;
+  forks: number;
+  topics: string[];
+  isPrivate: boolean;
+  url: string | null;
+  homepage: string | null;
 }
 
 // API Response types
@@ -255,7 +385,9 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  code?: string;
   message?: string;
+  ai?: AIMeta;
 }
 
 export interface PaginatedResponse<T> {
@@ -272,6 +404,7 @@ export interface PaginatedResponse<T> {
 // Repository stats
 export interface RepositoryStats {
   totalRepositories: number;
+  privateRepositories?: number;
   totalStars: number;
   totalForks: number;
   uniqueLanguages: number;

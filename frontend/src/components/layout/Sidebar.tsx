@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
 import {
@@ -36,6 +36,13 @@ const navigation = [
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   const isActive = (href: string, exact = false) => {
     if (exact) {
       return location.pathname === href;
@@ -48,25 +55,30 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 bg-gray-950/50 lg:hidden"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
       <aside
+        id="dashboard-sidebar"
+        aria-label="Dashboard"
         className={clsx(
-          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700',
+          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800',
           'transform transition-transform duration-200 ease-in-out z-50',
           'lg:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          isOpen ? 'translate-x-0' : '-translate-x-full invisible lg:visible'
         )}
       >
         {/* Mobile close button */}
-        <div className="flex items-center justify-between p-4 lg:hidden border-b">
+        <div className="flex items-center justify-between p-4 lg:hidden border-b border-gray-200 dark:border-gray-800">
           <span className="font-semibold text-gray-900 dark:text-white">Menu</span>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close navigation"
             className="p-1 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <X className="w-5 h-5" />
@@ -74,7 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-1 overflow-y-auto h-full">
+        <nav aria-label="Dashboard sections" className="p-4 space-y-1 overflow-y-auto h-full pb-24">
           {navigation.map((item) => {
             const active = isActive(item.href, item.exact);
             return (
@@ -82,14 +94,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 key={item.name}
                 to={item.href}
                 onClick={onClose}
+                aria-current={active ? 'page' : undefined}
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   active
-                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-primary-50 dark:bg-primary-950 text-primary-800 dark:text-primary-300'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-900'
                 )}
               >
                 <item.icon
+                  aria-hidden="true"
                   className={clsx(
                     'w-5 h-5',
                     active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'

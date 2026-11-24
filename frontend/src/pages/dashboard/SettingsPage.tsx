@@ -1,95 +1,99 @@
 import React from 'react';
-import { Settings, Moon, Sun, Monitor } from 'lucide-react';
-import { useThemeStore } from '../../store/themeStore';
+import clsx from 'clsx';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import { useThemeStore, ThemeMode } from '../../store/themeStore';
+import { PageHeader } from '../../components/ui';
+import AIProviderSection from '../../components/settings/AIProviderSection';
+import ShowcaseSection from '../../components/settings/ShowcaseSection';
+import AccountSection from '../../components/settings/AccountSection';
+
+const Section: React.FC<{ id: string; title: string; description: string; children: React.ReactNode }> = ({
+  id,
+  title,
+  description,
+  children,
+}) => (
+  <section id={id} aria-labelledby={`${id}-title`} className="card scroll-mt-24 p-5 sm:p-6">
+    <h2 id={`${id}-title`} className="text-lg font-semibold text-gray-900 dark:text-white">
+      {title}
+    </h2>
+    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{description}</p>
+    <div className="mt-5">{children}</div>
+  </section>
+);
+
+const THEMES: Array<{ mode: ThemeMode; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+  { mode: 'light', label: 'Light', icon: Sun },
+  { mode: 'dark', label: 'Dark', icon: Moon },
+  { mode: 'system', label: 'Match system', icon: Monitor },
+];
 
 const SettingsPage: React.FC = () => {
-  const { darkMode, toggleDarkMode } = useThemeStore();
+  const { mode, setMode } = useThemeStore();
 
   return (
-    <div className="space-y-8 animate-in">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-          <Settings className="w-7 h-7 text-primary-600" />
-          Settings
-        </h1>
-        <p className="mt-1 text-gray-600 dark:text-gray-400">
-          Manage your GitVanta preferences
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="Settings" description="Manage your AI provider, public profile, appearance and account." />
 
-      {/* Appearance Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Appearance
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Customize how GitVanta looks
-          </p>
-        </div>
+      <nav aria-label="Settings sections" className="flex flex-wrap gap-2 text-sm">
+        {[
+          ['#ai-provider', 'AI provider'],
+          ['#public-profile', 'Public profile'],
+          ['#appearance', 'Appearance'],
+          ['#account', 'Account'],
+        ].map(([href, label]) => (
+          <a
+            key={href}
+            href={href}
+            className="rounded-full border border-gray-200 px-3 py-1 text-gray-700 hover:bg-white dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
 
-        <div className="px-6 py-5">
-          {/* Dark Mode Toggle */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                {darkMode ? (
-                  <Moon className="w-5 h-5 text-indigo-500" />
-                ) : (
-                  <Sun className="w-5 h-5 text-amber-500" />
+      <Section
+        id="ai-provider"
+        title="AI provider"
+        description="Choose which AI writes your README rewrites, resume bullets, summaries and roadmaps."
+      >
+        <AIProviderSection />
+      </Section>
+
+      <Section
+        id="public-profile"
+        title="Public profile"
+        description="Choose which repositories appear on your public profile and professional view."
+      >
+        <ShowcaseSection />
+      </Section>
+
+      <Section id="appearance" title="Appearance" description="Pick a theme for GitVanta on this device.">
+        <fieldset>
+          <legend className="sr-only">Theme</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {THEMES.map(({ mode: m, label, icon: Icon }) => (
+              <label
+                key={m}
+                className={clsx(
+                  'flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary-500',
+                  mode === m
+                    ? 'border-primary-500 bg-primary-50 text-primary-900 dark:bg-primary-950 dark:text-primary-100'
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800/60'
                 )}
-              </div>
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  Dark Mode
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {darkMode
-                    ? 'Dark theme is active — easier on the eyes at night'
-                    : 'Light theme is active — switch to dark for a sleek look'}
-                </p>
-              </div>
-            </div>
-
-            {/* Toggle Switch */}
-            <button
-              onClick={toggleDarkMode}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
-                darkMode ? 'bg-primary-600' : 'bg-gray-300'
-              }`}
-              role="switch"
-              aria-checked={darkMode}
-              aria-label="Toggle dark mode"
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  darkMode ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
+              >
+                <input type="radio" name="theme" value={m} checked={mode === m} onChange={() => setMode(m)} className="sr-only" />
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {label}
+              </label>
+            ))}
           </div>
-        </div>
-      </div>
+        </fieldset>
+      </Section>
 
-      {/* More settings sections can be added here later */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xs border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            More Settings
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Additional preferences coming soon
-          </p>
-        </div>
-
-        <div className="px-6 py-8 text-center">
-          <Monitor className="w-10 h-10 mx-auto text-gray-300 dark:text-gray-600" />
-          <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-            Notification preferences, data export options, and account management will be available here soon.
-          </p>
-        </div>
-      </div>
+      <Section id="account" title="Account" description="Export your data, end other sessions, or delete your account.">
+        <AccountSection />
+      </Section>
     </div>
   );
 };

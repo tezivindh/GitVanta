@@ -1,46 +1,62 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type ThemeMode = 'light' | 'dark' | 'system';
+
 interface ThemeState {
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-  setDarkMode: (enabled: boolean) => void;
+  mode: ThemeMode;
+  /** Resolved theme currently on screen. */
+  isDark: boolean;
+  setMode: (mode: ThemeMode) => void;
+  toggle: () => void;
+}
+
+const media = () =>
+  typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+function resolve(mode: ThemeMode): boolean {
+  return mode === 'dark' || (mode === 'system' && !!media()?.matches);
+}
+
+function apply(dark: boolean) {
+  document.documentElement.classList.toggle('dark', dark);
 }
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set) => ({
-      darkMode: false,
-
-      toggleDarkMode: () => {
-        set((state) => {
-          const next = !state.darkMode;
-          applyDarkClass(next);
-          return { darkMode: next };
-        });
+    (set, get) => ({
+      mode: 'system',
+      isDark: resolve('system'),
+      setMode: (mode) => {
+        const isDark = resolve(mode);
+        apply(isDark);
+        set({ mode, isDark });
       },
-
-      setDarkMode: (enabled: boolean) => {
-        applyDarkClass(enabled);
-        set({ darkMode: enabled });
-      },
+      toggle: () => get().setMode(get().isDark ? 'light' : 'dark'),
     }),
     {
       name: 'theme-storage',
-      onRehydrateStorage: () => (state) => {
-        // Apply dark class on rehydration (page load)
-        if (state) {
-          applyDarkClass(state.darkMode);
+      version: 2,
+      partialize: (s) => ({ mode: s.mode }),
+      // v1 stored { darkMode: boolean }
+      migrate: (persisted: any) => {
+        if (persisted && typeof persisted.darkMode === 'boolean') {
+          return { mode: persisted.darkMode ? 'dark' : 'light' } as any;
         }
+        return persisted;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const isDark = resolve(state.mode);
+        apply(isDark);
+        useThemeStore.setState({ isDark });
       },
     }
   )
 );
 
-function applyDarkClass(dark: boolean) {
-  if (dark) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-}
+// Follow the OS setting live when the user chose "system".
+media()?.addEventListener('change', () => {
+  const { mode } = useThemeStore.getState();
+  if (mode === 'system') useThemeStore.getState().setMode('system');
+});
