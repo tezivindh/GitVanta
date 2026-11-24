@@ -229,7 +229,10 @@ const PublicProfilePage: React.FC = () => {
               </Link>
             </div>
           ) : (
-            <ErrorState message={error?.message ?? 'Something went wrong.'} onRetry={load} />
+            <>
+              <h1 className="sr-only">Profile for @{username}</h1>
+              <ErrorState message={error?.message ?? 'Something went wrong.'} onRetry={load} />
+            </>
           )}
         </main>
       </div>
@@ -313,14 +316,12 @@ const PublicProfilePage: React.FC = () => {
             </h2>
             <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
               {CATEGORIES.map((c) => (
-                <div key={c.key}>
-                  <div className="flex items-baseline justify-between text-sm">
-                    <dt className="text-gray-700 dark:text-gray-300">{c.label}</dt>
-                    <dd className="tabular-nums text-gray-500 dark:text-gray-400">{profile.categoryScores[c.key]}</dd>
-                  </div>
-                  <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true">
+                <div key={c.key} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 text-sm">
+                  <dt className="text-gray-700 dark:text-gray-300">{c.label}</dt>
+                  <dd className="tabular-nums text-gray-500 dark:text-gray-400">{profile.categoryScores[c.key]}</dd>
+                  <dd className="col-span-2 mt-1.5 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true">
                     <div className="h-1.5 rounded-full bg-primary-500" style={{ width: `${profile.categoryScores[c.key]}%` }} />
-                  </div>
+                  </dd>
                 </div>
               ))}
             </dl>

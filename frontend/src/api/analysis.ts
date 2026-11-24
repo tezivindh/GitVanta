@@ -17,7 +17,7 @@ import {
 export const analysisApi = {
 
   async analyzePortfolio(): Promise<AnalysisReport> {
-    const response = await apiClient.post<ApiResponse<AnalysisReport>>('/analysis/analyze', null, {
+    const response = await apiClient.post<ApiResponse<AnalysisReport>>('/analysis/analyze', {}, {
       timeout: SLOW_REQUEST_TIMEOUT,
     });
     return response.data.data!;

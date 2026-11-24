@@ -26,7 +26,7 @@ export const enhancementApi = {
   },
 
   enhanceReadme(repoName: string): Promise<WithAI<ReadmeEnhancement>> {
-    return withAI(apiClient.post(`/enhance/readme/${repoPath(repoName)}`, null, slow));
+    return withAI(apiClient.post(`/enhance/readme/${repoPath(repoName)}`, {}, slow));
   },
 
   analyzeReadmeQuality(
@@ -36,29 +36,29 @@ export const enhancementApi = {
   },
 
   generateResumeBullets(repoName: string): Promise<WithAI<ResumeBullet>> {
-    return withAI(apiClient.post(`/enhance/resume/${repoPath(repoName)}`, null, slow));
+    return withAI(apiClient.post(`/enhance/resume/${repoPath(repoName)}`, {}, slow));
   },
 
   generateAllResumeBullets(limit?: number): Promise<WithAI<ResumeBullet[]>> {
-    return withAI(apiClient.post('/enhance/resume', null, { ...slow, params: { limit } }));
+    return withAI(apiClient.post('/enhance/resume', {}, { ...slow, params: { limit } }));
   },
 
   generatePortfolioSummary(): Promise<WithAI<PortfolioSummary>> {
-    return withAI(apiClient.post('/enhance/summary', null, slow));
+    return withAI(apiClient.post('/enhance/summary', {}, slow));
   },
 
   generateImprovementRoadmap(): Promise<WithAI<ImprovementRoadmap>> {
-    return withAI(apiClient.post('/enhance/roadmap', null, slow));
+    return withAI(apiClient.post('/enhance/roadmap', {}, slow));
   },
 
   async reviewRepositories(): Promise<RepoReviews> {
-    const res = await apiClient.post<ApiResponse<RepoReviews>>('/enhance/repo-reviews', null, slow);
+    const res = await apiClient.post<ApiResponse<RepoReviews>>('/enhance/repo-reviews', {}, slow);
     return res.data.data!;
   },
 
   async generateProjectDescription(repoName: string): Promise<WithAI<string>> {
     const res = await withAI<{ description: string }>(
-      apiClient.post(`/enhance/description/${repoPath(repoName)}`, null, slow)
+      apiClient.post(`/enhance/description/${repoPath(repoName)}`, {}, slow)
     );
     return { data: res.data?.description ?? '', ai: res.ai };
   },

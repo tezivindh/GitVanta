@@ -58,7 +58,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon: Icon, title, descr
         <Icon className="h-6 w-6" />
       </div>
     )}
-    <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
+    <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
     {description && <div className="mt-1 max-w-md text-sm text-gray-600 dark:text-gray-400">{description}</div>}
     {action && <div className="mt-5">{action}</div>}
   </div>
@@ -89,7 +89,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
     )}
   >
     <AlertTriangle className="mb-3 h-7 w-7 text-red-600 dark:text-red-400" aria-hidden="true" />
-    <h3 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h3>
+    <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
     <p className="mt-1 max-w-md text-sm text-gray-700 dark:text-gray-300">{message}</p>
     {(onRetry || action) && (
       <div className="mt-5 flex flex-wrap justify-center gap-3">
