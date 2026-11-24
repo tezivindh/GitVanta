@@ -173,3 +173,17 @@ export const exportLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Comparing runs a full analysis of another account, so keep it modest.
+export const compareLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hr
+  max: 15,
+  message: {
+    success: false,
+    error: 'Comparison limit reached (15 per hour). Please try again later.',
+    code: 'RATE_LIMITED',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => (req as AuthenticatedRequest).userId || req.ip || 'unknown',
+});

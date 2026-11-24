@@ -139,11 +139,6 @@ const analysisReportSchema = new Schema<IAnalysisReport>(
       type: Date,
       default: Date.now,
     },
-    expiresAt: {
-      type: Date,
-      required: true,
-      index: true,
-    },
   },
   {
     timestamps: true,
@@ -152,7 +147,6 @@ const analysisReportSchema = new Schema<IAnalysisReport>(
 
 // Indexes
 analysisReportSchema.index({ userId: 1, generatedAt: -1 });
-analysisReportSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const AnalysisReport = mongoose.model<IAnalysisReport>('AnalysisReport', analysisReportSchema);
 

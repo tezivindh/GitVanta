@@ -88,7 +88,8 @@ router.get('/:username', async (req: Request, res: Response) => {
       categoryScores: analysis.categoryScores,
       skills: analysis.skills || [],
       badges: analysis.badges || [],
-      repositories: analysis.repositories || [],
+      // Never expose private repositories on the public page.
+      repositories: (analysis.repositories || []).filter((r: any) => !r.isPrivate),
       generatedAt: analysis.generatedAt,
     };
 

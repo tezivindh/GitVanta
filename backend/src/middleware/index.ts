@@ -5,5 +5,6 @@ export {
   authLimiter, 
   aiLimiter, 
   analysisLimiter, 
-  exportLimiter 
+  exportLimiter,
+  compareLimiter,
 } from './rateLimiter';

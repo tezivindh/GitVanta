@@ -327,3 +327,21 @@ export async function getImprovements(
     });
   }
 }
+
+export async function getHistory(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 30, 1), 60);
+  const history = await analysisService.getAnalysisHistory(req.user!._id, limit);
+  const last = history[history.length - 1];
+  const prev = history[history.length - 2];
+
+  res.json({
+    success: true,
+    data: {
+      points: history,
+      change: last && prev ? last.overallScore - prev.overallScore : null,
+    },
+  });
+}

@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import config from './config';
 import { connectDatabase } from './config/database';
+import { runMigrations } from './config/migrations';
 import { initializeRedis } from './config/redis';
 import { initializeAI } from './ai';
 import logger from './utils/logger';
@@ -11,6 +12,7 @@ async function startServer(): Promise<void> {
 
   
     await connectDatabase();
+    await runMigrations();
 
     initializeRedis();
 

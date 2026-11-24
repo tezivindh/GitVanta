@@ -25,11 +25,7 @@ import {
 } from '../types';
 import logger from '../utils/logger';
 
-export async function analyzePortfolio(
-  userId: Types.ObjectId,
-  username: string,
-  accessToken: string
-): Promise<{
+export interface PortfolioResult {
   overallScore: number;
   categoryScores: CategoryScores;
   detailedBreakdown: DetailedBreakdown;
@@ -38,12 +34,27 @@ export async function analyzePortfolio(
   improvements: Improvement[];
   badges: Badge[];
   repositories: AnalyzedRepository[];
-}> {
-  logger.info(`Starting portfolio analysis for ${username}`);
+}
 
-  //Fetch all necessary data from GitHub
-  const [repos, githubUser, hasProfileReadme, socialAccounts] = await Promise.all([
-    githubService.getOwnRepositories(accessToken, username),
+type RepoDetail = {
+  repo: GitHubRepository;
+  languages: Record<string, number>;
+  readme: string | null;
+  hasContributing: boolean;
+  hasTests: boolean;
+};
+
+/**
+ * Score a GitHub account with the full engine. Used for the signed-in user
+ * (with private repos) and for comparison targets (public repos only), so
+ * both sides of a comparison are scored the same way.
+ */
+async function computePortfolio(
+  accessToken: string,
+  username: string,
+  repos: GitHubRepository[]
+): Promise<PortfolioResult & { repoDetails: RepoDetail[] }> {
+  const [githubUser, hasProfileReadme, socialAccounts] = await Promise.all([
     githubService.getUserByUsername(accessToken, username),
     githubService.hasProfileReadme(accessToken, username),
     githubService.getUserSocialAccounts(accessToken, username),
@@ -150,7 +161,7 @@ export async function analyzePortfolio(
     hasProfileReadme  // for professional profile badge
   );
 
-  const repositories = ownRepos.map(repo => ({
+  const repositories: AnalyzedRepository[] = ownRepos.map(repo => ({
     name: repo.name,
     url: repo.html_url,
     description: repo.description,
@@ -163,31 +174,6 @@ export async function analyzePortfolio(
     pushedAt: repo.pushed_at,
   }));
 
-  // Save analysis report
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-  await AnalysisReport.findOneAndUpdate(
-    { userId },
-    {
-      userId,
-      overallScore,
-      categoryScores,
-      detailedBreakdown,
-      skills,
-      weaknesses,
-      improvements,
-      badges,
-      repositories,
-      generatedAt: new Date(),
-      expiresAt,
-    },
-    { upsert: true, new: true }
-  );
-
-  // Save repo insights
-  await saveRepoInsights(userId, repoDetails);
-
-  logger.info(`Portfolio analysis completed for ${username}. Score: ${overallScore}`);
-
   return {
     overallScore,
     categoryScores,
@@ -197,7 +183,51 @@ export async function analyzePortfolio(
     improvements,
     badges,
     repositories,
+    repoDetails,
   };
+}
+
+export async function analyzePortfolio(
+  userId: Types.ObjectId,
+  username: string,
+  accessToken: string
+): Promise<PortfolioResult> {
+  logger.info(`Starting portfolio analysis for ${username}`);
+
+  const repos = await githubService.getOwnRepositories(accessToken, username);
+  const { repoDetails, ...result } = await computePortfolio(accessToken, username, repos);
+  const {
+    overallScore,
+    categoryScores,
+    detailedBreakdown,
+    skills,
+    weaknesses,
+    improvements,
+    badges,
+    repositories,
+  } = result;
+
+  // Save a new report each run so users can track progress over time.
+  await AnalysisReport.create({
+    userId,
+    overallScore,
+    categoryScores,
+    detailedBreakdown,
+    skills,
+    weaknesses,
+    improvements,
+    badges,
+    repositories,
+    generatedAt: new Date(),
+  });
+  await pruneOldReports(userId);
+
+  // Save repo insights
+  await saveRepoInsights(userId, repoDetails);
+
+  logger.info(`Portfolio analysis completed for ${username}. Score: ${overallScore}`);
+
+  return result;
 }
 
 /**
@@ -231,13 +261,7 @@ function calculateProfileCompleteness(user: any): number {
 
 async function saveRepoInsights(
   userId: Types.ObjectId,
-  repoDetails: Array<{
-    repo: GitHubRepository;
-    languages: Record<string, number>;
-    readme: string | null;
-    hasContributing: boolean;
-    hasTests: boolean;
-  }>
+  repoDetails: RepoDetail[]
 ): Promise<void> {
   const operations = repoDetails.map(({ repo, languages, readme, hasContributing, hasTests }) => ({
     updateOne: {
@@ -272,6 +296,48 @@ export async function getLatestAnalysis(userId: Types.ObjectId): Promise<any | n
   return await AnalysisReport.findOne({ userId })
     .sort({ generatedAt: -1 })
     .lean();
+}
+
+const MAX_REPORTS_PER_USER = 60;
+
+/** Keep the newest reports only, so history stays bounded. */
+async function pruneOldReports(userId: Types.ObjectId): Promise<void> {
+  const stale = await AnalysisReport.find({ userId })
+    .sort({ generatedAt: -1 })
+    .skip(MAX_REPORTS_PER_USER)
+    .select('_id')
+    .lean();
+  if (stale.length > 0) {
+    await AnalysisReport.deleteMany({ _id: { $in: stale.map((r) => r._id) } });
+  }
+}
+
+export interface HistoryPoint {
+  id: string;
+  overallScore: number;
+  categoryScores: CategoryScores;
+  badgeCount: number;
+  generatedAt: Date;
+}
+
+/** Score history, oldest first. */
+export async function getAnalysisHistory(
+  userId: Types.ObjectId,
+  limit = 30
+): Promise<HistoryPoint[]> {
+  const reports = await AnalysisReport.find({ userId })
+    .sort({ generatedAt: -1 })
+    .limit(limit)
+    .select('overallScore categoryScores badges generatedAt')
+    .lean();
+
+  return reports.reverse().map((r: any) => ({
+    id: r._id.toString(),
+    overallScore: r.overallScore,
+    categoryScores: r.categoryScores,
+    badgeCount: r.badges?.length ?? 0,
+    generatedAt: r.generatedAt,
+  }));
 }
 
 export async function getRepoInsights(userId: Types.ObjectId): Promise<any[]> {
@@ -363,32 +429,11 @@ export async function compareProfiles(
     userAnalysis = await analyzePortfolio(userId, username, accessToken);
   }
 
-  // Analyze compare user (limited)
-  const compareUser = await githubService.getUserByUsername(accessToken, compareUsername);
+  // Score the other developer with the same engine (public repos only).
   const compareRepos = await githubService.getAllUserRepositories(accessToken, compareUsername);
-  
-  // Calculate basic scores for compare user
-  const ownRepos = compareRepos.filter(r => !r.fork);
-  const totalStars = ownRepos.reduce((sum, r) => sum + r.stargazers_count, 0);
-  
-  // Simplified scoring for comparison
-  const compareScores: CategoryScores = {
-    codeQuality: Math.min(100, ownRepos.length * 5),
-    documentation: Math.min(100, ownRepos.filter(r => r.description).length * 10),
-    activity: calculateActivityScore(ownRepos),
-    diversity: calculateDiversityScore(ownRepos),
-    community: calculateCommunityScore(compareUser.followers, totalStars),
-    professionalism: calculateProfessionalismScore(compareUser),
-  };
-
-  const compareOverall = Math.round(
-    compareScores.codeQuality * 0.25 +
-    compareScores.documentation * 0.20 +
-    compareScores.activity * 0.20 +
-    compareScores.diversity * 0.15 +
-    compareScores.community * 0.10 +
-    compareScores.professionalism * 0.10
-  );
+  const compareResult = await computePortfolio(accessToken, compareUsername, compareRepos);
+  const compareScores: CategoryScores = compareResult.categoryScores;
+  const compareOverall = compareResult.overallScore;
 
   // Determine winners
   const breakdown = {
@@ -449,8 +494,8 @@ export async function compareProfiles(
       username: compareUsername,
       overallScore: compareOverall,
       categoryScores: compareScores,
-      topSkills: [],
-      badges: 0,
+      topSkills: compareResult.skills.slice(0, 5).map((sk: ExtractedSkill) => sk.name),
+      badges: compareResult.badges.length,
     },
     yourScore: {
       overall: userAnalysis.overallScore,
@@ -470,38 +515,10 @@ export async function compareProfiles(
   };
 }
 
-function calculateActivityScore(repos: GitHubRepository[]): number {
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const recentRepos = repos.filter(r => new Date(r.pushed_at) > thirtyDaysAgo);
-  return Math.min(100, recentRepos.length * 20);
-}
-
-function calculateDiversityScore(repos: GitHubRepository[]): number {
-  const languages = new Set<string>();
-  repos.forEach(r => {
-    if (r.language) languages.add(r.language);
-  });
-  return Math.min(100, languages.size * 10);
-}
-
-function calculateCommunityScore(followers: number, stars: number): number {
-  return Math.min(100, Math.sqrt(followers) * 5 + Math.sqrt(stars) * 3);
-}
-
-function calculateProfessionalismScore(user: any): number {
-  let score = 0;
-  if (user.bio) score += 20;
-  if (user.company) score += 20;
-  if (user.location) score += 20;
-  if (user.blog) score += 20;
-  if (user.email) score += 20;
-  return score;
-}
-
 export default {
   analyzePortfolio,
   getLatestAnalysis,
+  getAnalysisHistory,
   getRepoInsights,
   generateProfessionalProfile,
   compareProfiles,

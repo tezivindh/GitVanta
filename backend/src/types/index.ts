@@ -137,7 +137,6 @@ export interface AnalysisReport extends Document {
   badges: Badge[];
   repositories: AnalyzedRepository[];
   generatedAt: Date;
-  expiresAt: Date;
 }
 
 export interface CategoryScores {
