@@ -95,7 +95,7 @@ export function getAIStatusForUser(user: IUser) {
     source: server ? ('server' as const) : null,
     provider: server,
     message: server
-      ? `AI features use ${server.label} (${server.model}).`
+      ? `AI features use the shared GitVanta key: ${server.label} (${server.model}).`
       : 'AI is not set up. Add your own API key in Settings → AI provider.',
   };
 }
