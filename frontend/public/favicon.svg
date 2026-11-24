@@ -1,7 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#0E7C7B"/>
-  <path d="M10 23V9m0 14c0-5 12-3 12-9" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
-  <circle cx="10" cy="9" r="2.6" fill="#fff"/>
-  <circle cx="22" cy="12" r="3.2" fill="#E8A33D"/>
-  <circle cx="10" cy="23" r="2.6" fill="#fff"/>
+  <rect width="32" height="32" rx="7" fill="#0A1416"/>
+  <g transform="translate(4.5 4.5) scale(0.72)">
+    <rect x="1" y="1" width="9" height="9" rx="2" fill="#16272A"/>
+    <rect x="11.5" y="1" width="9" height="9" rx="2" fill="#16272A"/>
+    <rect x="22" y="1" width="9" height="9" rx="2" fill="#5EE6C6"/>
+    <rect x="1" y="11.5" width="9" height="9" rx="2" fill="#16272A"/>
+    <rect x="11.5" y="11.5" width="9" height="9" rx="2" fill="#1FAF95"/>
+    <rect x="22" y="11.5" width="9" height="9" rx="2" fill="#5EE6C6"/>
+    <rect x="1" y="22" width="9" height="9" rx="2" fill="#127A6C"/>
+    <rect x="11.5" y="22" width="9" height="9" rx="2" fill="#1FAF95"/>
+    <rect x="22" y="22" width="9" height="9" rx="2" fill="#5EE6C6"/>
+  </g>
 </svg>

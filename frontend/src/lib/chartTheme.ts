@@ -6,27 +6,27 @@ import { useThemeStore } from '../store/themeStore';
  * (dataviz validate_palette: all checks pass in light and dark).
  */
 const LIGHT = {
-  you: '#0A9490',
-  them: '#C9831F',
-  grid: '#EEF2F7',
-  axis: '#64748B',
+  you: '#0F8A72',
+  them: '#B86E12',
+  grid: '#E7ECEA',
+  axis: '#5B6D68',
   surface: '#FFFFFF',
   tooltipBg: '#FFFFFF',
-  tooltipBorder: '#DCE3EC',
-  ink: '#0F1B2D',
-  muted: '#64748B',
+  tooltipBorder: '#D5DEDB',
+  ink: '#12201E',
+  muted: '#5B6D68',
 };
 
 const DARK = {
-  you: '#14989A',
+  you: '#1A9C83',
   them: '#C9831F',
-  grid: '#1C2A40',
-  axis: '#8D9BB0',
-  surface: '#0F1B2D',
-  tooltipBg: '#0A1322',
-  tooltipBorder: '#33415A',
-  ink: '#F7F9FC',
-  muted: '#8D9BB0',
+  grid: '#1D2C29',
+  axis: '#84968F',
+  surface: '#12201E',
+  tooltipBg: '#0A1416',
+  tooltipBorder: '#33433F',
+  ink: '#F3F5F4',
+  muted: '#84968F',
 };
 
 export type ChartTheme = typeof LIGHT;
@@ -43,7 +43,7 @@ export function tooltipStyle(t: ChartTheme) {
       backgroundColor: t.tooltipBg,
       border: `1px solid ${t.tooltipBorder}`,
       borderRadius: 8,
-      boxShadow: '0 8px 24px -12px rgb(15 27 45 / 0.35)',
+      boxShadow: '0 8px 24px -12px rgb(10 20 22 / 0.35)',
       color: t.ink,
       fontSize: 13,
     },

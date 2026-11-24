@@ -5,21 +5,35 @@ import { Moon, Sun, Sparkles, KeyRound } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { AIMeta } from '../../types';
 
-/** The GitVanta mark: a branch whose tip is the score. */
+/** Three columns of contribution cells, stepping up to the right: a score rising. */
+const MARK_CELLS: Array<[number, number, number]> = [
+  // [column, row, level]
+  [0, 0, 0], [1, 0, 0], [2, 0, 4],
+  [0, 1, 0], [1, 1, 3], [2, 1, 4],
+  [0, 2, 2], [1, 2, 3], [2, 2, 4],
+];
+
+/** The GitVanta mark. Uses the heat ramp, so it follows the theme. */
 export const LogoMark: React.FC<{ className?: string }> = ({ className }) => (
-  <svg viewBox="0 0 32 32" className={clsx('h-8 w-8', className)} aria-hidden="true">
-    <rect width="32" height="32" rx="8" fill="#0E7C7B" />
-    <path d="M10 23V9m0 14c0-5 12-3 12-9" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
-    <circle cx="10" cy="9" r="2.6" fill="#fff" />
-    <circle cx="22" cy="12" r="3.2" fill="#E8A33D" />
-    <circle cx="10" cy="23" r="2.6" fill="#fff" />
+  <svg viewBox="0 0 32 32" className={clsx('h-7 w-7', className)} aria-hidden="true">
+    {MARK_CELLS.map(([c, r, l]) => (
+      <rect
+        key={`${c}${r}`}
+        x={1 + c * 10.5}
+        y={1 + r * 10.5}
+        width="9"
+        height="9"
+        rx="2"
+        style={{ fill: `var(--heat-${l})` }}
+      />
+    ))}
   </svg>
 );
 
 export const Logo: React.FC<{ to?: string; className?: string }> = ({ to = '/', className }) => (
-  <Link to={to} className={clsx('flex items-center gap-2 rounded-md', className)} aria-label="GitVanta home">
+  <Link to={to} className={clsx('flex items-center gap-2.5 rounded-md', className)} aria-label="GitVanta home">
     <LogoMark />
-    <span className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">GitVanta</span>
+    <span className="font-display text-[1.15rem] text-gray-900 dark:text-white">GitVanta</span>
   </Link>
 );
 
