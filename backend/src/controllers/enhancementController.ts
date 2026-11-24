@@ -4,6 +4,7 @@ import { resolveAIForUser, getAIStatusForUser } from '../services/userAIService'
 import { describeAI } from '../ai';
 import { AuthenticatedRequest, GitHubRepository, IUser } from '../types';
 import { NotFoundError } from '../utils/errors';
+import { AnalysisReport, RepoInsight } from '../models';
 
 async function findOwnRepo(user: IUser, repoName: string): Promise<GitHubRepository> {
   const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
@@ -184,4 +185,51 @@ function calculateBasicReadmeScore(content: string): number {
   if (lower.includes('license')) score += 10;
   if (lower.includes('contributing')) score += 10;
   return Math.min(100, score);
+}
+
+const MAX_REVIEWED_REPOS = 30;
+
+/** Rate every analysed repository (up to 30) in one AI request; cached on the report. */
+export async function reviewRepositories(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const analysis: any = await analysisService.getLatestAnalysis(user._id);
+  if (!analysis) throw new NotFoundError('No analysis found. Run an analysis first.');
+
+  const ai = await resolveAIForUser(user);
+  const insights = await RepoInsight.find({ userId: user._id }).lean();
+  const byName = new Map(insights.map((i: any) => [i.repoName, i]));
+
+  const repos = [...(analysis.repositories ?? [])]
+    .sort((x: any, y: any) => new Date(y.pushedAt || 0).getTime() - new Date(x.pushedAt || 0).getTime())
+    .slice(0, MAX_REVIEWED_REPOS);
+
+  const readmes = await Promise.all(
+    repos.map((r: any) => githubService.getReadmeContent(user.accessToken, user.username, r.name).catch(() => null))
+  );
+
+  const items = await aiService.reviewRepositories(
+    ai,
+    repos.map((r: any, i: number) => {
+      const insight: any = byName.get(r.name);
+      const readme = readmes[i] || '';
+      return {
+        name: r.name,
+        description: r.description,
+        language: r.language,
+        topics: r.topics || [],
+        stars: r.stars || 0,
+        hasReadme: !!readme,
+        readmeLength: readme.length,
+        readmeExcerpt: readme.replace(/\s+/g, ' ').slice(0, 400),
+        hasLicense: !!insight?.hasLicense,
+        hasTests: !!insight?.hasTests,
+        hasContributing: !!insight?.hasContributing,
+        lastPush: r.pushedAt || null,
+      };
+    })
+  );
+
+  const reviews = { items, ai: describeAI(ai), generatedAt: new Date() };
+  await AnalysisReport.updateOne({ _id: analysis._id }, { $set: { aiRepoReviews: reviews } });
+  res.json({ success: true, data: reviews, ai: reviews.ai });
 }

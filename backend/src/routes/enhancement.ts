@@ -19,5 +19,6 @@ router.post('/resume', validate({ query: resumeQuery }), aiLimiter, asyncHandler
 router.post('/summary', aiLimiter, asyncHandler(enhancementController.generatePortfolioSummary));
 router.post('/roadmap', aiLimiter, asyncHandler(enhancementController.generateImprovementRoadmap));
 router.post('/description/:repoName', repo, aiLimiter, asyncHandler(enhancementController.generateProjectDescription));
+router.post('/repo-reviews', aiLimiter, asyncHandler(enhancementController.reviewRepositories));
 
 export default router;

@@ -166,6 +166,12 @@ export interface AnalysisReport extends Document {
   badges: Badge[];
   repositories: AnalyzedRepository[];
   quickWins?: QuickWinsResult;
+  /** Cached AI ratings for each repository. */
+  aiRepoReviews?: {
+    items: import('../services/aiService').RepoReview[];
+    ai: import('../ai/types').AIMeta;
+    generatedAt: Date;
+  };
   /** Cached AI headline/summary for the professional view. */
   aiSummary?: {
     headline: string;

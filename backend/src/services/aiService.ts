@@ -342,7 +342,83 @@ Return ONLY the description text, no JSON or formatting.`;
   }
 }
 
+export interface RepoReviewInput {
+  name: string;
+  description: string | null;
+  language: string | null;
+  topics: string[];
+  stars: number;
+  hasReadme: boolean;
+  readmeLength: number;
+  readmeExcerpt: string;
+  hasLicense: boolean;
+  hasTests: boolean;
+  hasContributing: boolean;
+  lastPush: string | null;
+}
+
+export interface RepoReview {
+  name: string;
+  rating: number;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+}
+
+/**
+ * Rate many repositories in a single AI request (one call per analysis,
+ * instead of one per repo).
+ */
+export async function reviewRepositories(ai: ResolvedAI, repos: RepoReviewInput[]): Promise<RepoReview[]> {
+  const lines = repos.map((r) =>
+    JSON.stringify({
+      name: r.name,
+      description: r.description || '',
+      language: r.language || '',
+      topics: r.topics.slice(0, 6),
+      stars: r.stars,
+      readme: r.hasReadme ? `${r.readmeLength} chars: ${r.readmeExcerpt}` : 'none',
+      license: r.hasLicense,
+      tests: r.hasTests,
+      contributing: r.hasContributing,
+      lastPush: r.lastPush,
+    })
+  );
+
+  const prompt = `You are a senior engineer reviewing a developer's GitHub repositories as a hiring manager would.
+
+Rate each repository from 1 to 10 on how well it presents the developer's skills: clarity of purpose, documentation, signs of quality (tests, license), and how maintained it looks. Be honest and specific; a bare repo with no README should score low.
+
+Repositories (one JSON object per line):
+${lines.join('\n')}
+
+Return JSON only, in this exact shape, with one entry per repository and the same names:
+{
+  "reviews": [
+    {"name": "repo-name", "rating": 7, "summary": "one sentence verdict", "strengths": ["up to 2 short points"], "improvements": ["up to 3 short, concrete actions"]}
+  ]
+}`;
+
+  try {
+    const result = await generateJson<{ reviews: RepoReview[] }>(ai, prompt, { maxTokens: 8192 });
+    const known = new Set(repos.map((r) => r.name));
+    return (result.reviews ?? [])
+      .filter((r) => r && known.has(r.name))
+      .map((r) => ({
+        name: r.name,
+        rating: Math.min(10, Math.max(1, Math.round(Number(r.rating) || 1))),
+        summary: String(r.summary ?? '').slice(0, 300),
+        strengths: (r.strengths ?? []).slice(0, 2).map((x) => String(x).slice(0, 160)),
+        improvements: (r.improvements ?? []).slice(0, 3).map((x) => String(x).slice(0, 200)),
+      }));
+  } catch (error) {
+    logger.error("Failed to review repositories:", error);
+    rethrow(error, "Failed to review repositories with AI");
+  }
+}
+
 export default {
+  reviewRepositories,
   enhanceReadme,
   generateResumeBullets,
   generatePortfolioSummary,

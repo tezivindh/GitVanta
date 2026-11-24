@@ -94,8 +94,12 @@ export async function generateText(
   return response.content;
 }
 
-export async function generateJson<T>(ai: ResolvedAI, prompt: string): Promise<T> {
-  const response = await ai.provider.complete(prompt, { json: true });
+export async function generateJson<T>(
+  ai: ResolvedAI,
+  prompt: string,
+  options: { maxTokens?: number } = {}
+): Promise<T> {
+  const response = await ai.provider.complete(prompt, { json: true, ...options });
   try {
     return extractJson<T>(response.content);
   } catch {
