@@ -51,7 +51,19 @@ interface CodeQualityInput {
   languages: Record<string, number>[];
   hasTests: boolean[];
   hasLinting: boolean[];
-  avgCommitSize: number[];
+  /** First lines of the user's recent commit messages (sampled). */
+  commitMessages: string[];
+}
+
+const GENERIC_COMMIT = /^(update|updated|updates|fix|fixed|fixes|wip|changes|change|commit|test|tests|minor|misc|stuff|initial commit|first commit|init|done|final|temp|.)(\s+\S+)?$/i;
+
+/** A message that says what changed: 3+ words, 12+ chars, not generic. */
+export function isDescriptiveCommitMessage(message: string): boolean {
+  const first = message.split('\n')[0].trim();
+  if (first.length < 12) return false;
+  if (first.split(/\s+/).length < 3) return false;
+  if (/^Merge (branch|pull request)/i.test(first)) return false;
+  return !GENERIC_COMMIT.test(first);
 }
 
 export function scoreCodeQuality(input: CodeQualityInput): {
@@ -104,23 +116,26 @@ export function scoreCodeQuality(input: CodeQualityInput): {
   });
   totalScore += testScore;
 
-  // 4. Commit Quality (25 points max)
-  const avgCommits = input.avgCommitSize.length > 0 
-    ? input.avgCommitSize.reduce((a, b) => a + b, 0) / input.avgCommitSize.length 
-    : 0;
-  // Ideal commit size is between 50-200 lines
-  let commitScore = 25;
-  if (avgCommits < 10) commitScore = 10;
-  else if (avgCommits > 500) commitScore = 15;
-  else if (avgCommits >= 50 && avgCommits <= 200) commitScore = 25;
-  else commitScore = 20;
-  
+  // 4. Commit message quality (25 points max)
+  // Share of recent commits whose message explains the change, rather than
+  // "update", "fix" or "wip".
+  const sampled = input.commitMessages.length;
+  const descriptive = input.commitMessages.filter(isDescriptiveCommitMessage).length;
+  const messagePct = sampled > 0 ? (descriptive / sampled) * 100 : 0;
+  const commitScore = (messagePct / 100) * 25;
+
   breakdown.push({
-    metric: 'Commit Quality',
+    metric: 'Commit Messages',
     score: Math.round(commitScore),
     maxScore: 25,
-    description: `Average commit size suggests ${commitScore >= 20 ? 'good' : 'improvable'} practices`,
-    suggestion: commitScore < 20 ? 'Make smaller, more focused commits' : undefined,
+    description:
+      sampled > 0
+        ? `${Math.round(messagePct)}% of ${sampled} recent commits have descriptive messages`
+        : 'No recent commits found to assess',
+    suggestion:
+      messagePct < 70
+        ? 'Write commit messages that say what changed and why, e.g. "Add retry to payment webhook"'
+        : undefined,
   });
   totalScore += commitScore;
 
@@ -258,7 +273,7 @@ export function scoreActivity(input: ActivityInput): {
     metric: 'Commit Consistency',
     score: Math.round(consistencyScore),
     maxScore: 35,
-    description: `${uniqueCommitDays} unique days with commits`,
+    description: `${uniqueCommitDays} days with commits in the last year (sampled from your most active repos)`,
     suggestion: uniqueCommitDays < 50 ? 'Maintain a more consistent coding schedule' : undefined,
   });
   totalScore += consistencyScore;

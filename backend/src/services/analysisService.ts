@@ -88,13 +88,15 @@ async function computePortfolio(
     })
   );
 
+  const commitSample = await sampleRecentCommits(accessToken, username, ownRepos);
+
   const scoringInput: FullScoringInput = {
     codeQuality: {
       repos: ownRepos,
       languages: repoDetails.map(d => d.languages),
       hasTests: repoDetails.map(d => d.hasTests),
-      hasLinting: repoDetails.map(() => false), // Would need deeper analysis
-      avgCommitSize: repoDetails.map(() => 100), // Default value
+      hasLinting: repoDetails.map(() => false),
+      commitMessages: commitSample.messages,
     },
     documentation: {
       repos: ownRepos,
@@ -106,7 +108,7 @@ async function computePortfolio(
     },
     activity: {
       repos: ownRepos,
-      commitDates: repoDetails.map(() => [new Date()]), // Simplified
+      commitDates: commitSample.dates,
       lastPushDates: ownRepos.map(r => new Date(r.pushed_at)),
       accountAge: Math.floor(
         (Date.now() - new Date(githubUser.created_at).getTime()) / (1000 * 60 * 60 * 24)
@@ -251,6 +253,40 @@ export async function analyzePortfolio(
   logger.info(`Portfolio analysis completed for ${username}. Score: ${overallScore}`);
 
   return result;
+}
+
+const COMMIT_SAMPLE_REPOS = 10;
+
+/**
+ * The user's own commits from their most recently pushed repos, within the
+ * last year: real dates for consistency and messages for message quality.
+ */
+async function sampleRecentCommits(
+  accessToken: string,
+  username: string,
+  repos: GitHubRepository[]
+): Promise<{ dates: Date[][]; messages: string[] }> {
+  const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+  const recent = [...repos]
+    .filter((r) => new Date(r.pushed_at).getTime() > oneYearAgo)
+    .sort((a, b) => new Date(b.pushed_at).getTime() - new Date(a.pushed_at).getTime())
+    .slice(0, COMMIT_SAMPLE_REPOS);
+
+  const perRepo = await Promise.all(
+    recent.map((r) => githubService.getRepositoryCommits(accessToken, username, r.name, 100))
+  );
+
+  const me = username.toLowerCase();
+  const dates: Date[][] = [];
+  const messages: string[] = [];
+  for (const commits of perRepo) {
+    const mine = commits.filter(
+      (c) => c.author?.login?.toLowerCase() === me && new Date(c.commit.author.date).getTime() > oneYearAgo
+    );
+    dates.push(mine.map((c) => new Date(c.commit.author.date)));
+    messages.push(...mine.map((c) => c.commit.message.split('\n')[0]));
+  }
+  return { dates, messages };
 }
 
 /**
