@@ -135,6 +135,10 @@ const analysisReportSchema = new Schema<IAnalysisReport>(
     improvements: [improvementSchema],
     badges: [badgeSchema],
     repositories: [analyzedRepositorySchema],
+    quickWins: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
     generatedAt: {
       type: Date,
       default: Date.now,

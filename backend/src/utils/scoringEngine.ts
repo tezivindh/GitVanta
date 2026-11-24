@@ -23,7 +23,7 @@ import {
 // WEIGHT CONFIGURATION
 // =====================================================
 
-const CATEGORY_WEIGHTS = {
+export const CATEGORY_WEIGHTS = {
   codeQuality: 0.25,
   documentation: 0.20,
   activity: 0.20,
@@ -91,7 +91,9 @@ export function scoreCodeQuality(input: CodeQualityInput): {
 
   // 3. Testing Presence (25 points max)
   const reposWithTests = input.hasTests.filter(Boolean).length;
-  const testPercentage = repoCount > 0 ? (reposWithTests / repoCount) * 100 : 0;
+  // Only the repos that were inspected have test data, so divide by those.
+  const testedCount = input.hasTests.length;
+  const testPercentage = testedCount > 0 ? (reposWithTests / testedCount) * 100 : 0;
   const testScore = (testPercentage / 100) * 25;
   breakdown.push({
     metric: 'Test Coverage Presence',
@@ -151,7 +153,7 @@ export function scoreDocumentation(input: DocumentationInput): {
 
   // 1. README Presence (30 points max)
   const reposWithReadme = input.hasReadme.filter(Boolean).length;
-  const readmePercentage = (reposWithReadme / repoCount) * 100;
+  const readmePercentage = (reposWithReadme / (input.hasReadme.length || 1)) * 100;
   const readmePresenceScore = (readmePercentage / 100) * 30;
   breakdown.push({
     metric: 'README Presence',
@@ -184,7 +186,7 @@ export function scoreDocumentation(input: DocumentationInput): {
 
   // 3. License Presence (20 points max)
   const reposWithLicense = input.hasLicense.filter(Boolean).length;
-  const licensePercentage = (reposWithLicense / repoCount) * 100;
+  const licensePercentage = (reposWithLicense / (input.hasLicense.length || 1)) * 100;
   const licenseScore = (licensePercentage / 100) * 20;
   breakdown.push({
     metric: 'License Presence',
@@ -197,7 +199,7 @@ export function scoreDocumentation(input: DocumentationInput): {
 
   // 4. Contributing Guidelines (20 points max)
   const reposWithContributing = input.hasContributing.filter(Boolean).length;
-  const contributingPercentage = (reposWithContributing / repoCount) * 100;
+  const contributingPercentage = (reposWithContributing / (input.hasContributing.length || 1)) * 100;
   const contributingScore = (contributingPercentage / 100) * 20;
   breakdown.push({
     metric: 'Contributing Guidelines',

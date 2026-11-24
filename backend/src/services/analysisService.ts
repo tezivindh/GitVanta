@@ -24,8 +24,10 @@ import {
   AnalyzedRepository,
 } from '../types';
 import logger from '../utils/logger';
+import { computeQuickWins, QuickWinsResult } from '../utils/quickWins';
 
 export interface PortfolioResult {
+  quickWins: QuickWinsResult;
   overallScore: number;
   categoryScores: CategoryScores;
   detailedBreakdown: DetailedBreakdown;
@@ -137,6 +139,21 @@ async function computePortfolio(
   // Calculate scores
   const { overallScore, categoryScores, detailedBreakdown } = calculateFullScore(scoringInput);
 
+  // Concrete per-repo fixes, with the real score gain from re-running the engine.
+  const quickWins = computeQuickWins(
+    scoringInput,
+    repoDetails.map((d) => ({
+      name: d.repo.name,
+      isPrivate: !!d.repo.private,
+      hasReadme: !!d.readme,
+      readmeLength: d.readme?.length || 0,
+      hasLicense: !!d.repo.license,
+      hasTests: d.hasTests,
+      hasContributing: d.hasContributing,
+      topicCount: d.repo.topics?.length || 0,
+    }))
+  );
+
   // Extract skills
   const skills = extractSkills(
     repoDetails.map(d => d.languages),
@@ -183,6 +200,7 @@ async function computePortfolio(
     improvements,
     badges,
     repositories,
+    quickWins,
     repoDetails,
   };
 }
@@ -205,6 +223,7 @@ export async function analyzePortfolio(
     improvements,
     badges,
     repositories,
+    quickWins,
   } = result;
 
   // Save a new report each run so users can track progress over time.
@@ -218,6 +237,7 @@ export async function analyzePortfolio(
     improvements,
     badges,
     repositories,
+    quickWins,
     generatedAt: new Date(),
   });
   await pruneOldReports(userId);

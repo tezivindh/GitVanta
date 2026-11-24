@@ -1,3 +1,4 @@
+import type { QuickWinsResult } from '../utils/quickWins';
 // GITVANTA - TYPE DEFINITIONS
 import { Request } from 'express';
 import { Document, Types } from 'mongoose';
@@ -33,7 +34,7 @@ export interface IUserAISettings {
   baseUrl?: string;
   /** AES-256-GCM ciphertext; never selected by default, never returned. */
   encryptedKey?: string;
-  /** Masked form for display, e.g. "sk-…a1b2". */
+  /** Masked form for display, e.g. "sk-â€¦a1b2". */
   keyHint?: string;
   updatedAt?: Date;
   lastTestedAt?: Date;
@@ -153,6 +154,7 @@ export interface AnalysisReport extends Document {
   improvements: Improvement[];
   badges: Badge[];
   repositories: AnalyzedRepository[];
+  quickWins?: QuickWinsResult;
   generatedAt: Date;
 }
 
