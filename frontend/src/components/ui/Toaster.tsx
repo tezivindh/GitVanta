@@ -19,7 +19,7 @@ const Toaster: React.FC = () => {
     <div
       aria-live="polite"
       aria-relevant="additions"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex flex-col items-center gap-2 p-4 sm:items-end"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex flex-col items-center gap-2 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:items-end"
     >
       {toasts.map((t) => {
         const Icon = icons[t.kind];
@@ -27,7 +27,7 @@ const Toaster: React.FC = () => {
           <div
             key={t.id}
             role={t.kind === 'error' ? 'alert' : 'status'}
-            className="pointer-events-auto flex w-full max-w-sm animate-toast-in items-start gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 transition-[opacity,transform] duration-400 ease-[ease] starting:translate-y-full starting:opacity-0 rounded-lg border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900"
           >
             <Icon className={clsx('mt-0.5 h-5 w-5 shrink-0', tones[t.kind])} aria-hidden="true" />
             <div className="min-w-0 flex-1">

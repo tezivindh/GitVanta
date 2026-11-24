@@ -20,6 +20,10 @@ function resolve(mode: ThemeMode): boolean {
 
 function apply(dark: boolean) {
   document.documentElement.classList.toggle('dark', dark);
+  // Keep the status bar / browser chrome on the theme the page is actually in.
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => {
+    m.content = dark ? '#0a1416' : '#f3f5f4';
+  });
 }
 
 export const useThemeStore = create<ThemeState>()(

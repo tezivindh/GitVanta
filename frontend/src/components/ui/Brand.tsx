@@ -44,7 +44,7 @@ export const ThemeToggle: React.FC<{ className?: string }> = ({ className }) => 
       type="button"
       onClick={toggle}
       className={clsx(
-        'rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
+        'inline-flex size-10 items-center justify-center rounded-md text-gray-600 transition-[background-color,color,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.94] pointer-coarse:size-11 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
         className
       )}
       aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}

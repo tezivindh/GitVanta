@@ -173,7 +173,7 @@ const PublicProfilePage: React.FC = () => {
   };
 
   const nav = (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
+    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 pt-[env(safe-area-inset-top)] backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo />
         <div className="flex items-center gap-1 sm:gap-2">
@@ -182,7 +182,7 @@ const PublicProfilePage: React.FC = () => {
             <button
               type="button"
               onClick={copyLink}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gray-800 hover:bg-gray-200/60 dark:text-gray-200 dark:hover:bg-gray-800"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gray-800 transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-200/60 active:scale-[0.97] pointer-coarse:h-11 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
               {copied ? 'Link copied' : 'Copy link'}
@@ -191,7 +191,7 @@ const PublicProfilePage: React.FC = () => {
           {!viewer && (
             <Link
               to="/"
-              className="hidden h-9 items-center rounded-md bg-gray-950 px-3.5 text-sm font-semibold text-white hover:bg-gray-800 sm:inline-flex dark:bg-primary-400 dark:text-gray-950 dark:hover:bg-primary-300"
+              className="hidden h-10 items-center rounded-md bg-gray-950 px-3.5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-800 active:scale-[0.97] sm:inline-flex dark:bg-primary-400 dark:text-gray-950 dark:hover:bg-primary-300"
             >
               Get your score
             </Link>
@@ -203,7 +203,7 @@ const PublicProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-dvh bg-gray-50 dark:bg-gray-950">
         {nav}
         <LoadingRegion label="Loading profile" className="mx-auto max-w-6xl space-y-6 px-4 py-14 sm:px-6">
           <div className="flex items-center gap-6">
@@ -222,7 +222,7 @@ const PublicProfilePage: React.FC = () => {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-dvh bg-gray-50 dark:bg-gray-950">
         {nav}
         <main className="mx-auto max-w-lg px-4 py-20">
           {error?.notFound ? (
@@ -248,7 +248,7 @@ const PublicProfilePage: React.FC = () => {
   const repos = [...profile.repositories].sort((a, b) => Number(a.isPrivate) - Number(b.isPrivate) || b.stars - a.stars);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="min-h-dvh bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       {nav}
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
         {/* Identity and score */}

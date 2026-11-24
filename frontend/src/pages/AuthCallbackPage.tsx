@@ -64,7 +64,7 @@ const AuthCallbackPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950">
+      <div className="min-h-dvh flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950">
         <div className="max-w-md w-full">
           <Alert variant="error" title="Sign-in did not complete">
             {error}

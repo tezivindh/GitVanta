@@ -60,7 +60,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
       <div className={clsx('w-full bg-gray-200 dark:bg-gray-700 rounded-full', sizes[size])}>
         <div
           className={clsx(
-            'rounded-full transition-all duration-300',
+            'rounded-full transition-[width] duration-500 ease-[var(--ease-out)]',
             getColor(),
             sizes[size]
           )}

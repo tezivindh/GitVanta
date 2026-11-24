@@ -88,20 +88,20 @@ const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-gray-950/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 animate-fade-in bg-gray-950/60 backdrop-blur-xs"
         onClick={closeOnOverlay ? onClose : undefined}
         aria-hidden="true"
       />
 
       {/* Modal container */}
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-dvh items-center justify-center p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div
           ref={dialogRef}
           tabIndex={-1}
           className={clsx(
-            'relative w-full bg-white dark:bg-gray-900 dark:ring-1 dark:ring-gray-800 rounded-xl shadow-2xl focus:outline-none',
-            'transform transition-all',
-            'animate-in duration-200',
+            'relative w-full bg-white dark:bg-gray-900 dark:ring-1 dark:ring-gray-800 rounded-lg shadow-2xl focus:outline-none',
+            // Centered, so it scales from the center (modals are the exception to origin-aware).
+            'animate-dialog-in',
             sizes[size],
             className
           )}

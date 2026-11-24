@@ -80,7 +80,7 @@ const SignInButton: React.FC<{ className?: string }> = ({ className }) => (
   <Link
     to="/login"
     className={clsx(
-      'inline-flex h-12 items-center gap-2.5 rounded-md bg-gray-950 px-5 text-[15px] font-semibold text-white transition-colors hover:bg-gray-800',
+      'inline-flex h-12 items-center gap-2.5 rounded-md bg-gray-950 px-5 text-[15px] font-semibold text-white transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-800 active:scale-[0.97]',
       'dark:bg-primary-400 dark:text-gray-950 dark:hover:bg-primary-300',
       className
     )}
@@ -139,7 +139,7 @@ const CopySnippet: React.FC<{ text: string }> = ({ text }) => {
       <button
         type="button"
         onClick={copy}
-        className="flex shrink-0 items-center gap-1.5 border-l border-gray-200 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900"
+        className="flex shrink-0 items-center gap-1.5 border-l border-gray-200 px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 active:bg-gray-100 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900 dark:active:bg-gray-800"
         aria-live="polite"
       >
         {copied ? <Check className="h-4 w-4 text-primary-600 dark:text-primary-400" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
@@ -286,7 +286,7 @@ const LandingPage: React.FC = () => {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="min-h-dvh overflow-x-clip bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow dark:focus:bg-gray-900"
@@ -294,7 +294,7 @@ const LandingPage: React.FC = () => {
         Skip to content
       </a>
 
-      <header className="sticky top-0 z-50 border-b border-gray-200/70 bg-gray-50/85 backdrop-blur-md dark:border-gray-800/70 dark:bg-gray-950/85">
+      <header className="sticky top-0 z-50 border-b border-gray-200/70 bg-gray-50/85 pt-[env(safe-area-inset-top)] backdrop-blur-md dark:border-gray-800/70 dark:bg-gray-950/85">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Logo />
           <nav aria-label="Main" className="hidden items-center gap-7 text-sm text-gray-600 md:flex dark:text-gray-400">
@@ -308,7 +308,7 @@ const LandingPage: React.FC = () => {
             <ThemeToggle />
             <Link
               to="/login"
-              className="inline-flex h-9 items-center rounded-md px-3 text-sm font-semibold text-gray-900 hover:bg-gray-200/60 dark:text-gray-100 dark:hover:bg-gray-800"
+              className="inline-flex h-10 items-center rounded-md px-3 text-sm font-semibold text-gray-900 transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-200/60 active:scale-[0.97] pointer-coarse:h-11 dark:text-gray-100 dark:hover:bg-gray-800"
             >
               Sign in
             </Link>
@@ -560,10 +560,10 @@ const LandingPage: React.FC = () => {
                     {f.q}
                     <span
                       aria-hidden="true"
-                      className="relative h-3.5 w-3.5 shrink-0 before:absolute before:inset-x-0 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:bg-current after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-current after:transition-transform group-open:after:scale-y-0"
+                      className="relative h-3.5 w-3.5 shrink-0 before:absolute before:inset-x-0 before:top-1/2 before:h-0.5 before:-translate-y-1/2 before:bg-current after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:bg-current after:transition-transform after:duration-200 after:ease-[var(--ease-out)] group-open:after:scale-y-0"
                     />
                   </summary>
-                  <p className="max-w-2xl pb-6 leading-relaxed text-gray-600 dark:text-gray-400">{f.a}</p>
+                  <p className="max-w-2xl animate-fade-in pb-6 leading-relaxed text-gray-600 dark:text-gray-400">{f.a}</p>
                 </details>
               ))}
             </div>
@@ -581,7 +581,7 @@ const LandingPage: React.FC = () => {
             </div>
             <Link
               to="/login"
-              className="inline-flex h-12 shrink-0 items-center gap-2.5 self-start rounded-md bg-primary-400 px-5 text-[15px] font-semibold text-gray-950 transition-colors hover:bg-primary-300 lg:self-auto"
+              className="inline-flex h-12 shrink-0 items-center gap-2.5 self-start rounded-md bg-primary-400 px-5 text-[15px] font-semibold text-gray-950 transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-primary-300 active:scale-[0.97] lg:self-auto"
             >
               <Github className="h-[18px] w-[18px]" aria-hidden="true" />
               Sign in with GitHub

@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="color-scheme" content="light dark" />
     <title>GitVanta: your GitHub portfolio, scored and explained</title>
     <meta name="description" content="GitVanta scores your GitHub portfolio from 0 to 100 across six categories, shows exactly how the score was calculated, and lists the fixes that raise it. Free, with a shareable public profile." />
     <link rel="canonical" href="__SITE_URL__/" />
@@ -37,6 +38,10 @@
           var mode = state.mode || (state.darkMode === true ? 'dark' : state.darkMode === false ? 'light' : 'system');
           var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
+          // The browser chrome follows the in-app theme, not only the OS one.
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
+            m.setAttribute('content', dark ? '#0a1416' : '#f3f5f4');
+          });
         } catch (e) {}
       })();
     </script>

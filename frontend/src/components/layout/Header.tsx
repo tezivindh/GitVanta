@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 const itemClass =
-  'flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 focus-visible:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800';
+  'flex w-full items-center gap-2 px-4 py-2 pointer-coarse:py-3 text-sm text-gray-700 hover:bg-gray-50 focus-visible:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800';
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
+    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 pt-[env(safe-area-inset-top)] backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
       <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-2">
           {isAuthenticated && (
@@ -57,7 +57,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
               aria-label={isMenuOpen ? 'Close navigation' : 'Open navigation'}
               aria-expanded={!!isMenuOpen}
               aria-controls="dashboard-sidebar"
-              className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="inline-flex size-10 items-center justify-center rounded-md text-gray-600 transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-100 hover:text-gray-900 active:scale-[0.94] pointer-coarse:size-11 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
             >
               {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
                 <div
                   ref={menuRef}
                   role="menu"
-                  className="absolute right-0 mt-2 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                  className="absolute right-0 mt-2 w-56 origin-top-right overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg transition-[opacity,transform] duration-150 ease-[var(--ease-out)] starting:scale-95 starting:opacity-0 dark:border-gray-700 dark:bg-gray-900"
                 >
                   <div className="border-b border-gray-100 px-4 py-2 dark:border-gray-800">
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{user.displayName}</p>

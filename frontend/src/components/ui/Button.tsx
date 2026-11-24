@@ -27,7 +27,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const isLoadingState = isLoading || loading || false;
   const baseStyles =
-    'inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold rounded-md transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:cursor-not-allowed';
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold rounded-md transition-[background-color,color,border-color,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97] disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variants = {
     primary: 'bg-gray-950 text-white hover:bg-gray-800 dark:bg-primary-400 dark:text-gray-950 dark:hover:bg-primary-300',

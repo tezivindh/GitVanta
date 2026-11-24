@@ -46,7 +46,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
+    <div className="flex min-h-dvh flex-col bg-gray-50 pt-[env(safe-area-inset-top)] dark:bg-gray-950">
       <div className="flex justify-end p-4">
         <ThemeToggle />
       </div>
