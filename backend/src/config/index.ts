@@ -17,6 +17,10 @@ interface Config {
         callbackUrl : string;
     };
     frontendUrl : string;
+    /** Origins allowed by CORS. Defaults to FRONTEND_URL. */
+    corsOrigins : string[];
+    /** Express "trust proxy" setting; 1 = one reverse proxy (Render, Vercel, etc). */
+    trustProxy : number | boolean;
     redis : {
         url :string;
         enabled:boolean;
@@ -25,6 +29,14 @@ interface Config {
         windowMs : number;
         maxRequest : number;
     }
+}
+
+function parseTrustProxy(value: string | undefined, isProd: boolean): number | boolean {
+    if (value === undefined || value === '') return isProd ? 1 : false;
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    const n = parseInt(value, 10);
+    return Number.isFinite(n) ? n : false;
 }
 
 const config : Config = {
@@ -39,6 +51,11 @@ const config : Config = {
         callbackUrl : process.env.GITHUB_CALLBACK_URL || 'http://localhost:5000/api/auth/github/callback',
     },
     frontendUrl : process.env.FRONTEND_URL || 'http://localhost:5173',
+    corsOrigins : (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
+        .split(',')
+        .map((o) => o.trim().replace(/\/+$/, ''))
+        .filter(Boolean),
+    trustProxy : parseTrustProxy(process.env.TRUST_PROXY, process.env.NODE_ENV === 'production'),
     redis : {
         url : process.env.REDIS_URL || "redis://localhost:6379",
         enabled : process.env.REDIS_ENABLED === "true"

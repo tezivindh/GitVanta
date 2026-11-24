@@ -24,7 +24,7 @@ export class AIProviderError extends AppError {
         : kind === 'rate_limit'
           ? 429
           : 502;
-    super(message, status);
+    super(message, status, `AI_${kind.toUpperCase()}`);
     this.kind = kind;
   }
 }

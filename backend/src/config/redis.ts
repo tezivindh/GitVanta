@@ -103,3 +103,13 @@ export default {
   cacheDelete,
   cacheClear,
 };
+
+export async function closeRedis(): Promise<void> {
+    if (!redisClient) return;
+    try {
+        await redisClient.quit();
+    } catch {
+        redisClient.disconnect();
+    }
+    redisClient = null;
+}

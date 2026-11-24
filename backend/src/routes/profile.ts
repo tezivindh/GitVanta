@@ -4,13 +4,16 @@ import { AnalysisReport } from '../models';
 import githubService from '../services/githubService';
 import logger from '../utils/logger';
 
+import { validate } from '../middleware/validate';
+import { usernameParams } from '../validation/schemas';
+
 const router = Router();
 
 /**
  * GET /api/profile/:username
  * Public endpoint — returns portfolio data for the given username
  */
-router.get('/:username', async (req: Request, res: Response) => {
+router.get('/:username', validate({ params: usernameParams }), async (req: Request, res: Response) => {
   const { username } = req.params;
 
   try {

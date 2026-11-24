@@ -69,8 +69,8 @@ export function scoreCodeQuality(input: CodeQualityInput): {
     metric: 'Repository Portfolio Size',
     score: Math.round(sizeScore),
     maxScore: 25,
-    description: `${repoCount} public repositories`,
-    suggestion: repoCount < 10 ? 'Consider creating more public repositories to showcase your work' : undefined,
+    description: `${repoCount} repositories`,
+    suggestion: repoCount < 10 ? 'Consider building more projects to showcase your work' : undefined,
   });
   totalScore += sizeScore;
 

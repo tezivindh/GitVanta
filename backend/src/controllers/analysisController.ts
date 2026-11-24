@@ -1,347 +1,103 @@
 import { Response } from 'express';
 import { analysisService, pdfService } from '../services';
 import { AuthenticatedRequest } from '../types';
-import logger from '../utils/logger';
+import { NotFoundError } from '../utils/errors';
 
-export async function analyzePortfolio(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  try {
-    const result = await analysisService.analyzePortfolio(
-      user._id,
-      user.username,
-      user.accessToken
-    );
-
-    res.json({
-      success: true,
-      data: result,
-    });
-  } catch (error: any) {
-    logger.error('Analysis error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to analyze portfolio',
-    });
+async function requireLatest(req: AuthenticatedRequest) {
+  const analysis = await analysisService.getLatestAnalysis(req.user!._id);
+  if (!analysis) {
+    throw new NotFoundError('No analysis found. Run an analysis first.');
   }
+  return analysis;
 }
 
-
-export async function getLatestAnalysis(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function analyzePortfolio(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-
-  try {
-    const analysis = await analysisService.getLatestAnalysis(user._id);
-
-    if (!analysis) {
-      res.status(404).json({
-        success: false,
-        error: 'No analysis found. Please run an analysis first.',
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: analysis,
-    });
-  } catch (error: any) {
-    logger.error('Get analysis error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get analysis',
-    });
-  }
+  const data = await analysisService.analyzePortfolio(user._id, user.username, user.accessToken);
+  res.json({ success: true, data });
 }
 
-
-export async function getRepoInsights(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  try {
-    const insights = await analysisService.getRepoInsights(user._id);
-
-    res.json({
-      success: true,
-      data: insights,
-    });
-  } catch (error: any) {
-    logger.error('Get insights error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get repository insights',
-    });
-  }
+export async function getLatestAnalysis(req: AuthenticatedRequest, res: Response): Promise<void> {
+  res.json({ success: true, data: await requireLatest(req) });
 }
 
-
-export async function getProfessionalProfile(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  try {
-    const profile = await analysisService.generateProfessionalProfile(
-      user._id,
-      user.username,
-      user.accessToken
-    );
-
-    res.json({
-      success: true,
-      data: profile,
-    });
-  } catch (error: any) {
-    logger.error('Professional profile error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate professional profile',
-    });
-  }
+export async function getRepoInsights(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const data = await analysisService.getRepoInsights(req.user!._id);
+  res.json({ success: true, data });
 }
 
-
-export async function compareProfiles(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function getProfessionalProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const { username: compareUsername } = req.params;
-
-  if (!compareUsername) {
-    res.status(400).json({
-      success: false,
-      error: 'Username to compare is required',
-    });
-    return;
-  }
-
-  try {
-    const comparison = await analysisService.compareProfiles(
-      user._id,
-      user.username,
-      compareUsername,
-      user.accessToken
-    );
-
-    res.json({
-      success: true,
-      data: comparison,
-    });
-  } catch (error: any) {
-    logger.error('Compare profiles error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to compare profiles',
-    });
-  }
+  const data = await analysisService.generateProfessionalProfile(user._id, user.username, user.accessToken);
+  res.json({ success: true, data });
 }
 
-
-export async function exportToPDF(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function compareProfiles(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-
-  try {
-    const analysis = await analysisService.getLatestAnalysis(user._id);
-
-    if (!analysis) {
-      res.status(404).json({
-        success: false,
-        error: 'No analysis found. Please run an analysis first.',
-      });
-      return;
-    }
-
-    const pdfBuffer = await pdfService.generatePDFReport({
-      username: user.username,
-      displayName: user.displayName,
-      avatarUrl: user.avatarUrl,
-      overallScore: analysis.overallScore,
-      categoryScores: analysis.categoryScores,
-      skills: analysis.skills,
-      badges: analysis.badges,
-      weaknesses: analysis.weaknesses,
-      improvements: analysis.improvements,
-      generatedAt: analysis.generatedAt,
-    });
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="portfolio-report-${user.username}.pdf"`
-    );
-    res.send(pdfBuffer);
-  } catch (error: any) {
-    logger.error('PDF export error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to export PDF',
-      details: error.message || 'Unknown error',
-    });
-  }
+  const { username } = req.params;
+  const data = await analysisService.compareProfiles(user._id, user.username, username, user.accessToken);
+  res.json({ success: true, data });
 }
 
-
-export async function getScoreBreakdown(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function exportToPDF(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
+  const analysis = await requireLatest(req);
 
-  try {
-    const analysis = await analysisService.getLatestAnalysis(user._id);
+  const pdfBuffer = await pdfService.generatePDFReport({
+    username: user.username,
+    displayName: user.displayName,
+    avatarUrl: user.avatarUrl,
+    overallScore: analysis.overallScore,
+    categoryScores: analysis.categoryScores,
+    skills: analysis.skills,
+    badges: analysis.badges,
+    weaknesses: analysis.weaknesses,
+    improvements: analysis.improvements,
+    generatedAt: analysis.generatedAt,
+  });
 
-    if (!analysis) {
-      res.status(404).json({
-        success: false,
-        error: 'No analysis found',
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        overallScore: analysis.overallScore,
-        categoryScores: analysis.categoryScores,
-        detailedBreakdown: analysis.detailedBreakdown,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Score breakdown error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get score breakdown',
-    });
-  }
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="gitvanta-report-${user.username}.pdf"`);
+  res.send(pdfBuffer);
 }
 
-
-export async function getSkills(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  try {
-    const analysis = await analysisService.getLatestAnalysis(user._id);
-
-    if (!analysis) {
-      res.status(404).json({
-        success: false,
-        error: 'No analysis found',
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        skills: analysis.skills,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get skills error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get skills',
-    });
-  }
-}
-
-
-export async function getBadges(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  try {
-    const analysis = await analysisService.getLatestAnalysis(user._id);
-
-    if (!analysis) {
-      res.status(404).json({
-        success: false,
-        error: 'No analysis found',
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        badges: analysis.badges,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get badges error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get badges',
-    });
-  }
-}
-
-export async function getImprovements(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  try {
-    const analysis = await analysisService.getLatestAnalysis(user._id);
-
-    if (!analysis) {
-      res.status(404).json({
-        success: false,
-        error: 'No analysis found',
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        weaknesses: analysis.weaknesses,
-        improvements: analysis.improvements,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get improvements error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get improvements',
-    });
-  }
-}
-
-export async function getHistory(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const limit = Math.min(Math.max(Number(req.query.limit) || 30, 1), 60);
-  const history = await analysisService.getAnalysisHistory(req.user!._id, limit);
-  const last = history[history.length - 1];
-  const prev = history[history.length - 2];
-
+export async function getScoreBreakdown(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const analysis = await requireLatest(req);
   res.json({
     success: true,
     data: {
-      points: history,
-      change: last && prev ? last.overallScore - prev.overallScore : null,
+      overallScore: analysis.overallScore,
+      categoryScores: analysis.categoryScores,
+      detailedBreakdown: analysis.detailedBreakdown,
     },
+  });
+}
+
+export async function getSkills(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const analysis = await requireLatest(req);
+  res.json({ success: true, data: { skills: analysis.skills } });
+}
+
+export async function getBadges(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const analysis = await requireLatest(req);
+  res.json({ success: true, data: { badges: analysis.badges } });
+}
+
+export async function getImprovements(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const analysis = await requireLatest(req);
+  res.json({
+    success: true,
+    data: { weaknesses: analysis.weaknesses, improvements: analysis.improvements },
+  });
+}
+
+export async function getHistory(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const { limit } = req.query as unknown as { limit: number };
+  const points = await analysisService.getAnalysisHistory(req.user!._id, limit);
+  const last = points[points.length - 1];
+  const prev = points[points.length - 2];
+  res.json({
+    success: true,
+    data: { points, change: last && prev ? last.overallScore - prev.overallScore : null },
   });
 }

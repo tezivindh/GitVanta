@@ -65,9 +65,9 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
-  },
+  // req.ip honours the "trust proxy" setting; reading X-Forwarded-For
+  // directly would let clients pick their own rate-limit bucket.
+  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 //strict for auth

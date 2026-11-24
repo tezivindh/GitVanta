@@ -6,7 +6,7 @@ import {
   GitHubSocialAccount,
 } from '../types';
 import logger from '../utils/logger';
-import { ExternalServiceError } from '../utils/errors';
+import { ExternalServiceError, NotFoundError } from '../utils/errors';
 import { cacheGet, cacheSet } from '../config/redis';
 
 const GITHUB_API_BASE = 'https://api.github.com';
@@ -61,6 +61,9 @@ export async function getUserRepositories(
     await cacheSet(cacheKey, response.data, { prefix: 'github', ttl: 3600 });
     return response.data;
   } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new NotFoundError(`GitHub user "${username}" does not exist.`);
+    }
     logger.error('Failed to get user repositories:', error.message);
     throw new ExternalServiceError('GitHub', 'Failed to fetch repositories');
   }
@@ -93,6 +96,7 @@ export async function getAllUserRepositories(
     await cacheSet(cacheKey, allRepos, { prefix: 'github', ttl: 3600 });
     return allRepos;
   } catch (error: any) {
+    if (error instanceof NotFoundError) throw error;
     logger.error('Failed to get all repositories:', error.message);
     throw new ExternalServiceError('GitHub', 'Failed to fetch all repositories');
   }
@@ -247,7 +251,10 @@ export async function getUserByUsername(
     await cacheSet(cacheKey, response.data, { prefix: 'github', ttl: 3600 });
     return response.data;
   } catch (error: any) {
-    logger.error(`Failed to get user ${username}:`, error.message);
+    if (error.response?.status === 404) {
+      throw new NotFoundError(`GitHub user "${username}" does not exist.`);
+    }
+    logger.error(`Failed to get user ${username}: ${error.message}`);
     throw new ExternalServiceError('GitHub', `Failed to fetch user: ${username}`);
   }
 }
