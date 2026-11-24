@@ -238,7 +238,7 @@ const AIProviderSection: React.FC = () => {
 
       {/* Saved key summary */}
       {settings && !editing && (
-        <div className="rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+        <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
               <dt className="text-gray-500 dark:text-gray-400">Provider</dt>
@@ -303,7 +303,7 @@ const AIProviderSection: React.FC = () => {
 
       {/* Editor */}
       {editing && (
-        <form onSubmit={save} className="space-y-5 rounded-xl border border-gray-200 p-4 sm:p-5 dark:border-gray-800" noValidate>
+        <form onSubmit={save} className="space-y-5 rounded-lg border border-gray-200 p-4 sm:p-5 dark:border-gray-800" noValidate>
           <div>
             <label htmlFor={ids.provider} className={labelClass}>
               Provider

@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/90 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90">
+    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
       <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-2">
           {isAuthenticated && (
@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
                 <div
                   ref={menuRef}
                   role="menu"
-                  className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                  className="absolute right-0 mt-2 w-56 overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
                 >
                   <div className="border-b border-gray-100 px-4 py-2 dark:border-gray-800">
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{user.displayName}</p>

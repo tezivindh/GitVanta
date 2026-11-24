@@ -212,7 +212,7 @@ const EnhancementsPage: React.FC = () => {
           {header}
 
           {status && !status.available && (
-            <div className="flex flex-col gap-3 rounded-xl border border-gain-300 bg-gain-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gain-700/50 dark:bg-gain-700/15">
+            <div className="flex flex-col gap-3 rounded-lg border border-gain-300 bg-gain-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gain-700/50 dark:bg-gain-700/15">
               <p className="text-sm text-gray-800 dark:text-gray-200">{status.message}</p>
               <Link
                 to="/dashboard/settings#ai-provider"
@@ -244,7 +244,7 @@ const EnhancementsPage: React.FC = () => {
                   setError(null);
                 }}
                 className={clsx(
-                  'rounded-xl border p-4 text-left transition-colors',
+                  'rounded-lg border p-4 text-left transition-colors',
                   tool === t.type
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-950'
                     : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700'

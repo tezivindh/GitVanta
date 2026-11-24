@@ -39,31 +39,12 @@ const Badge: React.FC<BadgeProps> = ({
 }) => {
   const Icon = iconMap[icon];
 
-  const variants = {
-    gold: {
-      bg: 'bg-linear-to-br from-yellow-400 to-yellow-600',
-      border: 'border-yellow-500',
-      text: 'text-yellow-900',
-      glow: 'shadow-yellow-500/50',
-    },
-    silver: {
-      bg: 'bg-linear-to-br from-gray-300 to-gray-500',
-      border: 'border-gray-400',
-      text: 'text-gray-900',
-      glow: 'shadow-gray-500/50',
-    },
-    bronze: {
-      bg: 'bg-linear-to-br from-orange-400 to-orange-600',
-      border: 'border-orange-500',
-      text: 'text-orange-900',
-      glow: 'shadow-orange-500/50',
-    },
-    special: {
-      bg: 'bg-linear-to-br from-purple-400 to-purple-600',
-      border: 'border-purple-500',
-      text: 'text-purple-900',
-      glow: 'shadow-purple-500/50',
-    },
+  // One quiet style for every badge; the icon and name tell them apart.
+  void variant;
+  const variantStyles = {
+    bg: 'bg-primary-50 dark:bg-primary-950',
+    border: 'border-primary-200 dark:border-primary-800',
+    text: 'text-primary-700 dark:text-primary-300',
   };
 
   const sizes = {
@@ -72,20 +53,16 @@ const Badge: React.FC<BadgeProps> = ({
     lg: { container: 'w-20 h-20', icon: 'w-10 h-10' },
   };
 
-  const variantStyles = variants[variant];
   const sizeStyles = sizes[size];
 
   return (
     <div className={clsx('relative group', className)}>
       <div
         className={clsx(
-          'rounded-full flex items-center justify-center',
-          'border-2 shadow-lg',
+          'flex items-center justify-center rounded-lg border',
           variantStyles.bg,
           variantStyles.border,
-          variantStyles.glow,
-          sizeStyles.container,
-          'transform transition-transform hover:scale-110'
+          sizeStyles.container
         )}
       >
         <Icon className={clsx(sizeStyles.icon, variantStyles.text)} />

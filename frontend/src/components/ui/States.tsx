@@ -49,7 +49,7 @@ interface EmptyStateProps {
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon: Icon, title, description, action, className }) => (
   <div
     className={clsx(
-      'flex flex-col items-center rounded-xl border border-dashed border-gray-300 px-6 py-12 text-center dark:border-gray-700',
+      'flex flex-col items-center rounded-lg border border-dashed border-gray-300 px-6 py-12 text-center dark:border-gray-700',
       className
     )}
   >
@@ -84,7 +84,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   <div
     role="alert"
     className={clsx(
-      'flex flex-col items-center rounded-xl border border-red-200 bg-red-50/60 px-6 py-10 text-center dark:border-red-900/60 dark:bg-red-950/30',
+      'flex flex-col items-center rounded-lg border border-red-200 bg-red-50/60 px-6 py-10 text-center dark:border-red-900/60 dark:bg-red-950/30',
       className
     )}
   >
@@ -111,9 +111,9 @@ interface PageHeaderProps {
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, actions }) => (
-  <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">
-      <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{title}</h1>
+      <h1 className="font-display text-[1.75rem] leading-tight text-gray-950 sm:text-[2rem] dark:text-white">{title}</h1>
       {description && <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{description}</p>}
     </div>
     {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}

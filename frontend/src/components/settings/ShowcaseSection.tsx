@@ -171,7 +171,7 @@ const ShowcaseSection: React.FC = () => {
         </div>
       </div>
 
-      <ul className="max-h-[28rem] divide-y divide-gray-200 overflow-y-auto rounded-xl border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+      <ul className="max-h-[28rem] divide-y divide-gray-200 overflow-y-auto rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
         {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">No repositories match.</li>}
         {filtered.map((r) => {
           const visible = isVisible(r);

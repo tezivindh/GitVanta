@@ -56,7 +56,7 @@ const LoginPage: React.FC = () => {
             <Link to="/" className="inline-flex rounded-lg" aria-label="GitVanta home">
               <LogoMark className="h-12 w-12" />
             </Link>
-            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Sign in to GitVanta</h1>
+            <h1 className="font-display mt-5 text-[2rem] leading-tight text-gray-950 dark:text-white">Sign in to GitVanta</h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">Score your GitHub portfolio and see what to improve.</p>
           </div>
 

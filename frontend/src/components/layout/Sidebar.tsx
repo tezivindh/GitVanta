@@ -66,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         id="dashboard-sidebar"
         aria-label="Dashboard"
         className={clsx(
-          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800',
+          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-gray-50 dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800',
           'transform transition-transform duration-200 ease-in-out z-50',
           'lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full invisible lg:visible'
@@ -96,17 +96,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 aria-current={active ? 'page' : undefined}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-md px-3 py-2 text-[15px] transition-colors',
                   active
-                    ? 'bg-primary-50 dark:bg-primary-950 text-primary-800 dark:text-primary-300'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-900'
+                    ? 'bg-white font-semibold text-gray-950 shadow-[inset_3px_0_0_var(--heat-3)] dark:bg-gray-900 dark:text-white'
+                    : 'font-medium text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-900'
                 )}
               >
                 <item.icon
                   aria-hidden="true"
                   className={clsx(
-                    'w-5 h-5',
-                    active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400 dark:text-gray-500'
+                    'h-[18px] w-[18px]',
+                    active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-500'
                   )}
                 />
                 {item.name}

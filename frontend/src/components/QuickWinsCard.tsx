@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Lock, ListChecks } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { QuickWins } from '../types';
 import { Card } from './ui';
 
@@ -21,7 +20,6 @@ const QuickWinsCard: React.FC<{ quickWins?: QuickWins; className?: string }> = (
             Gains are calculated by re-running the scoring engine with each fix applied.
           </p>
         </div>
-        <ListChecks className="h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" aria-hidden="true" />
       </div>
 
       {items.length === 0 ? (
@@ -31,25 +29,20 @@ const QuickWinsCard: React.FC<{ quickWins?: QuickWins; className?: string }> = (
             : 'Run a new analysis to get repo-level suggestions.'}
         </p>
       ) : (
-        <ol className="mt-4 space-y-3">
+        <ol className="mt-4 divide-y divide-gray-200 border-t border-gray-200 dark:divide-gray-800 dark:border-gray-800">
           {items.map((w) => (
-            <li
-              key={`${w.repo}-${w.action}`}
-              className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-800"
-            >
-              <span className="mt-0.5 font-mono text-sm text-primary-600 dark:text-primary-400" aria-hidden="true">
-                +
-              </span>
+            <li key={`${w.repo}-${w.action}`} className="flex items-start gap-4 py-4">
+              <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-gain-500" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {w.title} in <span className="font-mono">{w.repo}</span>
+                <p className="font-medium text-gray-950 dark:text-white">
+                  {w.title} in <span className="font-mono text-[0.92em]">{w.repo}</span>
                   {w.isPrivate && (
-                    <Lock className="ml-1.5 inline h-3.5 w-3.5 text-gray-400" aria-label="Private repository" />
+                    <Lock className="ml-1.5 inline h-3.5 w-3.5 -translate-y-px text-gray-500" aria-label="Private repository" />
                   )}
                 </p>
                 <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{w.detail}</p>
               </div>
-              <span className="shrink-0 font-mono text-sm tabular-nums text-gain-700 dark:text-gain-400">
+              <span className="font-display shrink-0 text-lg text-gain-700 dark:text-gain-400">
                 +{w.gain}
                 <span className="sr-only"> points</span>
               </span>
@@ -57,13 +50,6 @@ const QuickWinsCard: React.FC<{ quickWins?: QuickWins; className?: string }> = (
           ))}
         </ol>
       )}
-
-      <Link
-        to="/dashboard/analytics"
-        className="mt-4 inline-block text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
-      >
-        See every metric behind your score
-      </Link>
     </Card>
   );
 };
