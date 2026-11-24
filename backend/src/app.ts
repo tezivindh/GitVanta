@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import config from './config';
 import routes from './routes';
 import healthRoutes from './routes/health';
+import badgeRoutes from './routes/badge';
 import { errorHandler, notFoundHandler, apiLimiter } from './middleware';
 import logger from './utils/logger';
 
@@ -58,6 +59,8 @@ export function createApp(): Application {
 
   // Health checks are not rate limited so uptime monitors never trip it.
   app.use('/api/health', healthRoutes);
+  // README badges are fetched by image proxies; they have their own limiter.
+  app.use('/api/badge', badgeRoutes);
 
   app.use('/api', apiLimiter);
   app.use('/api', routes);
