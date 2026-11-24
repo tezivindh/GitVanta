@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trophy, Lock } from 'lucide-react';
-import { useAnalysisStore } from '../../store/analysisStore';
-import { Card, CardHeader, Alert, Badge as BadgeComponent } from '../../components/ui';
+import { Card, CardHeader, PageHeader, Badge as BadgeComponent } from '../../components/ui';
+import AnalysisGate from '../../components/AnalysisGate';
 
 // All possible badges - IDs match exactly what the backend generates
 const allBadges = [
@@ -164,44 +164,30 @@ const allBadges = [
 // Create a lookup map for badge names by ID
 // const badgeNameMap = new Map(allBadges.map(b => [b.id, b.name]));
 
-const BadgesPage: React.FC = () => {
-  const { currentReport, badges: fullBadgeObjects } = useAnalysisStore();
+const BadgesPage: React.FC = () => (
+  <AnalysisGate header={<PageHeader title="Badges" />}>
+    {(analysis) => <BadgesContent earnedIds={new Set(analysis.badges.map((b) => b.id))} />}
+  </AnalysisGate>
+);
 
-  // earnedBadgeIds contains badge IDs from the backend
-  const earnedBadgeIds = currentReport?.result.badges || [];
-  const earnedIdSet = new Set(earnedBadgeIds);
-
-  // Check if a badge is earned by exact ID match
-  const isBadgeEarned = (badgeId: string): boolean => {
-    return earnedIdSet.has(badgeId);
-  };
-
-  if (!currentReport) {
-    return (
-      <Alert variant="info" title="No Analysis Found">
-        Run an analysis from the dashboard to see your badges.
-      </Alert>
-    );
-  }
+const BadgesContent: React.FC<{ earnedIds: Set<string> }> = ({ earnedIds }) => {
+  const isBadgeEarned = (badgeId: string): boolean => earnedIds.has(badgeId);
 
   const earned = allBadges.filter((badge) => isBadgeEarned(badge.id));
   const locked = allBadges.filter((badge) => !isBadgeEarned(badge.id));
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Badges</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          {earned.length} of {allBadges.length} badges earned
-        </p>
-      </div>
+      <PageHeader
+        title="Badges"
+        description={`${earned.length} of ${allBadges.length} badges earned. Each one has a fixed rule, shown below.`}
+      />
 
       {/* Earned Badges */}
       <Card>
         <CardHeader
           title="Earned Badges"
-          icon={<Trophy className="w-5 h-5 text-yellow-500" />}
+          icon={<Trophy className="w-5 h-5 text-gain-600 dark:text-gain-400" aria-hidden="true" />}
         />
         {earned.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
@@ -237,15 +223,15 @@ const BadgesPage: React.FC = () => {
             {locked.map((badge) => (
               <div
                 key={badge.id}
-                className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg opacity-60"
+                className="flex items-start gap-4 rounded-lg border border-dashed border-gray-300 p-4 dark:border-gray-700"
               >
-                <div className="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center shrink-0">
-                  <Lock className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white">{badge.name}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{badge.description}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
                     How to earn: {badge.criteria}
                   </p>
                 </div>
@@ -255,22 +241,6 @@ const BadgesPage: React.FC = () => {
         </Card>
       )}
 
-      {/* All Detected Achievements (shows full badge objects from store) */}
-      {fullBadgeObjects.length > 0 && (
-        <Card>
-          <CardHeader title="All Detected Achievements" />
-          <div className="flex flex-wrap gap-2">
-            {fullBadgeObjects.map((badge, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full text-sm font-medium"
-              >
-                {badge.name}
-              </span>
-            ))}
-          </div>
-        </Card>
-      )}
     </div>
   );
 };

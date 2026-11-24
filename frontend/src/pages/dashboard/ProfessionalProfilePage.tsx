@@ -1,279 +1,305 @@
-import React, { useState, useEffect } from 'react';
-import { Copy, Check, ExternalLink, RefreshCw, Code, Star, GitFork, Folder } from 'lucide-react';
-import { useAnalysisStore } from '../../store/analysisStore';
-import { useAuthStore } from '../../store/authStore';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Copy, Check, ExternalLink, RefreshCw, Star, Lock, Globe, Mail, Github } from 'lucide-react';
 import { analysisApi } from '../../api/analysis';
-import { Card, CardHeader, Button, Alert, ScoreCircle, Loader } from '../../components/ui';
+import { getApiError } from '../../api/client';
+import { reportError } from '../../lib/errors';
+import { toast } from '../../store/toastStore';
+import { AIAttribution, Button, Card, ErrorState, LoadingRegion, PageHeader, ScoreCircle, Skeleton } from '../../components/ui';
+import AnalysisGate from '../../components/AnalysisGate';
 import { ProfessionalProfile } from '../../types';
 
-const ProfessionalProfilePage: React.FC = () => {
-  const { currentReport } = useAnalysisStore();
-  const { user } = useAuthStore();
-  const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+/** Absolute API base, so README badges work when pasted anywhere. */
+function apiBase(): string {
+  return new URL(import.meta.env.VITE_API_URL || '/api', window.location.origin).href.replace(/\/+$/, '');
+}
 
-  const fetchProfessionalProfile = async () => {
+const CopyField: React.FC<{ label: string; value: string; mono?: boolean }> = ({ label, value, mono }) => {
+  const [copied, setCopied] = useState(false);
+  const id = `copy-${label.replace(/\W+/g, '-').toLowerCase()}`;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast.success(`${label} copied`);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Copy failed', 'Select the text and copy it manually.');
+    }
+  };
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-medium text-gray-900 dark:text-white">
+        {label}
+      </label>
+      <div className="mt-1.5 flex gap-2">
+        <input
+          id={id}
+          readOnly
+          value={value}
+          onFocus={(e) => e.currentTarget.select()}
+          className={`input h-10 min-w-0 flex-1 px-3 text-sm ${mono ? 'font-mono' : ''}`}
+        />
+        <Button variant="outline" onClick={copy} leftIcon={copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}>
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const ProfessionalContent: React.FC = () => {
+  const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await analysisApi.getProfessionalProfile();
-      setProfile(response);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to generate professional profile');
+      setProfile(await analysisApi.getProfessionalProfile());
+    } catch (e) {
+      setError((await getApiError(e, 'Could not build your professional profile.')).message);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchProfessionalProfile();
   }, []);
 
-  const handleCopyLink = async () => {
-    const link = `${window.location.origin}/profile/${user?.username}`;
-    await navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  if (!currentReport) {
-    return (
-      <Alert variant="info" title="No Analysis Found">
-        Run an analysis from the dashboard first to generate your professional profile.
-      </Alert>
-    );
-  }
+  const regenerate = async () => {
+    setRefreshing(true);
+    try {
+      setProfile(await analysisApi.getProfessionalProfile(true));
+      toast.success('Summary rewritten');
+    } catch (e) {
+      await reportError(e, 'Could not rewrite the summary');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader size="lg" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Generating professional profile...</p>
-      </div>
+      <LoadingRegion label="Building your professional profile" className="space-y-6">
+        <Skeleton className="h-40" />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-48" />
+        </div>
+      </LoadingRegion>
     );
   }
+  if (error || !profile) return <ErrorState message={error ?? 'Something went wrong.'} onRetry={load} />;
 
-  // Show error but continue rendering the page with available data
-  const { result } = currentReport;
+  const badgeUrl = `${apiBase()}/badge/${profile.username}.svg`;
+  const badgeMarkdown = `[![GitVanta score](${badgeUrl})](${profile.publicUrl})`;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Professional Portfolio View</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            A polished, shareable profile showcasing your GitHub portfolio to recruiters and hiring managers
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleCopyLink}
-            leftIcon={copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          >
-            {copied ? 'Copied!' : 'Copy Link'}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={fetchProfessionalProfile}
-            leftIcon={<RefreshCw className="w-4 h-4" />}
-          >
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Error Alert - shown but doesn't block content */}
-      {error && (
-        <Alert variant="warning" title="AI Summary Unavailable">
-          {error}. Your repositories, skills, and projects are still displayed below.
-        </Alert>
-      )}
-
-      {/* Why Professional View Info */}
-      <div className="bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-lg p-4">
-        <h3 className="font-semibold text-primary-800 dark:text-primary-300 mb-2">Why a Professional Portfolio View?</h3>
-        <p className="text-primary-700 dark:text-primary-400 text-sm">
-          This view presents your GitHub portfolio in a clean, professional format optimized for sharing with recruiters, 
-          hiring managers, and potential collaborators. It highlights your best work, technical skills, and coding activity 
-          in a single shareable link - no LinkedIn or resume required.
-        </p>
-      </div>
-
-      {/* Preview Card */}
-      <div className="bg-linear-to-br from-gray-900 to-gray-800 rounded-2xl p-8 text-white">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left: Profile */}
-          <div className="flex items-start gap-4">
-            <img
-              src={user?.avatarUrl || '/placeholder.png'}
-              alt={user?.displayName}
-              className="w-20 h-20 rounded-full border-4 border-white/20"
-            />
-            <div>
-              <h2 className="text-2xl font-bold">{user?.displayName}</h2>
-              <p className="text-gray-300">@{user?.username}</p>
-              {profile?.headline && (
-                <p className="text-lg mt-2 text-primary-300">{profile.headline}</p>
+      <Card>
+        <div className="flex flex-col gap-6 md:flex-row md:items-start">
+          <img src={profile.avatarUrl} alt="" className="h-20 w-20 rounded-full ring-1 ring-gray-200 dark:ring-gray-800" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{profile.displayName}</h2>
+            <p className="mt-0.5 text-primary-700 dark:text-primary-400">{profile.headline}</p>
+            <p className="mt-3 max-w-2xl leading-relaxed text-gray-700 dark:text-gray-300">{profile.summary}</p>
+            {profile.highlights.length > 0 && (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">
+                {profile.highlights.map((h) => (
+                  <li key={h}>{h}</li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {profile.ai ? (
+                <AIAttribution ai={profile.ai} />
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Plain summary.{' '}
+                  <Link to="/dashboard/settings#ai-provider" className="underline">
+                    Set up AI
+                  </Link>{' '}
+                  for a written one.
+                </p>
               )}
+              <Button size="sm" variant="ghost" onClick={regenerate} isLoading={refreshing} leftIcon={<RefreshCw className="h-4 w-4" />}>
+                {profile.ai ? 'Rewrite summary' : 'Write summary with AI'}
+              </Button>
             </div>
           </div>
-
-          {/* Right: Score */}
-          <div className="lg:ml-auto">
-            <ScoreCircle
-              score={result.score.overall}
-              size="lg"
-              label="Portfolio Score"
-              className="text-white"
-            />
+          <div className="flex shrink-0 justify-center">
+            <ScoreCircle score={profile.overallScore} size="lg" label="GitVanta score" />
           </div>
         </div>
+      </Card>
 
-        {/* Summary */}
-        {profile?.summary && (
-          <div className="mt-6 pt-6 border-t border-white/10">
-            <p className="text-gray-300 leading-relaxed">{profile.summary}</p>
+      <Card>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Share</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              Anyone with the link sees your score, skills, badges and the projects you choose.
+            </p>
           </div>
-        )}
+          <a
+            href={`/profile/${profile.username}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+          >
+            Open public profile <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        </div>
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <CopyField label="Public profile link" value={profile.publicUrl} />
+          <div>
+            <CopyField label="README badge (Markdown)" value={badgeMarkdown} mono />
+            <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              Preview: <img src={badgeUrl} alt={`GitVanta score ${profile.overallScore} of 100`} height={20} className="h-5" />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Featured projects</h2>
+            <Link to="/dashboard/settings#public-profile" className="shrink-0 text-sm font-medium text-primary-700 hover:underline dark:text-primary-400">
+              Choose projects
+            </Link>
+          </div>
+          {profile.topProjects.length === 0 ? (
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+              No projects are visible. Turn some on in Settings → Public profile.
+            </p>
+          ) : (
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+              {profile.topProjects.map((p) => {
+                const body = (
+                  <>
+                    <span className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
+                      <span className="truncate">{p.name}</span>
+                      {p.isPrivate ? (
+                        <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-label="Private, not linked" />
+                      ) : (
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-hidden="true" />
+                      )}
+                    </span>
+                    <span className="mt-1 line-clamp-2 block text-sm text-gray-600 dark:text-gray-400">
+                      {p.description || 'No description'}
+                    </span>
+                    <span className="mt-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                      {p.language && <span>{p.language}</span>}
+                      <span className="inline-flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5" aria-hidden="true" /> {p.stars}
+                      </span>
+                    </span>
+                  </>
+                );
+                return (
+                  <li key={p.name}>
+                    {p.url ? (
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block h-full rounded-lg border border-gray-200 p-3 transition-colors hover:border-primary-300 dark:border-gray-800 dark:hover:border-primary-800"
+                      >
+                        {body}
+                      </a>
+                    ) : (
+                      <div className="h-full rounded-lg border border-dashed border-gray-300 p-3 dark:border-gray-700">{body}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Card>
+
+        <div className="space-y-6">
+          {profile.strengths.length > 0 && (
+            <Card>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Strengths</h2>
+              <ul className="mt-3 space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+                {profile.strengths.map((s) => (
+                  <li key={s}>{s}</li>
+                ))}
+              </ul>
+            </Card>
+          )}
+          <Card>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Contact</h2>
+            <ul className="mt-3 space-y-2 text-sm">
+              <li>
+                <a href={profile.contact.github} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-gray-700 hover:underline dark:text-gray-300">
+                  <Github className="h-4 w-4" aria-hidden="true" /> GitHub
+                </a>
+              </li>
+              {profile.contact.website && (
+                <li>
+                  <a
+                    href={/^https?:\/\//.test(profile.contact.website) ? profile.contact.website : `https://${profile.contact.website}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 break-all text-gray-700 hover:underline dark:text-gray-300"
+                  >
+                    <Globe className="h-4 w-4 shrink-0" aria-hidden="true" /> {profile.contact.website}
+                  </a>
+                </li>
+              )}
+              {profile.contact.email && (
+                <li>
+                  <a href={`mailto:${profile.contact.email}`} className="inline-flex items-center gap-2 break-all text-gray-700 hover:underline dark:text-gray-300">
+                    <Mail className="h-4 w-4 shrink-0" aria-hidden="true" /> {profile.contact.email}
+                  </a>
+                </li>
+              )}
+            </ul>
+          </Card>
+        </div>
       </div>
 
-      {/* Skills Section */}
-      <Card>
-        <CardHeader title="Technical Skills" icon={<Code className="w-5 h-5 text-primary-600" />} />
-        <div className="flex flex-wrap gap-2">
-          {result.skills.length > 0 ? (
-            result.skills.slice(0, 20).map((skill, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full text-sm font-medium"
-              >
-                {skill}
-              </span>
-            ))
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">No skills detected yet. Run an analysis to extract skills from your repositories.</p>
-          )}
-        </div>
-      </Card>
-
-      {/* Top Projects */}
-      <Card>
-        <CardHeader title="Featured Projects" icon={<Star className="w-5 h-5 text-yellow-500" />} />
-        <div className="space-y-4">
-          {result.repositories.length > 0 ? (
-            result.repositories
-              .sort((a, b) => (b.stars || 0) - (a.stars || 0))
-              .slice(0, 5)
-              .map((repo, index) => (
-                <div
-                  key={index}
-                  className="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{repo.name}</h3>
-                      <a
-                        href={repo.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </div>
-                    {repo.description && (
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mt-1 line-clamp-2">
-                        {repo.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      {repo.language && <span className="text-primary-600">{repo.language}</span>}
-                      <span className="flex items-center gap-1"><Star className="w-3 h-3" /> {repo.stars || 0}</span>
-                      <span className="flex items-center gap-1"><GitFork className="w-3 h-3" /> {repo.forks || 0}</span>
-                    </div>
-                  </div>
-                </div>
-              ))
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">No repositories found. Run an analysis to see your projects.</p>
-          )}
-        </div>
-      </Card>
-
-      {/* All Repositories */}
-      <Card>
-        <CardHeader title="All Repositories" icon={<Folder className="w-5 h-5 text-gray-600" />} />
-        <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-          Complete list of analyzed repositories ({result.repositories.length} total)
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {result.repositories.length > 0 ? (
-            result.repositories.map((repo, index) => (
-              <a
-                key={index}
-                href={repo.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 dark:text-white truncate">{repo.name}</h4>
-                  <ExternalLink className="w-3 h-3 text-gray-400" />
-                </div>
-                {repo.description && (
-                  <p className="text-gray-500 dark:text-gray-400 text-xs mb-2 line-clamp-2">{repo.description}</p>
-                )}
-                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                  {repo.language && <span className="text-primary-600">{repo.language}</span>}
-                  <span className="flex items-center gap-1"><Star className="w-3 h-3" /> {repo.stars || 0}</span>
-                </div>
-              </a>
-            ))
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-sm col-span-3">No repositories found.</p>
-          )}
-        </div>
-      </Card>
-
-      {/* Highlights */}
-      {profile?.highlights && profile.highlights.length > 0 && (
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader title="Career Highlights" />
-          <ul className="space-y-2">
-            {profile.highlights.map((highlight, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-primary-500 mt-1">•</span>
-                <span className="text-gray-700 dark:text-gray-300">{highlight}</span>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Top skills</h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {profile.topSkills.map((s) => (
+              <li key={s.name} className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-800 dark:bg-primary-950 dark:text-primary-200">
+                {s.name}
               </li>
             ))}
           </ul>
         </Card>
-      )}
-
-      {/* Contact / Links */}
-      <Card>
-        <CardHeader title="Connect" />
-        <div className="flex flex-wrap gap-4">
-          {user?.username && (
-            <a
-              href={`https://github.com/${user.username}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              GitHub Profile
-            </a>
-          )}
-        </div>
-      </Card>
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Badges ({profile.badges.length})</h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {profile.badges.map((b) => (
+              <li key={b.id} className="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-800 dark:border-gray-800 dark:text-gray-200">
+                {b.name}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
     </div>
   );
 };
+
+const ProfessionalProfilePage: React.FC = () => (
+  <AnalysisGate header={<PageHeader title="Professional view" />}>
+    {() => (
+      <div className="space-y-6">
+        <PageHeader title="Professional view" description="How recruiters and visitors see you. Share the link or add the badge to your README." />
+        <ProfessionalContent />
+      </div>
+    )}
+  </AnalysisGate>
+);
 
 export default ProfessionalProfilePage;

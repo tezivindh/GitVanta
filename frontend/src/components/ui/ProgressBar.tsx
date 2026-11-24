@@ -34,10 +34,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     }
 
     // Auto color based on percentage
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 60) return 'bg-primary-500';
-    if (percentage >= 40) return 'bg-yellow-500';
-    return 'bg-red-500';
+    // One hue for magnitude; the number itself carries the value.
+    void percentage;
+    return 'bg-primary-500';
   };
 
   const sizes = {

@@ -42,17 +42,14 @@ const ScoreCircle: React.FC<ScoreCircleProps> = ({
   };
 
   const getColor = (): string => {
-    if (percentage >= 80) return 'text-green-500';
-    if (percentage >= 60) return 'text-primary-500';
-    if (percentage >= 40) return 'text-yellow-500';
-    return 'text-red-500';
+    // One hue for magnitude; the number itself carries the value.
+    void percentage;
+    return 'text-primary-600 dark:text-primary-400';
   };
 
   const getStrokeColor = (): string => {
-    if (percentage >= 80) return 'stroke-green-500';
-    if (percentage >= 60) return 'stroke-primary-500';
-    if (percentage >= 40) return 'stroke-yellow-500';
-    return 'stroke-red-500';
+    void percentage;
+    return 'stroke-primary-500 dark:stroke-primary-400';
   };
 
   return (
@@ -64,7 +61,7 @@ const ScoreCircle: React.FC<ScoreCircleProps> = ({
             cx="50"
             cy="50"
             r={radius}
-            className="stroke-gray-200 dark:stroke-gray-700"
+            className="stroke-gray-200 dark:stroke-gray-800"
             strokeWidth={config.stroke}
             fill="none"
           />

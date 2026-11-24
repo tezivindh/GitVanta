@@ -6,6 +6,7 @@ import {
   PortfolioSummary,
   ImprovementRoadmap,
   AIStatus,
+  RepoReviews,
   WithAI,
 } from '../types';
 
@@ -48,6 +49,11 @@ export const enhancementApi = {
 
   generateImprovementRoadmap(): Promise<WithAI<ImprovementRoadmap>> {
     return withAI(apiClient.post('/enhance/roadmap', null, slow));
+  },
+
+  async reviewRepositories(): Promise<RepoReviews> {
+    const res = await apiClient.post<ApiResponse<RepoReviews>>('/enhance/repo-reviews', null, slow);
+    return res.data.data!;
   },
 
   async generateProjectDescription(repoName: string): Promise<WithAI<string>> {

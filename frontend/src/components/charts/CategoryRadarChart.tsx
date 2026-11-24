@@ -1,67 +1,45 @@
 import React from 'react';
-import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
+import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { CategoryScore } from '../../types';
+import { tooltipStyle, useChartTheme } from '../../lib/chartTheme';
 
 interface CategoryRadarChartProps {
   categoryScores: CategoryScore[];
+  /** Optional second series, e.g. the profile you compare against. */
+  compareScores?: CategoryScore[];
+  seriesNames?: [string, string];
   height?: number;
   className?: string;
 }
 
 const CategoryRadarChart: React.FC<CategoryRadarChartProps> = ({
   categoryScores,
+  compareScores,
+  seriesNames = ['You', 'Them'],
   height = 300,
   className,
 }) => {
-  const data = categoryScores.map((category) => ({
-    category: category.category.replace(/([A-Z])/g, ' $1').trim(),
-    score: category.score,
-    maxScore: category.maxScore,
-    fullMark: category.maxScore,
+  const t = useChartTheme();
+  const data = categoryScores.map((c, i) => ({
+    category: c.category,
+    a: c.score,
+    b: compareScores?.[i]?.score,
   }));
+  const summary = categoryScores.map((c) => `${c.category} ${c.score}`).join(', ');
 
   return (
-    <div className={className} style={{ height }}>
+    <div className={className} style={{ height }} role="img" aria-label={`Category scores: ${summary}`}>
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
-          <PolarGrid stroke="#e5e7eb" />
-          <PolarAngleAxis
-            dataKey="category"
-            tick={{ fontSize: 12, fill: '#6b7280' }}
-          />
-          <PolarRadiusAxis
-            angle={30}
-            domain={[0, 100]}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
-          />
-          <Radar
-            name="Score"
-            dataKey="score"
-            stroke="#6366f1"
-            fill="#6366f1"
-            fillOpacity={0.3}
-            strokeWidth={2}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-            }}
-            formatter={(value: number, _name: string, props: any) => [
-              `${value}/${props.payload.maxScore}`,
-              'Score',
-            ]}
-          />
+        <RadarChart cx="50%" cy="50%" outerRadius="72%" data={data}>
+          <PolarGrid stroke={t.grid} />
+          <PolarAngleAxis dataKey="category" tick={{ fontSize: 12, fill: t.axis }} />
+          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+          <Radar name={seriesNames[0]} dataKey="a" stroke={t.you} fill={t.you} fillOpacity={0.18} strokeWidth={2} isAnimationActive={false} />
+          {compareScores && (
+            <Radar name={seriesNames[1]} dataKey="b" stroke={t.them} fill={t.them} fillOpacity={0.12} strokeWidth={2} strokeDasharray="5 3" isAnimationActive={false} />
+          )}
+          <Tooltip {...tooltipStyle(t)} formatter={(value: number, name: string) => [`${value} / 100`, name]} />
+          {compareScores && <Legend wrapperStyle={{ fontSize: 13, color: t.muted }} />}
         </RadarChart>
       </ResponsiveContainer>
     </div>

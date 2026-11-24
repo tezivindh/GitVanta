@@ -19,7 +19,7 @@ import { useAuthStore } from '../store/authStore';
 import { Logo, ThemeToggle } from '../components/ui';
 
 const CATEGORIES = [
-  { name: 'Code quality', weight: 25, measures: 'Portfolio size, language range, how many repos have tests' },
+  { name: 'Code quality', weight: 25, measures: 'Portfolio size, language range, tests, and how descriptive your commit messages are' },
   { name: 'Documentation', weight: 20, measures: 'README coverage and depth, licenses, contributing guides' },
   { name: 'Activity', weight: 20, measures: 'Recent pushes, consistency, how many repos are still maintained' },
   { name: 'Diversity', weight: 15, measures: 'Languages, topics and kinds of projects you build' },

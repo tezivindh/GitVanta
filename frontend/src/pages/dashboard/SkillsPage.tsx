@@ -1,182 +1,164 @@
-import React, { useMemo } from 'react';
-import { Brain, Code, Database, Cloud, Wrench, Palette } from 'lucide-react';
-import { useAnalysisStore } from '../../store/analysisStore';
-import { Card, CardHeader, Alert, ProgressBar } from '../../components/ui';
-import { SkillPieChart } from '../../components/charts';
+import React, { useMemo, useState } from 'react';
+import clsx from 'clsx';
+import { Brain } from 'lucide-react';
+import { Card, EmptyState, PageHeader } from '../../components/ui';
+import AnalysisGate from '../../components/AnalysisGate';
+import { ExtractedSkill } from '../../types';
 
-// Skill categories for organization
-const skillCategories: Record<string, { icon: React.ElementType; skills: string[] }> = {
-  Languages: {
-    icon: Code,
-    skills: [
-      'JavaScript', 'TypeScript', 'Python', 'Java', 'Go', 'Rust', 'C', 'C++',
-      'Ruby', 'PHP', 'Swift', 'Kotlin', 'Scala', 'C#', 'Shell', 'Bash',
-    ],
-  },
-  'Web Frameworks': {
-    icon: Palette,
-    skills: [
-      'React', 'Vue', 'Angular', 'Svelte', 'Next.js', 'Nuxt', 'Express',
-      'FastAPI', 'Django', 'Flask', 'Rails', 'Spring', 'Laravel', 'ASP.NET',
-    ],
-  },
-  Databases: {
-    icon: Database,
-    skills: [
-      'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'SQLite', 'Cassandra',
-      'DynamoDB', 'Firebase', 'Supabase', 'Prisma', 'GraphQL',
-    ],
-  },
-  Cloud: {
-    icon: Cloud,
-    skills: [
-      'AWS', 'GCP', 'Azure', 'Docker', 'Kubernetes', 'Terraform', 'CI/CD',
-      'GitHub Actions', 'Jenkins', 'Vercel', 'Netlify', 'Heroku',
-    ],
-  },
-  Tools: {
-    icon: Wrench,
-    skills: [
-      'Git', 'Linux', 'Vim', 'VS Code', 'Jest', 'Cypress', 'Webpack',
-      'Vite', 'ESLint', 'Prettier', 'npm', 'yarn', 'pnpm',
-    ],
-  },
+const CATEGORY_LABELS: Record<ExtractedSkill['category'], string> = {
+  language: 'Languages',
+  framework: 'Frameworks',
+  tool: 'Tools',
+  database: 'Databases',
+  cloud: 'Cloud',
+  other: 'Other',
+};
+const CATEGORY_ORDER: ExtractedSkill['category'][] = ['language', 'framework', 'database', 'cloud', 'tool', 'other'];
+
+const PROFICIENCY_LABEL: Record<ExtractedSkill['proficiency'], string> = {
+  beginner: 'Beginner',
+  intermediate: 'Intermediate',
+  advanced: 'Advanced',
+  expert: 'Expert',
+};
+
+/** Skills by number of projects: one hue, shared baseline. */
+const SkillBars: React.FC<{ skills: ExtractedSkill[] }> = ({ skills }) => {
+  const max = Math.max(1, ...skills.map((s) => s.projectCount));
+  return (
+    <ul className="space-y-3">
+      {skills.map((s) => (
+        <li key={s.name} className="grid grid-cols-[8rem_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[10rem_1fr_auto]">
+          <span className="truncate text-gray-800 dark:text-gray-200" title={s.name}>
+            {s.name}
+          </span>
+          <span className="h-2 rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true">
+            <span className="block h-2 rounded-full bg-primary-500" style={{ width: `${(s.projectCount / max) * 100}%` }} />
+          </span>
+          <span className="tabular-nums text-gray-600 dark:text-gray-400">
+            {s.projectCount} {s.projectCount === 1 ? 'project' : 'projects'}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 };
 
 const SkillsPage: React.FC = () => {
-  const { currentReport } = useAnalysisStore();
+  const [category, setCategory] = useState<ExtractedSkill['category'] | 'all'>('all');
 
-  const skills = currentReport?.result.skills || [];
-  const repositories = currentReport?.result.repositories || [];
+  return (
+    <AnalysisGate header={<PageHeader title="Skills" />}>
+      {(a) => <SkillsContent skills={a.skills} category={category} setCategory={setCategory} />}
+    </AnalysisGate>
+  );
+};
 
-  // Calculate skill frequency from repositories
-  const skillFrequency = useMemo(() => {
-    const frequency: Record<string, number> = {};
-
-    repositories.forEach((repo) => {
-      if (repo.language) {
-        frequency[repo.language] = (frequency[repo.language] || 0) + 1;
-      }
-      repo.topics?.forEach((topic) => {
-        frequency[topic] = (frequency[topic] || 0) + 1;
-      });
-    });
-
-    return Object.entries(frequency)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, value]) => ({ name, value }));
-  }, [repositories]);
-
-  // Categorize skills
-  const categorizedSkills = useMemo(() => {
-    const result: Record<string, string[]> = {};
-
-    Object.entries(skillCategories).forEach(([category, { skills: categorySkills }]) => {
-      const matched = skills.filter((skill) =>
-        categorySkills.some(
-          (cs) => cs.toLowerCase() === skill.toLowerCase()
-        )
-      );
-      if (matched.length > 0) {
-        result[category] = matched;
-      }
-    });
-
-    // Add uncategorized skills
-    const allCategorized = Object.values(result).flat();
-    const uncategorized = skills.filter(
-      (skill) => !allCategorized.includes(skill)
-    );
-    if (uncategorized.length > 0) {
-      result['Other'] = uncategorized;
-    }
-
-    return result;
+const SkillsContent: React.FC<{
+  skills: ExtractedSkill[];
+  category: ExtractedSkill['category'] | 'all';
+  setCategory: (c: ExtractedSkill['category'] | 'all') => void;
+}> = ({ skills, category, setCategory }) => {
+  const byCategory = useMemo(() => {
+    const groups = new Map<ExtractedSkill['category'], ExtractedSkill[]>();
+    for (const s of skills) groups.set(s.category, [...(groups.get(s.category) ?? []), s]);
+    return CATEGORY_ORDER.filter((c) => groups.has(c)).map((c) => ({
+      key: c,
+      skills: groups.get(c)!.sort((x, y) => y.projectCount - x.projectCount),
+    }));
   }, [skills]);
 
-  if (!currentReport) {
+  const visible = (category === 'all' ? skills : skills.filter((s) => s.category === category))
+    .slice()
+    .sort((x, y) => y.projectCount - x.projectCount);
+
+  if (skills.length === 0) {
     return (
-      <Alert variant="info" title="No Analysis Found">
-        Run an analysis from the dashboard to see your skills.
-      </Alert>
+      <>
+        <PageHeader title="Skills" />
+        <EmptyState
+          icon={Brain}
+          title="No skills detected yet"
+          description="Skills come from your repositories' languages and topics. Add topics to your repos, then analyse again."
+        />
+      </>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Skills</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          {skills.length} skills detected across your repositories
-        </p>
+      <PageHeader
+        title="Skills"
+        description={`${skills.length} skills detected from the languages and topics in your repositories.`}
+      />
+
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by category">
+        {(['all', ...byCategory.map((g) => g.key)] as const).map((key) => (
+          <button
+            key={key}
+            type="button"
+            aria-pressed={category === key}
+            onClick={() => setCategory(key)}
+            className={clsx(
+              'rounded-full px-3 py-1 text-sm',
+              category === key
+                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                : 'border border-gray-200 text-gray-700 hover:bg-white dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900'
+            )}
+          >
+            {key === 'all' ? `All (${skills.length})` : `${CATEGORY_LABELS[key]} (${byCategory.find((g) => g.key === key)!.skills.length})`}
+          </button>
+        ))}
       </div>
 
-      {/* Skill Distribution Chart */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader title="Language Distribution" />
-          <SkillPieChart
-            skills={skillFrequency.slice(0, 8)}
-            height={300}
-          />
-        </Card>
-
-        <Card>
-          <CardHeader title="Top Languages by Usage" />
-          <div className="space-y-4">
-            {skillFrequency.slice(0, 8).map(({ name, value }) => (
-              <ProgressBar
-                key={name}
-                value={value}
-                max={Math.max(...skillFrequency.map((s) => s.value))}
-                label={name}
-                showValue={false}
-              />
-            ))}
+      <div className="grid gap-6 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Used in the most projects</h2>
+          <div className="mt-4">
+            <SkillBars skills={visible.slice(0, 12)} />
           </div>
         </Card>
+
+        <Card className="lg:col-span-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">By proficiency</h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Estimated from how many projects use each skill.</p>
+          <dl className="mt-4 space-y-3">
+            {(['expert', 'advanced', 'intermediate', 'beginner'] as const).map((level) => {
+              const names = visible.filter((s) => s.proficiency === level).map((s) => s.name);
+              if (names.length === 0) return null;
+              return (
+                <div key={level}>
+                  <dt className="text-sm font-medium text-gray-900 dark:text-white">
+                    {PROFICIENCY_LABEL[level]} ({names.length})
+                  </dt>
+                  <dd className="mt-1 text-sm text-gray-600 dark:text-gray-400">{names.join(', ')}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </Card>
       </div>
 
-      {/* Categorized Skills */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Object.entries(categorizedSkills).map(([category, categorySkills]) => {
-          const IconComponent = skillCategories[category]?.icon || Brain;
-          return (
-            <Card key={category}>
-              <CardHeader
-                title={category}
-                icon={<IconComponent className="w-5 h-5 text-primary-600" />}
-              />
-              <div className="flex flex-wrap gap-2">
-                {categorySkills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm font-medium"
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {byCategory
+          .filter((g) => category === 'all' || g.key === category)
+          .map((g) => (
+            <Card key={g.key}>
+              <h2 className="font-semibold text-gray-900 dark:text-white">{CATEGORY_LABELS[g.key]}</h2>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {g.skills.map((s) => (
+                  <li
+                    key={s.name}
+                    className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-800 dark:bg-primary-950 dark:text-primary-200"
+                    title={`${PROFICIENCY_LABEL[s.proficiency]}, ${s.projectCount} projects`}
                   >
-                    {skill}
-                  </span>
+                    {s.name}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </Card>
-          );
-        })}
-      </div>
-
-      {/* All Skills */}
-      <Card>
-        <CardHeader title="All Detected Skills" />
-        <div className="flex flex-wrap gap-2">
-          {skills.map((skill, index) => (
-            <span
-              key={index}
-              className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full text-sm font-medium"
-            >
-              {skill}
-            </span>
           ))}
-        </div>
-      </Card>
+      </div>
     </div>
   );
 };

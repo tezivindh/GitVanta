@@ -107,6 +107,20 @@ export interface QuickWin {
   gain: number;
 }
 
+export interface RepoReview {
+  name: string;
+  rating: number;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+}
+
+export interface RepoReviews {
+  items: RepoReview[];
+  ai: AIMeta;
+  generatedAt: string;
+}
+
 export interface QuickWins {
   items: QuickWin[];
   totalGain: number;
@@ -124,6 +138,7 @@ export interface AnalysisReport {
   badges: Badge[];
   repositories: AnalyzedRepository[];
   quickWins?: QuickWins;
+  aiRepoReviews?: RepoReviews;
   generatedAt: string;
 }
 

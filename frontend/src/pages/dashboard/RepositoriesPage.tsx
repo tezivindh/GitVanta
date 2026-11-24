@@ -1,235 +1,266 @@
-import React, { useState, useMemo } from 'react';
-import { ExternalLink, Star, GitFork, Search, Filter, ChevronDown } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import clsx from 'clsx';
+import { ExternalLink, Star, GitFork, Search, Lock, Sparkles, ChevronDown } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
-import { Card, Input, Button, ProgressBar, Alert } from '../../components/ui';
+import { enhancementApi } from '../../api/enhancement';
+import { getApiError } from '../../api/client';
+import { needsAISettings, formatRelative } from '../../lib/errors';
+import { toast } from '../../store/toastStore';
+import { AIAttribution, Button, Card, EmptyState, PageHeader } from '../../components/ui';
+import AnalysisGate from '../../components/AnalysisGate';
+import { AnalyzedRepository, RepoReview, RepoReviews } from '../../types';
 
-type SortOption = 'stars' | 'forks' | 'name' | 'updated';
+type SortOption = 'rating' | 'stars' | 'name' | 'updated';
 
-const RepositoriesPage: React.FC = () => {
-  const { currentReport } = useAnalysisStore();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('stars');
-  const [filterLanguage, setFilterLanguage] = useState<string>('all');
-  const [showFilters, setShowFilters] = useState(false);
+const RatingPill: React.FC<{ rating: number }> = ({ rating }) => (
+  <span
+    className="inline-flex h-7 min-w-[3.25rem] items-center justify-center rounded-full bg-primary-50 px-2 text-sm font-semibold tabular-nums text-primary-800 dark:bg-primary-950 dark:text-primary-200"
+    aria-label={`AI rating ${rating} out of 10`}
+  >
+    {rating}/10
+  </span>
+);
 
-  const repositories = currentReport?.result.repositories || [];
+const RepoRow: React.FC<{ repo: AnalyzedRepository; review?: RepoReview }> = ({ repo, review }) => {
+  const [open, setOpen] = useState(false);
+  const panelId = `review-${repo.name}`;
+  return (
+    <li className="py-4">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {repo.isPrivate ? (
+              <span className="font-medium text-gray-900 dark:text-white">{repo.name}</span>
+            ) : (
+              <a
+                href={repo.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-medium text-gray-900 hover:underline dark:text-white"
+              >
+                {repo.name}
+                <ExternalLink className="h-3.5 w-3.5 text-gray-400" aria-hidden="true" />
+                <span className="sr-only">(opens GitHub)</span>
+              </a>
+            )}
+            {repo.isPrivate && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                <Lock className="h-3 w-3" aria-hidden="true" /> Private
+              </span>
+            )}
+          </div>
+          <p className="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
+            {review?.summary || repo.description || 'No description'}
+          </p>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+            {repo.language && <span>{repo.language}</span>}
+            <span className="inline-flex items-center gap-1">
+              <Star className="h-3.5 w-3.5" aria-hidden="true" /> {repo.stars}
+              <span className="sr-only">stars</span>
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <GitFork className="h-3.5 w-3.5" aria-hidden="true" /> {repo.forks}
+              <span className="sr-only">forks</span>
+            </span>
+            {repo.pushedAt && <span>Updated {formatRelative(repo.pushedAt)}</span>}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          {review && <RatingPill rating={review.rating} />}
+          {review && (
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-controls={panelId}
+              className="inline-flex items-center gap-1 rounded-md text-xs font-medium text-primary-700 hover:underline dark:text-primary-400"
+            >
+              {open ? 'Hide review' : 'Review'}
+              <ChevronDown className={clsx('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+      {review && open && (
+        <div id={panelId} className="mt-3 grid gap-4 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2 dark:bg-gray-950/60">
+          <div>
+            <h3 className="font-medium text-gray-900 dark:text-white">Working well</h3>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-gray-700 dark:text-gray-300">
+              {review.strengths.length ? review.strengths.map((s) => <li key={s}>{s}</li>) : <li>Nothing stood out yet.</li>}
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-900 dark:text-white">To improve</h3>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-gray-700 dark:text-gray-300">
+              {review.improvements.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+};
 
-  // Get unique languages
-  const languages = useMemo(() => {
-    const langs = new Set(repositories.map((r) => r.language).filter(Boolean));
-    return Array.from(langs).sort();
-  }, [repositories]);
+const RepositoriesContent: React.FC<{ repos: AnalyzedRepository[]; initialReviews?: RepoReviews }> = ({ repos, initialReviews }) => {
+  const [reviews, setReviews] = useState<RepoReviews | undefined>(initialReviews);
+  const [reviewing, setReviewing] = useState(false);
+  const [reviewError, setReviewError] = useState<{ message: string; settings: boolean } | null>(null);
+  const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>(initialReviews ? 'rating' : 'updated');
+  const [language, setLanguage] = useState('all');
+  const [visibility, setVisibility] = useState<'all' | 'public' | 'private'>('all');
 
-  // Filter and sort repositories
-  const filteredRepos = useMemo(() => {
-    let filtered = [...repositories];
+  const reviewByName = useMemo(() => new Map((reviews?.items ?? []).map((r) => [r.name, r])), [reviews]);
+  const languages = useMemo(() => Array.from(new Set(repos.map((r) => r.language).filter(Boolean) as string[])).sort(), [repos]);
 
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (repo) =>
-          repo.name.toLowerCase().includes(query) ||
-          repo.description?.toLowerCase().includes(query)
-      );
-    }
-
-    // Language filter
-    if (filterLanguage !== 'all') {
-      filtered = filtered.filter((repo) => repo.language === filterLanguage);
-    }
-
-    // Sort
-    switch (sortBy) {
-      case 'stars':
-        filtered.sort((a, b) => (b.stars || 0) - (a.stars || 0));
-        break;
-      case 'forks':
-        filtered.sort((a, b) => (b.forks || 0) - (a.forks || 0));
-        break;
-      case 'name':
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'updated':
-        filtered.sort(
-          (a, b) =>
-            new Date(b.updatedAt || 0).getTime() -
-            new Date(a.updatedAt || 0).getTime()
-        );
-        break;
-    }
-
-    return filtered;
-  }, [repositories, searchQuery, filterLanguage, sortBy]);
-
-  if (!currentReport) {
-    return (
-      <Alert variant="info" title="No Analysis Found">
-        Run an analysis from the dashboard to see your repositories.
-      </Alert>
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const filtered = repos.filter(
+      (r) =>
+        (!q || r.name.toLowerCase().includes(q) || (r.description ?? '').toLowerCase().includes(q)) &&
+        (language === 'all' || r.language === language) &&
+        (visibility === 'all' || (visibility === 'private') === !!r.isPrivate)
     );
-  }
+    const time = (r: AnalyzedRepository) => new Date(r.pushedAt || 0).getTime();
+    const sorters: Record<SortOption, (a: AnalyzedRepository, b: AnalyzedRepository) => number> = {
+      rating: (a, b) => (reviewByName.get(b.name)?.rating ?? -1) - (reviewByName.get(a.name)?.rating ?? -1) || b.stars - a.stars,
+      stars: (a, b) => b.stars - a.stars,
+      name: (a, b) => a.name.localeCompare(b.name),
+      updated: (a, b) => time(b) - time(a),
+    };
+    return filtered.sort(sorters[sortBy]);
+  }, [repos, query, language, visibility, sortBy, reviewByName]);
+
+  const runReview = async () => {
+    setReviewing(true);
+    setReviewError(null);
+    try {
+      const result = await enhancementApi.reviewRepositories();
+      setReviews(result);
+      setSortBy('rating');
+      // Keep the cached copy on the report in sync for other pages.
+      useAnalysisStore.setState((s) => (s.analysis ? { analysis: { ...s.analysis, aiRepoReviews: result } } : {}));
+      toast.success('Repositories reviewed', `${result.items.length} repositories rated.`);
+    } catch (e) {
+      const info = await getApiError(e, 'The AI review failed. Please try again.');
+      setReviewError({ message: info.message, settings: needsAISettings(info) });
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const average = reviews?.items.length
+    ? Math.round((reviews.items.reduce((s, r) => s + r.rating, 0) / reviews.items.length) * 10) / 10
+    : null;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Repositories</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          {repositories.length} repositories analyzed
-        </p>
-      </div>
-
-      {/* Search and Filters */}
-      <Card padding="compact">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="flex-1 w-full">
-            <Input
-              placeholder="Search repositories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              leftIcon={<Search className="w-4 h-4" />}
-            />
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            rightIcon={<ChevronDown className="w-4 h-4" />}
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
+      <PageHeader
+        title="Repositories"
+        description={`${repos.length} repositories analysed, ${repos.filter((r) => r.isPrivate).length} of them private.`}
+        actions={
+          <Button onClick={runReview} isLoading={reviewing} leftIcon={<Sparkles className="h-4 w-4" />}>
+            {reviews ? 'Review again with AI' : 'Rate all with AI'}
           </Button>
-        </div>
+        }
+      />
 
-        {showFilters && (
-          <div className="mt-4 pt-4 border-t flex flex-wrap gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Sort by
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-              >
-                <option value="stars">Stars</option>
-                <option value="forks">Forks</option>
-                <option value="name">Name</option>
-                <option value="updated">Last Updated</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Language
-              </label>
-              <select
-                value={filterLanguage}
-                onChange={(e) => setFilterLanguage(e.target.value)}
-                className="block w-40 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-              >
-                <option value="all">All Languages</option>
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {lang}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <Card>
+        {reviews ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-800 dark:text-gray-200">
+              {reviews.items.length} repositories rated {formatRelative(reviews.generatedAt)}. Average rating{' '}
+              <span className="font-semibold tabular-nums">{average}/10</span>.
+            </p>
+            <AIAttribution ai={reviews.ai} />
           </div>
+        ) : (
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Rate up to 30 of your most recently updated repositories in one AI request: a 1–10 rating, a one-line verdict
+            and what to fix. README excerpts, including from private repos, are sent to your AI provider.
+          </p>
+        )}
+        {reviewError && (
+          <p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-400">
+            {reviewError.message}{' '}
+            {reviewError.settings && (
+              <Link to="/dashboard/settings#ai-provider" className="font-medium underline">
+                Open AI settings
+              </Link>
+            )}
+          </p>
         )}
       </Card>
 
-      {/* Repository List */}
-      <div className="space-y-4">
-        {filteredRepos.map((repo, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
-            <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-              {/* Main Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start gap-2">
-                  <h3 className="font-semibold text-lg text-gray-900 dark:text-white truncate">
-                    {repo.name}
-                  </h3>
-                  <a
-                    href={repo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-
-                {repo.description && (
-                  <p className="text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                    {repo.description}
-                  </p>
-                )}
-
-                {/* Tags */}
-                <div className="flex flex-wrap items-center gap-2 mt-3">
-                  {repo.language && (
-                    <span className="px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-sm text-sm">
-                      {repo.language}
-                    </span>
-                  )}
-                  {repo.topics?.map((topic) => (
-                    <span
-                      key={topic}
-                      className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-sm text-sm"
-                    >
-                      {topic}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="flex items-center gap-4 lg:gap-6 text-sm text-gray-500">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-500" />
-                  <span>{repo.stars || 0}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <GitFork className="w-4 h-4" />
-                  <span>{repo.forks || 0}</span>
-                </div>
-              </div>
-
-              {/* Score (if available) */}
-              {repo.score !== undefined && (
-                <div className="lg:w-32">
-                  <ProgressBar
-                    value={repo.score}
-                    max={100}
-                    size="sm"
-                    showValue
-                  />
-                </div>
-              )}
-            </div>
-          </Card>
-        ))}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative lg:w-72">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+          <label htmlFor="repo-search" className="sr-only">
+            Search repositories
+          </label>
+          <input
+            id="repo-search"
+            type="search"
+            className="input h-10 pl-9 pr-3 text-sm"
+            placeholder="Search by name or description"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-2 lg:ml-auto lg:flex">
+          <label className="sr-only" htmlFor="repo-lang">Language</label>
+          <select id="repo-lang" className="input h-10 px-2 text-sm" value={language} onChange={(e) => setLanguage(e.target.value)}>
+            <option value="all">All languages</option>
+            {languages.map((l) => (
+              <option key={l} value={l}>
+                {l}
+              </option>
+            ))}
+          </select>
+          <label className="sr-only" htmlFor="repo-vis">Visibility</label>
+          <select id="repo-vis" className="input h-10 px-2 text-sm" value={visibility} onChange={(e) => setVisibility(e.target.value as typeof visibility)}>
+            <option value="all">Public and private</option>
+            <option value="public">Public only</option>
+            <option value="private">Private only</option>
+          </select>
+          <label className="sr-only" htmlFor="repo-sort">Sort by</label>
+          <select id="repo-sort" className="input h-10 px-2 text-sm" value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)}>
+            {reviews && <option value="rating">Highest rated</option>}
+            <option value="updated">Recently updated</option>
+            <option value="stars">Most stars</option>
+            <option value="name">Name</option>
+          </select>
+        </div>
       </div>
 
-      {/* Empty state */}
-      {filteredRepos.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400">No repositories match your filters.</p>
-          <Button
-            variant="ghost"
-            className="mt-2"
-            onClick={() => {
-              setSearchQuery('');
-              setFilterLanguage('all');
-            }}
-          >
-            Clear filters
-          </Button>
-        </div>
-      )}
+      <Card padding="none" className="px-4 sm:px-6">
+        {list.length === 0 ? (
+          <div className="py-10 text-center text-sm text-gray-600 dark:text-gray-400">No repositories match these filters.</div>
+        ) : (
+          <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+            {list.map((repo) => (
+              <RepoRow key={repo.name} repo={repo} review={reviewByName.get(repo.name)} />
+            ))}
+          </ul>
+        )}
+      </Card>
     </div>
   );
 };
+
+const RepositoriesPage: React.FC = () => (
+  <AnalysisGate header={<PageHeader title="Repositories" />}>
+    {(a) =>
+      a.repositories.length === 0 ? (
+        <EmptyState title="No repositories found" description="GitVanta didn't find any repositories you own. Create one on GitHub, then analyse again." />
+      ) : (
+        <RepositoriesContent repos={a.repositories} initialReviews={a.aiRepoReviews} />
+      )
+    }
+  </AnalysisGate>
+);
 
 export default RepositoriesPage;

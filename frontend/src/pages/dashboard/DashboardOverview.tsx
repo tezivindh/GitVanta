@@ -1,265 +1,202 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RefreshCw, TrendingUp, ArrowRight } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Minus, Lock, Star } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
-import { useAuthStore } from '../../store/authStore';
-import { Card, CardHeader, Button, ScoreCircle, ProgressBar, Alert } from '../../components/ui';
-import { CategoryRadarChart } from '../../components/charts';
-import { Loader } from '../../components/ui';
+import { Card, Button, ScoreCircle, PageHeader } from '../../components/ui';
+import { ScoreHistoryChart } from '../../components/charts';
+import AnalysisGate, { runAnalysisWithFeedback } from '../../components/AnalysisGate';
+import QuickWinsCard from '../../components/QuickWinsCard';
+import { CATEGORIES, contribution } from '../../lib/scoring';
+import { formatRelative } from '../../lib/errors';
+
+const ChangeChip: React.FC<{ change: number | null }> = ({ change }) => {
+  if (change === null) return <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Your first analysis</p>;
+  const Icon = change > 0 ? TrendingUp : change < 0 ? TrendingDown : Minus;
+  return (
+    <p
+      className={
+        change > 0
+          ? 'mt-3 inline-flex items-center gap-1.5 rounded-full bg-gain-50 px-2.5 py-1 text-sm font-medium text-gain-700 dark:bg-gain-700/20 dark:text-gain-300'
+          : 'mt-3 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+      }
+    >
+      <Icon className="h-4 w-4" aria-hidden="true" />
+      {change > 0 ? `+${change}` : change} since last analysis
+    </p>
+  );
+};
 
 const DashboardOverview: React.FC = () => {
-  const { user } = useAuthStore();
-  const {
-    currentReport,
-    isAnalyzing,
-    error,
-    fetchLatestReport,
-    runAnalysis,
-  } = useAnalysisStore();
+  const { isAnalyzing, history, fetchHistory } = useAnalysisStore();
 
   useEffect(() => {
-    fetchLatestReport();
-  }, [fetchLatestReport]);
+    fetchHistory();
+  }, [fetchHistory]);
 
-  const handleRunAnalysis = async () => {
-    if (user?.username) {
-      await runAnalysis(user.username);
-    }
-  };
-
-  if (isAnalyzing) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader size="lg" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Analyzing your portfolio...</p>
-        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-          This may take a few minutes depending on the number of repositories.
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="py-8">
-        <Alert variant="error" title="Analysis Error">
-          {error}
-        </Alert>
-        <div className="mt-4">
-          <Button onClick={handleRunAnalysis} leftIcon={<RefreshCw className="w-4 h-4" />}>
-            Retry Analysis
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentReport) {
-    return (
-      <div className="py-20 text-center">
-        <div className="max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Welcome to GitVanta
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Run your first analysis to get a comprehensive score and insights
-            about your GitHub portfolio.
-          </p>
-          <Button
-            size="lg"
-            onClick={handleRunAnalysis}
-            loading={isAnalyzing}
-            leftIcon={<TrendingUp className="w-5 h-5" />}
-          >
-            Analyze My Portfolio
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const { result } = currentReport;
+  const reanalyse = (
+    <Button variant="outline" onClick={runAnalysisWithFeedback} isLoading={isAnalyzing} leftIcon={<RefreshCw className="h-4 w-4" />}>
+      {isAnalyzing ? 'Analysing…' : 'Analyse again'}
+    </Button>
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Last analyzed:{' '}
-            {new Date(currentReport.createdAt).toLocaleDateString('en-US', {
-              dateStyle: 'medium',
-            })}
-          </p>
-        </div>
-        <Button
-          onClick={handleRunAnalysis}
-          variant="outline"
-          leftIcon={<RefreshCw className="w-4 h-4" />}
-        >
-          Re-analyze
-        </Button>
-      </div>
+    <AnalysisGate header={<PageHeader title="Overview" />}>
+      {(a) => {
+        const points = history?.points ?? [];
+        const repos = a.repositories ?? [];
+        const privateCount = repos.filter((r) => r.isPrivate).length;
+        const topRepos = [...repos].sort((x, y) => (y.stars || 0) - (x.stars || 0)).slice(0, 4);
 
-      {/* Main Score Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Overall Score */}
-        <Card className="lg:col-span-1 flex flex-col items-center justify-center py-8">
-          <ScoreCircle
-            score={result.score.overall}
-            size="xl"
-            label="Overall Score"
-          />
-          <div className="mt-6 w-full px-6">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {result.repositories.length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Repositories</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {result.skills.length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Skills</div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Category Scores Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader title="Score Breakdown" />
-          <div className="grid md:grid-cols-2 gap-6">
-            <CategoryRadarChart
-              categoryScores={result.score.categories}
-              height={250}
+        return (
+          <div className="space-y-6">
+            <PageHeader
+              title="Overview"
+              description={
+                <>
+                  Last analysed {formatRelative(a.generatedAt)}. You can run 3 analyses a day.
+                </>
+              }
+              actions={reanalyse}
             />
-            <div className="space-y-4">
-              {result.score.categories.map((category) => (
-                <ProgressBar
-                  key={category.category}
-                  value={category.score}
-                  max={category.maxScore}
-                  label={category.category.replace(/([A-Z])/g, ' $1').trim()}
-                  showValue
-                />
-              ))}
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              <Card className="flex flex-col items-center justify-center text-center">
+                <ScoreCircle score={a.overallScore} size="xl" label="Overall score" />
+                <ChangeChip change={history?.change ?? null} />
+                <dl className="mt-6 grid w-full grid-cols-3 gap-2 border-t border-gray-200 pt-4 text-center dark:border-gray-800">
+                  <div>
+                    <dt className="text-xs text-gray-500 dark:text-gray-400">Repos</dt>
+                    <dd className="text-lg font-semibold tabular-nums text-gray-900 dark:text-white">{repos.length}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-gray-500 dark:text-gray-400">Skills</dt>
+                    <dd className="text-lg font-semibold tabular-nums text-gray-900 dark:text-white">{a.skills.length}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-gray-500 dark:text-gray-400">Badges</dt>
+                    <dd className="text-lg font-semibold tabular-nums text-gray-900 dark:text-white">{a.badges.length}</dd>
+                  </div>
+                </dl>
+                {privateCount > 0 && (
+                  <p className="mt-3 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                    Includes {privateCount} private {privateCount === 1 ? 'repo' : 'repos'}, hidden from your public profile.
+                  </p>
+                )}
+              </Card>
+
+              <QuickWinsCard quickWins={a.quickWins} className="lg:col-span-2" />
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">How your score adds up</h2>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Each category is scored 0–100, then weighted.</p>
+                  </div>
+                  <Link to="/dashboard/analytics" className="shrink-0 text-sm font-medium text-primary-700 hover:underline dark:text-primary-400">
+                    Full breakdown
+                  </Link>
+                </div>
+                <ul className="mt-5 space-y-4">
+                  {CATEGORIES.map((c) => {
+                    const score = a.categoryScores[c.key];
+                    return (
+                      <li key={c.key}>
+                        <div className="flex items-baseline justify-between gap-3 text-sm">
+                          <span className="text-gray-800 dark:text-gray-200">
+                            {c.label} <span className="text-gray-500 dark:text-gray-400">({Math.round(c.weight * 100)}%)</span>
+                          </span>
+                          <span className="tabular-nums text-gray-600 dark:text-gray-400">
+                            {score}/100, adds {contribution(score, c.weight)}
+                          </span>
+                        </div>
+                        <div
+                          className="mt-1.5 h-2 rounded-full bg-gray-100 dark:bg-gray-800"
+                          role="progressbar"
+                          aria-label={c.label}
+                          aria-valuenow={score}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        >
+                          <div className="h-2 rounded-full bg-primary-500" style={{ width: `${score}%` }} />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Card>
+
+              <Card>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Score history</h2>
+                {points.length >= 2 ? (
+                  <>
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                      {points.length} analyses since {new Date(points[0].generatedAt).toLocaleDateString()}.
+                    </p>
+                    <div className="mt-4">
+                      <ScoreHistoryChart points={points} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    Your trend appears here after your next analysis. Make one of the suggested fixes, then analyse again to
+                    see the change.
+                  </p>
+                )}
+              </Card>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Top skills</h2>
+                  <Link to="/dashboard/skills" className="text-sm font-medium text-primary-700 hover:underline dark:text-primary-400">
+                    All skills
+                  </Link>
+                </div>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {a.skills.slice(0, 12).map((s) => (
+                    <li
+                      key={s.name}
+                      className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-800 dark:bg-primary-950 dark:text-primary-200"
+                    >
+                      {s.name}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+
+              <Card>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Most starred</h2>
+                  <Link to="/dashboard/repositories" className="text-sm font-medium text-primary-700 hover:underline dark:text-primary-400">
+                    All repositories
+                  </Link>
+                </div>
+                <ul className="mt-4 divide-y divide-gray-200 dark:divide-gray-800">
+                  {topRepos.map((r) => (
+                    <li key={r.name} className="flex items-center justify-between gap-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 truncate font-medium text-gray-900 dark:text-white">
+                          {r.name}
+                          {r.isPrivate && <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-label="Private" />}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{r.language ?? 'No language detected'}</p>
+                      </div>
+                      <span className="flex shrink-0 items-center gap-1 text-sm tabular-nums text-gray-600 dark:text-gray-400">
+                        <Star className="h-4 w-4" aria-hidden="true" /> {r.stars}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
             </div>
           </div>
-        </Card>
-      </div>
-
-      {/* Weaknesses Alert */}
-      {result.weaknesses && result.weaknesses.length > 0 && (
-        <Alert variant="warning" title="Areas for Improvement">
-          <ul className="list-disc list-inside mt-2 space-y-1">
-            {result.weaknesses.slice(0, 3).map((weakness, index) => (
-              <li key={index}>{weakness}</li>
-            ))}
-          </ul>
-          <Link
-            to="/dashboard/enhancements"
-            className="inline-flex items-center gap-1 mt-3 text-yellow-800 hover:text-yellow-900 font-medium"
-          >
-            View all suggestions
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Alert>
-      )}
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Total Stars</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {result.repositories.reduce((sum, r) => sum + (r.stars || 0), 0)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Total Forks</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {result.repositories.reduce((sum, r) => sum + (r.forks || 0), 0)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Languages</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {new Set(result.repositories.map((r) => r.language).filter(Boolean)).size}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Badges Earned</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {result.badges?.length || 0}
-          </div>
-        </Card>
-      </div>
-
-      {/* Top Skills & Top Repos */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Top Skills */}
-        <Card>
-          <CardHeader
-            title="Top Skills"
-            action={
-              <Link
-                to="/dashboard/skills"
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
-                View all
-              </Link>
-            }
-          />
-          <div className="flex flex-wrap gap-2">
-            {result.skills.slice(0, 8).map((skill, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full text-sm font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </Card>
-
-        {/* Top Repositories */}
-        <Card>
-          <CardHeader
-            title="Top Repositories"
-            action={
-              <Link
-                to="/dashboard/repositories"
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
-                View all
-              </Link>
-            }
-          />
-          <div className="space-y-3">
-            {result.repositories
-              .sort((a, b) => (b.stars || 0) - (a.stars || 0))
-              .slice(0, 3)
-              .map((repo, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">{repo.name}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{repo.language}</div>
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {repo.stars} stars
-                  </div>
-                </div>
-              ))}
-          </div>
-        </Card>
-      </div>
-    </div>
+        );
+      }}
+    </AnalysisGate>
   );
 };
 
