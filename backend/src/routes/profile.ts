@@ -1,112 +1,96 @@
 import { Router, Request, Response } from 'express';
-import { User } from '../models';
-import { AnalysisReport } from '../models';
+import { User, AnalysisReport } from '../models';
 import githubService from '../services/githubService';
-import logger from '../utils/logger';
-
+import { visibleRepos } from '../services/showcaseService';
+import { asyncHandler } from '../middleware';
 import { validate } from '../middleware/validate';
 import { usernameParams } from '../validation/schemas';
+import { NotFoundError } from '../utils/errors';
+import logger from '../utils/logger';
 
 const router = Router();
 
+/** GitHub usernames are case-insensitive. */
+export function findUserByUsername(username: string) {
+  return User.findOne({ username }).collation({ locale: 'en', strength: 2 });
+}
+
 /**
  * GET /api/profile/:username
- * Public endpoint — returns portfolio data for the given username
+ * Public, no auth. Returns only what the owner has chosen to show:
+ * private repos appear only if opted in, and never with a link.
  */
-router.get('/:username', validate({ params: usernameParams }), async (req: Request, res: Response) => {
-  const { username } = req.params;
-
-  try {
-    // Find the user by GitHub username (keep accessToken for internal use)
-    const user = await User.findOne({ username });
+router.get(
+  '/:username',
+  validate({ params: usernameParams }),
+  asyncHandler(async (req: Request, res: Response) => {
+    const user = await findUserByUsername(req.params.username);
     if (!user) {
-      res.status(404).json({
-        success: false,
-        error: 'Profile not found. This user has not signed up on GitVanta.',
-      });
-      return;
+      throw new NotFoundError('Profile not found. This user has not signed up on GitVanta.');
     }
 
-    // Find the latest analysis for this user
-    const analysis = await AnalysisReport.findOne({ userId: user._id })
-      .sort({ generatedAt: -1 })
-      .lean();
-
+    const analysis: any = await AnalysisReport.findOne({ userId: user._id }).sort({ generatedAt: -1 }).lean();
     if (!analysis) {
-      res.status(404).json({
-        success: false,
-        error: 'No analysis found. This user has not run a portfolio analysis yet.',
-      });
-      return;
+      throw new NotFoundError('No analysis yet. This user has not run a portfolio analysis.');
     }
 
-    // Fetch fresh GitHub profile data + social accounts in parallel
+    // Refresh public GitHub details. Done without the owner's token so
+    // public page views never spend their GitHub quota.
     let socialAccounts: { provider: string; url: string }[] = [];
-    let githubProfile: any = null;
+    let gh: any = null;
     try {
-      const [socials, ghUser] = await Promise.all([
-        githubService.getUserSocialAccounts(user.accessToken || '', username),
-        githubService.getUserByUsername(user.accessToken || '', username),
+      [socialAccounts, gh] = await Promise.all([
+        githubService.getUserSocialAccounts('', user.username),
+        githubService.getUserByUsername('', user.username),
       ]);
-      socialAccounts = socials;
-      githubProfile = ghUser;
-
-      // Update user record with latest GitHub data if we got fresh data
-      if (githubProfile) {
-        const updates: Record<string, any> = {};
-        if (githubProfile.bio && githubProfile.bio !== user.bio) updates.bio = githubProfile.bio;
-        if (githubProfile.company && githubProfile.company !== user.company) updates.company = githubProfile.company;
-        if (githubProfile.location && githubProfile.location !== user.location) updates.location = githubProfile.location;
-        if (githubProfile.blog && githubProfile.blog !== user.blog) updates.blog = githubProfile.blog;
-        if (githubProfile.email && githubProfile.email !== user.email) updates.email = githubProfile.email;
-        if (githubProfile.followers !== user.followers) updates.followers = githubProfile.followers;
-        if (githubProfile.public_repos !== user.publicRepos) updates.publicRepos = githubProfile.public_repos;
-        if (githubProfile.avatar_url && githubProfile.avatar_url !== user.avatarUrl) updates.avatarUrl = githubProfile.avatar_url;
-        if (githubProfile.name && githubProfile.name !== user.displayName) updates.displayName = githubProfile.name;
-
-        if (Object.keys(updates).length > 0) {
-          await User.updateOne({ _id: user._id }, { $set: updates });
-          // Apply to current response too
-          Object.assign(user, updates);
-        }
+      const updates: Record<string, unknown> = {};
+      const fields: Array<[string, unknown, unknown]> = [
+        ['bio', gh?.bio, user.bio],
+        ['company', gh?.company, user.company],
+        ['location', gh?.location, user.location],
+        ['blog', gh?.blog, user.blog],
+        ['followers', gh?.followers, user.followers],
+        ['publicRepos', gh?.public_repos, user.publicRepos],
+        ['avatarUrl', gh?.avatar_url, user.avatarUrl],
+        ['displayName', gh?.name, user.displayName],
+      ];
+      for (const [key, fresh, current] of fields) {
+        if (fresh !== undefined && fresh !== null && fresh !== '' && fresh !== current) updates[key] = fresh;
       }
-    } catch (err) {
-      logger.warn(`Could not fetch fresh GitHub data for ${username}`);
+      if (Object.keys(updates).length > 0) {
+        await User.updateOne({ _id: user._id }, { $set: updates });
+        Object.assign(user, updates);
+      }
+    } catch {
+      logger.warn(`Could not refresh GitHub data for public profile ${user.username}`);
     }
 
-    // Build the public profile response (exclude sensitive data)
-    const publicProfile = {
-      username: user.username,
-      displayName: githubProfile?.name || user.displayName,
-      avatarUrl: githubProfile?.avatar_url || user.avatarUrl,
-      bio: githubProfile?.bio || user.bio || '',
-      company: githubProfile?.company || user.company || '',
-      location: githubProfile?.location || user.location || '',
-      blog: githubProfile?.blog || user.blog || '',
-      profileUrl: user.profileUrl,
-      followers: githubProfile?.followers ?? user.followers,
-      publicRepos: githubProfile?.public_repos ?? user.publicRepos,
-      socialAccounts,
-      overallScore: analysis.overallScore,
-      categoryScores: analysis.categoryScores,
-      skills: analysis.skills || [],
-      badges: analysis.badges || [],
-      // Never expose private repositories on the public page.
-      repositories: (analysis.repositories || []).filter((r: any) => !r.isPrivate),
-      generatedAt: analysis.generatedAt,
-    };
-
+    res.set('Cache-Control', 'public, max-age=60');
     res.json({
       success: true,
-      data: publicProfile,
+      data: {
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        bio: user.bio || '',
+        company: user.company || '',
+        location: user.location || '',
+        blog: user.blog || '',
+        profileUrl: user.profileUrl || `https://github.com/${user.username}`,
+        followers: user.followers,
+        publicRepos: user.publicRepos,
+        socialAccounts,
+        overallScore: analysis.overallScore,
+        categoryScores: analysis.categoryScores,
+        skills: analysis.skills || [],
+        badges: analysis.badges || [],
+        repositories: visibleRepos(analysis.repositories, user),
+        headline: analysis.aiSummary?.headline ?? null,
+        summary: analysis.aiSummary?.summary ?? null,
+        generatedAt: analysis.generatedAt,
+      },
     });
-  } catch (error: any) {
-    logger.error(`Public profile error for ${username}:`, error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to load profile',
-    });
-  }
-});
+  })
+);
 
 export default router;

@@ -59,3 +59,12 @@ const aiConfigFields = {
 export const aiSettingsBody = z.object({ ...aiConfigFields, enabled: z.boolean().optional() }).strict();
 export const aiTestBody = z.object(aiConfigFields).strict();
 export const aiToggleBody = z.object({ enabled: z.boolean() }).strict();
+
+const repoNameList = z.array(repoName).max(1000).transform((names) => [...new Set(names)]);
+
+export const showcaseBody = z
+  .object({
+    hiddenRepos: repoNameList,
+    shownPrivateRepos: repoNameList,
+  })
+  .strict();

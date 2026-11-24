@@ -139,6 +139,10 @@ const analysisReportSchema = new Schema<IAnalysisReport>(
       type: Schema.Types.Mixed,
       default: undefined,
     },
+    aiSummary: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
     generatedAt: {
       type: Date,
       default: Date.now,

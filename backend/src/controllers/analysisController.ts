@@ -28,7 +28,10 @@ export async function getRepoInsights(req: AuthenticatedRequest, res: Response):
 
 export async function getProfessionalProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const data = await analysisService.generateProfessionalProfile(user._id, user.username, user.accessToken);
+  const refreshSummary = req.query.refresh === 'true';
+  const data = await analysisService.generateProfessionalProfile(user._id, user.username, user.accessToken, {
+    refreshSummary,
+  });
   res.json({ success: true, data });
 }
 

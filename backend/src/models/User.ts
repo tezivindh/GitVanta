@@ -83,6 +83,13 @@ const userSchema = new Schema<IUser>(
       type: aiSettingsSchema,
       default: undefined,
     },
+    sessionsRevokedAt: {
+      type: Date,
+    },
+    profileSettings: {
+      hiddenRepos: { type: [String], default: [] },
+      shownPrivateRepos: { type: [String], default: [] },
+    },
   },
   {
     timestamps: true,

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as analysisController from '../controllers/analysisController';
-import { authenticateToken, asyncHandler, analysisLimiter, exportLimiter, compareLimiter } from '../middleware';
+import { authenticateToken, asyncHandler, analysisLimiter, exportLimiter, compareLimiter, aiLimiter } from '../middleware';
 import { validate } from '../middleware/validate';
 import { historyQuery, usernameParams } from '../validation/schemas';
 
@@ -17,7 +17,12 @@ router.get('/badges', asyncHandler(analysisController.getBadges));
 router.get('/improvements', asyncHandler(analysisController.getImprovements));
 router.get('/insights', asyncHandler(analysisController.getRepoInsights));
 
-router.get('/professional-profile', asyncHandler(analysisController.getProfessionalProfile));
+// Regenerating the AI summary counts against the AI limit; plain views don't.
+router.get(
+  '/professional-profile',
+  (req, res, next) => (req.query.refresh === 'true' ? aiLimiter(req, res, next) : next()),
+  asyncHandler(analysisController.getProfessionalProfile)
+);
 
 router.get(
   '/compare/:username',

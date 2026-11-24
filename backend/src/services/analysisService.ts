@@ -3,6 +3,9 @@ import { AnalysisReport, RepoInsight, User } from '../models';
 import githubService from './githubService';
 import aiService from './aiService';
 import { resolveAIForUser } from './userAIService';
+import { visibleRepos } from './showcaseService';
+import { describeAI, AIMeta } from '../ai';
+import config from '../config';
 import scoringEngine, {
   calculateFullScore,
   extractSkills,
@@ -367,46 +370,86 @@ export async function getRepoInsights(userId: Types.ObjectId): Promise<any[]> {
 }
 
 
+const CATEGORY_LABELS: Record<keyof CategoryScores, string> = {
+  codeQuality: 'Code quality',
+  documentation: 'Documentation',
+  activity: 'Consistent activity',
+  diversity: 'Technical breadth',
+  community: 'Community impact',
+  professionalism: 'Professional presence',
+};
+
 export async function generateProfessionalProfile(
   userId: Types.ObjectId,
   username: string,
-  accessToken: string
+  accessToken: string,
+  options: { refreshSummary?: boolean } = {}
 ): Promise<ProfessionalProfile> {
-  let analysis = await getLatestAnalysis(userId);
-  
+  let analysis: any = await getLatestAnalysis(userId);
   if (!analysis) {
-    analysis = await analyzePortfolio(userId, username, accessToken);
+    await analyzePortfolio(userId, username, accessToken);
+    analysis = await getLatestAnalysis(userId);
   }
 
   const user = await User.findById(userId);
   if (!user) throw new Error('User not found');
 
-  const repos = await githubService.getOwnRepositories(accessToken, username);
-  const topRepos = repos
-    .filter(r => !r.fork && !r.private)
-    .sort((a, b) => b.stargazers_count - a.stargazers_count)
-    .slice(0, 5);
+  // Same visibility rules as the public page.
+  const projects = visibleRepos(analysis.repositories, user)
+    .sort((a, b) => b.stars - a.stars)
+    .slice(0, 6);
 
   let headline = `${user.displayName} | Software Developer`;
-  let summary = `Experienced developer with ${repos.length} public repositories and a portfolio score of ${analysis.overallScore}/100.`;
+  let summary = `Developer with ${analysis.repositories?.length ?? 0} projects and a GitVanta score of ${analysis.overallScore}/100.`;
+  let highlights: string[] = [];
+  let ai: AIMeta | null = null;
+  let summaryGeneratedAt: Date | null = null;
 
-  {
+  const cached = analysis.aiSummary;
+  if (cached && !options.refreshSummary) {
+    ({ headline, summary } = cached);
+    highlights = cached.highlights ?? [];
+    ai = cached.ai ?? null;
+    summaryGeneratedAt = cached.generatedAt ?? null;
+  } else {
     try {
-      const ai = await resolveAIForUser(user);
-      const aiSummary = await aiService.generatePortfolioSummary(
-        ai,
+      const resolved = await resolveAIForUser(user);
+      // Only what visitors may see goes into the prompt.
+      const promptRepos = visibleRepos(analysis.repositories, user).map((r) => ({
+        name: r.name,
+        description: r.description,
+        stargazers_count: r.stars,
+      })) as unknown as GitHubRepository[];
+      const result = await aiService.generatePortfolioSummary(
+        resolved,
         username,
-        repos.filter(r => !r.fork && !r.private),
+        promptRepos,
         analysis.skills,
         analysis.overallScore
       );
-      headline = aiSummary.headline;
-      summary = aiSummary.summary;
+      headline = result.headline;
+      summary = result.summary;
+      highlights = result.highlights ?? [];
+      ai = describeAI(resolved);
+      summaryGeneratedAt = new Date();
+      await AnalysisReport.updateOne(
+        { _id: analysis._id },
+        { $set: { aiSummary: { headline, summary, highlights, ai, generatedAt: summaryGeneratedAt } } }
+      );
     } catch (error: any) {
-      // Fall back to the plain headline when AI isn't set up or fails.
+      // Plain fallback when AI isn't set up or fails. Only surface the error
+      // when the user explicitly asked for a refresh.
+      if (options.refreshSummary) throw error;
       logger.warn(`AI summary unavailable for ${username}: ${error.message}`);
     }
   }
+
+  const strengths = (Object.keys(CATEGORY_LABELS) as Array<keyof CategoryScores>)
+    .map((k) => ({ k, score: analysis.categoryScores[k] as number }))
+    .filter((c) => c.score >= 60)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((c) => `${CATEGORY_LABELS[c.k]} (${c.score}/100)`);
 
   return {
     username: user.username,
@@ -414,26 +457,30 @@ export async function generateProfessionalProfile(
     avatarUrl: user.avatarUrl,
     headline,
     summary,
+    highlights,
     overallScore: analysis.overallScore,
     topSkills: analysis.skills.slice(0, 10),
-    topProjects: topRepos.map(r => ({
+    topProjects: projects.map((r) => ({
       name: r.name,
-      description: r.description || 'No description',
+      description: r.description || '',
       technologies: r.topics.slice(0, 5),
-      stars: r.stargazers_count,
-      url: r.html_url,
+      language: r.language,
+      stars: r.stars,
+      url: r.url,
+      homepage: r.homepage,
+      isPrivate: r.isPrivate,
       highlights: [],
     })),
     badges: analysis.badges,
-    strengths: analysis.improvements
-      .filter((imp: Improvement) => imp.priority > 3)
-      .map((imp: Improvement) => imp.title)
-      .slice(0, 5),
+    strengths,
     contact: {
       email: user.email,
       github: user.profileUrl,
       website: user.blog,
     },
+    ai,
+    summaryGeneratedAt,
+    publicUrl: `${config.frontendUrl.replace(/\/+$/, '')}/profile/${user.username}`,
   };
 }
 
