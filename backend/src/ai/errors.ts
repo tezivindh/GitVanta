@@ -34,7 +34,7 @@ export function aiErrorFromStatus(
   status: number | undefined,
   detail?: string
 ): AIProviderError {
-  const suffix = detail ? ` (${truncate(detail, 200)})` : '';
+  const suffix = detail ? ` (${truncate(redactSecrets(detail), 200)})` : '';
   switch (status) {
     case 401:
     case 403:
@@ -65,4 +65,11 @@ export function aiErrorFromStatus(
 
 function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+/** Provider error text sometimes echoes part of the key; never pass that on. */
+export function redactSecrets(text: string): string {
+  return text
+    .replace(/\b(sk-ant-|sk-or-|sk-proj-|sk-|gsk_|AIza|xai-|ghp_|gho_)[A-Za-z0-9_\-*.]{4,}/g, '$1[redacted]')
+    .replace(/\b(Bearer)\s+[A-Za-z0-9_\-.=]{8,}/gi, '$1 [redacted]');
 }
