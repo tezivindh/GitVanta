@@ -7,7 +7,6 @@ import {
   MapPin,
   Building2,
   Globe,
-  ExternalLink,
   Github,
   Linkedin,
   Instagram,
@@ -23,7 +22,8 @@ import { useAuthStore } from '../store/authStore';
 import { getApiError } from '../api/client';
 import { Badge, CategoryScores, ExtractedSkill, PublicRepo } from '../types';
 import { CATEGORIES } from '../lib/scoring';
-import { ErrorState, LoadingRegion, Logo, ScoreCircle, Skeleton, ThemeToggle } from '../components/ui';
+import { ErrorState, LoadingRegion, Logo, Skeleton, ThemeToggle } from '../components/ui';
+import ScoreFormula from '../components/brand/ScoreFormula';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -70,49 +70,55 @@ function socialInfo(account: { provider: string; url: string }) {
 
 const withProtocol = (url: string) => (/^https?:\/\//i.test(url) ? url : `https://${url}`);
 
-const RepoCard: React.FC<{ repo: PublicRepo }> = ({ repo }) => {
-  const body = (
-    <>
-      <span className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-white">
-        <span className="truncate">{repo.name}</span>
-        {repo.isPrivate ? (
-          <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-label="Private project, no public link" />
-        ) : (
-          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-hidden="true" />
-        )}
-      </span>
-      <span className="mt-1.5 line-clamp-2 block text-sm text-gray-600 dark:text-gray-400">
-        {repo.description || 'No description'}
-      </span>
-      <span className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-        {repo.language && <span>{repo.language}</span>}
-        {!repo.isPrivate && (
-          <>
-            <span className="inline-flex items-center gap-1">
-              <Star className="h-3.5 w-3.5" aria-hidden="true" /> {repo.stars}
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <GitFork className="h-3.5 w-3.5" aria-hidden="true" /> {repo.forks}
-            </span>
-          </>
-        )}
-        {repo.isPrivate && <span>Private project</span>}
-      </span>
-    </>
-  );
-  return repo.url ? (
-    <a
-      href={repo.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block h-full rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:border-primary-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-primary-800"
-    >
-      {body}
-    </a>
-  ) : (
-    <div className="h-full rounded-xl border border-dashed border-gray-300 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">{body}</div>
-  );
-};
+const linkClass = 'inline-flex items-center gap-1.5 text-gray-800 underline-offset-4 hover:underline dark:text-gray-200';
+
+const RepoRow: React.FC<{ repo: PublicRepo }> = ({ repo }) => (
+  <li className="grid gap-x-6 gap-y-1 py-4 sm:grid-cols-[minmax(0,16rem)_1fr_auto] sm:items-baseline">
+    <p className="flex min-w-0 items-center gap-1.5 font-semibold">
+      {repo.url ? (
+        <a
+          href={repo.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="truncate text-primary-700 underline-offset-4 hover:underline dark:text-primary-300"
+        >
+          {repo.name}
+        </a>
+      ) : (
+        <span className="truncate text-gray-950 dark:text-white">{repo.name}</span>
+      )}
+      {repo.isPrivate && <Lock className="h-3.5 w-3.5 shrink-0 text-gray-500" aria-label="Private project, no public link" />}
+    </p>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      {repo.description || (repo.isPrivate ? 'Private project' : 'No description')}
+    </p>
+    <p className="flex items-center gap-3 text-sm tabular-nums text-gray-600 sm:justify-end dark:text-gray-400">
+      {repo.language && <span>{repo.language}</span>}
+      {!repo.isPrivate && repo.stars > 0 && (
+        <span className="inline-flex items-center gap-1">
+          <Star className="h-3.5 w-3.5" aria-hidden="true" /> {repo.stars}
+          <span className="sr-only">stars</span>
+        </span>
+      )}
+      {!repo.isPrivate && repo.forks > 0 && (
+        <span className="inline-flex items-center gap-1">
+          <GitFork className="h-3.5 w-3.5" aria-hidden="true" /> {repo.forks}
+          <span className="sr-only">forks</span>
+        </span>
+      )}
+    </p>
+  </li>
+);
+
+/** One band of the résumé layout: heading on the left, content on the right. */
+const Band: React.FC<{ id: string; title: React.ReactNode; children: React.ReactNode }> = ({ id, title, children }) => (
+  <section aria-labelledby={id} className="grid gap-4 border-t border-gray-200 py-10 lg:grid-cols-12 lg:gap-8 dark:border-gray-800">
+    <h2 id={id} className="font-display text-xl text-gray-950 lg:col-span-3 dark:text-white">
+      {title}
+    </h2>
+    <div className="min-w-0 lg:col-span-9">{children}</div>
+  </section>
+);
 
 const PublicProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -167,8 +173,8 @@ const PublicProfilePage: React.FC = () => {
   };
 
   const nav = (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-gray-200 bg-gray-50/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo />
         <div className="flex items-center gap-1 sm:gap-2">
           <ThemeToggle />
@@ -176,7 +182,7 @@ const PublicProfilePage: React.FC = () => {
             <button
               type="button"
               onClick={copyLink}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-gray-800 hover:bg-gray-200/60 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
               {copied ? 'Link copied' : 'Copy link'}
@@ -185,7 +191,7 @@ const PublicProfilePage: React.FC = () => {
           {!viewer && (
             <Link
               to="/"
-              className="hidden h-9 items-center rounded-lg bg-primary-600 px-3 text-sm font-medium text-white hover:bg-primary-700 sm:inline-flex dark:bg-primary-500 dark:text-gray-950"
+              className="hidden h-9 items-center rounded-md bg-gray-950 px-3.5 text-sm font-semibold text-white hover:bg-gray-800 sm:inline-flex dark:bg-primary-400 dark:text-gray-950 dark:hover:bg-primary-300"
             >
               Get your score
             </Link>
@@ -199,15 +205,15 @@ const PublicProfilePage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         {nav}
-        <LoadingRegion label="Loading profile" className="mx-auto max-w-5xl space-y-6 px-4 py-10 sm:px-6">
-          <div className="flex items-center gap-5">
-            <Skeleton className="h-24 w-24 rounded-2xl" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-7 w-56" />
-              <Skeleton className="h-4 w-80 max-w-full" />
+        <LoadingRegion label="Loading profile" className="mx-auto max-w-6xl space-y-6 px-4 py-14 sm:px-6">
+          <div className="flex items-center gap-6">
+            <Skeleton className="h-20 w-20 rounded-lg" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-9 w-72 max-w-full" />
+              <Skeleton className="h-4 w-48" />
             </div>
           </div>
-          <Skeleton className="h-40" />
+          <Skeleton className="h-24" />
           <Skeleton className="h-64" />
         </LoadingRegion>
       </div>
@@ -222,9 +228,9 @@ const PublicProfilePage: React.FC = () => {
           {error?.notFound ? (
             <div className="text-center">
               <Github className="mx-auto h-10 w-10 text-gray-400" aria-hidden="true" />
-              <h1 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">No GitVanta profile here</h1>
+              <h1 className="font-display mt-4 text-2xl text-gray-950 dark:text-white">No GitVanta profile here</h1>
               <p className="mt-2 text-gray-600 dark:text-gray-400">{error.message}</p>
-              <Link to="/" className="mt-6 inline-block font-medium text-primary-700 hover:underline dark:text-primary-400">
+              <Link to="/" className="mt-6 inline-block font-semibold text-primary-700 underline-offset-4 hover:underline dark:text-primary-400">
                 Score your own GitHub profile
               </Link>
             </div>
@@ -244,155 +250,151 @@ const PublicProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       {nav}
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-6">
-        {/* Identity */}
-        <section className="flex flex-col gap-6 sm:flex-row sm:items-start">
-          <img src={profile.avatarUrl} alt="" className="h-24 w-24 rounded-2xl ring-1 ring-gray-200 dark:ring-gray-800" />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">{profile.displayName}</h1>
-            <p className="mt-0.5 text-gray-500 dark:text-gray-400">@{profile.username}</p>
-            {profile.headline && <p className="mt-3 text-lg text-primary-700 dark:text-primary-400">{profile.headline}</p>}
-            {profile.bio && <p className="mt-2 max-w-2xl text-gray-700 dark:text-gray-300">{profile.bio}</p>}
-            <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
-              {profile.company && (
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6 sm:pt-14">
+        {/* Identity and score */}
+        <section className="grid gap-10 pb-10 lg:grid-cols-12 lg:gap-8">
+          <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start lg:col-span-8">
+            <img src={profile.avatarUrl} alt="" className="h-20 w-20 shrink-0 rounded-lg ring-1 ring-gray-200 dark:ring-gray-800" />
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-[2.25rem] leading-none text-gray-950 sm:text-[2.75rem] dark:text-white">
+                {profile.displayName}
+              </h1>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">@{profile.username}</p>
+              {profile.headline && <p className="mt-4 max-w-2xl text-lg text-gray-900 dark:text-gray-100">{profile.headline}</p>}
+              {profile.bio && <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">{profile.bio}</p>}
+              <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
+                {profile.company && (
+                  <li className="inline-flex items-center gap-1.5">
+                    <Building2 className="h-4 w-4" aria-hidden="true" /> {profile.company}
+                  </li>
+                )}
+                {profile.location && (
+                  <li className="inline-flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" aria-hidden="true" /> {profile.location}
+                  </li>
+                )}
                 <li className="inline-flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4" aria-hidden="true" /> {profile.company}
+                  <Users className="h-4 w-4" aria-hidden="true" /> {profile.followers} followers
                 </li>
-              )}
-              {profile.location && (
-                <li className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" aria-hidden="true" /> {profile.location}
-                </li>
-              )}
-              <li className="inline-flex items-center gap-1.5">
-                <Users className="h-4 w-4" aria-hidden="true" /> {profile.followers} followers
-              </li>
-              {profile.blog && (
+              </ul>
+              <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
                 <li>
-                  <a href={withProtocol(profile.blog)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 hover:underline">
-                    <Globe className="h-4 w-4" aria-hidden="true" /> {profile.blog.replace(/^https?:\/\//, '')}
+                  <a href={profile.profileUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                    <Github className="h-4 w-4" aria-hidden="true" /> GitHub
                   </a>
                 </li>
-              )}
-            </ul>
-            <ul className="mt-4 flex flex-wrap gap-2">
-              <li>
-                <a
-                  href={profile.profileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-white dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900"
-                >
-                  <Github className="h-4 w-4" aria-hidden="true" /> GitHub
-                </a>
-              </li>
-              {profile.socialAccounts.map((acc) => {
-                const { label, icon: Icon } = socialInfo(acc);
-                return (
-                  <li key={acc.url}>
-                    <a
-                      href={acc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-700 hover:bg-white dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900"
-                    >
-                      <Icon className="h-4 w-4" aria-hidden="true" /> {label}
+                {profile.blog && (
+                  <li>
+                    <a href={withProtocol(profile.blog)} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                      <Globe className="h-4 w-4" aria-hidden="true" /> {profile.blog.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                     </a>
                   </li>
-                );
-              })}
-            </ul>
+                )}
+                {profile.socialAccounts.map((acc) => {
+                  const { label, icon: Icon } = socialInfo(acc);
+                  return (
+                    <li key={acc.url}>
+                      <a href={acc.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                        <Icon className="h-4 w-4" aria-hidden="true" /> {label}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
-        </section>
 
-        {/* Score */}
-        <section aria-labelledby="score-title" className="card grid gap-6 p-6 md:grid-cols-[auto_1fr] md:items-center">
-          <div className="flex justify-center">
-            <ScoreCircle score={profile.overallScore} size="lg" label="GitVanta score" />
-          </div>
-          <div>
-            <h2 id="score-title" className="sr-only">
-              Score by category
-            </h2>
-            <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
-              {CATEGORIES.map((c) => (
-                <div key={c.key} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 text-sm">
-                  <dt className="text-gray-700 dark:text-gray-300">{c.label}</dt>
-                  <dd className="tabular-nums text-gray-500 dark:text-gray-400">{profile.categoryScores[c.key]}</dd>
-                  <dd className="col-span-2 mt-1.5 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true">
-                    <div className="h-1.5 rounded-full bg-primary-500" style={{ width: `${profile.categoryScores[c.key]}%` }} />
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          <div className="lg:col-span-4 lg:text-right">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">GitVanta score</p>
+            <p className="font-display mt-1 text-[5.5rem] leading-[0.85] text-gray-950 dark:text-white">
+              {profile.overallScore}
+              <span className="text-2xl text-gray-500 dark:text-gray-400">/100</span>
+            </p>
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
               Analysed {new Date(profile.generatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}.{' '}
-              <Link to="/#scoring" className="underline">
-                How the score works
+              <Link to="/#scoring" className="font-medium text-gray-900 underline underline-offset-4 dark:text-gray-100">
+                How it’s scored
               </Link>
             </p>
           </div>
         </section>
 
+        <section aria-labelledby="score-title" className="pb-12">
+          <h2 id="score-title" className="sr-only">
+            Score by category
+          </h2>
+          <ScoreFormula
+            parts={CATEGORIES.map((c) => ({
+              label: c.label,
+              short: c.key === 'professionalism' ? 'Profile' : undefined,
+              weight: c.weight,
+              score: profile.categoryScores[c.key],
+            }))}
+          />
+        </section>
+
         {profile.summary && (
-          <section aria-labelledby="about-title">
-            <h2 id="about-title" className="text-lg font-semibold text-gray-900 dark:text-white">
-              About
-            </h2>
-            <p className="mt-2 max-w-3xl leading-relaxed text-gray-700 dark:text-gray-300">{profile.summary}</p>
-          </section>
+          <Band id="about-title" title="About">
+            <p className="max-w-3xl text-lg leading-relaxed text-gray-800 dark:text-gray-200">{profile.summary}</p>
+          </Band>
         )}
 
-        {/* Projects */}
-        <section aria-labelledby="projects-title">
-          <h2 id="projects-title" className="text-lg font-semibold text-gray-900 dark:text-white">
-            Projects ({repos.length})
-          </h2>
+        <Band
+          id="projects-title"
+          title={
+            <>
+              Projects <span className="text-gray-500 dark:text-gray-400">{repos.length}</span>
+            </>
+          }
+        >
           {repos.length === 0 ? (
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">No public projects to show yet.</p>
+            <p className="text-gray-600 dark:text-gray-400">No public projects to show yet.</p>
           ) : (
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="-mt-4 divide-y divide-gray-200 dark:divide-gray-800">
               {repos.map((r) => (
-                <li key={r.name}>
-                  <RepoCard repo={r} />
-                </li>
+                <RepoRow key={r.name} repo={r} />
               ))}
             </ul>
           )}
-        </section>
+        </Band>
 
-        <div className="grid gap-8 md:grid-cols-2">
-          <section aria-labelledby="skills-title">
-            <h2 id="skills-title" className="text-lg font-semibold text-gray-900 dark:text-white">
-              Skills
-            </h2>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {profile.skills.slice(0, 24).map((s) => (
-                <li key={s.name} className="rounded-full bg-primary-50 px-3 py-1 text-sm text-primary-800 dark:bg-primary-950 dark:text-primary-200">
-                  {s.name}
-                </li>
-              ))}
-            </ul>
-          </section>
-          <section aria-labelledby="badges-title">
-            <h2 id="badges-title" className="text-lg font-semibold text-gray-900 dark:text-white">
-              Badges ({profile.badges.length})
-            </h2>
-            <ul className="mt-3 space-y-2">
+        <Band id="skills-title" title="Skills">
+          <ul className="flex flex-wrap gap-2">
+            {profile.skills.slice(0, 30).map((s) => (
+              <li
+                key={s.name}
+                className="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-sm text-gray-800 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              >
+                {s.name}
+              </li>
+            ))}
+          </ul>
+        </Band>
+
+        {profile.badges.length > 0 && (
+          <Band
+            id="badges-title"
+            title={
+              <>
+                Badges <span className="text-gray-500 dark:text-gray-400">{profile.badges.length}</span>
+              </>
+            }
+          >
+            <dl className="grid gap-x-8 gap-y-5 sm:grid-cols-2">
               {profile.badges.map((b) => (
-                <li key={b.id} className="text-sm">
-                  <span className="font-medium text-gray-900 dark:text-white">{b.name}</span>
-                  <span className="text-gray-600 dark:text-gray-400">: {b.description}</span>
-                </li>
+                <div key={b.id}>
+                  <dt className="font-semibold text-gray-950 dark:text-white">{b.name}</dt>
+                  <dd className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{b.description}</dd>
+                </div>
               ))}
-            </ul>
-          </section>
-        </div>
+            </dl>
+          </Band>
+        )}
       </main>
 
-      <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
+      <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-600 dark:border-gray-800 dark:text-gray-400">
         Portfolio scored by{' '}
-        <Link to="/" className="font-medium text-primary-700 hover:underline dark:text-primary-400">
+        <Link to="/" className="font-semibold text-gray-900 underline-offset-4 hover:underline dark:text-gray-100">
           GitVanta
         </Link>
       </footer>

@@ -2,26 +2,29 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RefreshCw, TrendingUp, TrendingDown, Minus, Lock, Star } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
-import { Card, Button, ScoreCircle, PageHeader } from '../../components/ui';
+import { Card, Button, PageHeader } from '../../components/ui';
+import ScoreFormula from '../../components/brand/ScoreFormula';
 import { ScoreHistoryChart } from '../../components/charts';
 import AnalysisGate, { runAnalysisWithFeedback } from '../../components/AnalysisGate';
 import QuickWinsCard from '../../components/QuickWinsCard';
-import { CATEGORIES, contribution } from '../../lib/scoring';
+import { CATEGORIES, CategoryKey } from '../../lib/scoring';
+
+const SHORT_LABELS: Partial<Record<CategoryKey, string>> = { professionalism: 'Profile' };
 import { formatRelative } from '../../lib/errors';
 
 const ChangeChip: React.FC<{ change: number | null }> = ({ change }) => {
-  if (change === null) return <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Your first analysis</p>;
+  if (change === null) return <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Your first analysis</p>;
   const Icon = change > 0 ? TrendingUp : change < 0 ? TrendingDown : Minus;
   return (
     <p
       className={
         change > 0
-          ? 'mt-3 inline-flex items-center gap-1.5 rounded-full bg-gain-50 px-2.5 py-1 text-sm font-medium text-gain-700 dark:bg-gain-700/20 dark:text-gain-300'
-          : 'mt-3 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+          ? 'mt-4 inline-flex items-center gap-1.5 rounded-full bg-gain-50 px-2.5 py-1 text-sm font-medium text-gain-700 dark:bg-gain-700/20 dark:text-gain-300'
+          : 'mt-4 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300'
       }
     >
       <Icon className="h-4 w-4" aria-hidden="true" />
-      {change > 0 ? `+${change}` : change} since last analysis
+      {change === 0 ? 'No change' : change > 0 ? `+${change}` : change} since last analysis
     </p>
   );
 };
@@ -59,76 +62,61 @@ const DashboardOverview: React.FC = () => {
               actions={reanalyse}
             />
 
-            <div className="grid gap-6 lg:grid-cols-3">
-              <Card className="flex flex-col items-center justify-center text-center">
-                <ScoreCircle score={a.overallScore} size="xl" label="Overall score" />
-                <ChangeChip change={history?.change ?? null} />
-                <dl className="mt-6 grid w-full grid-cols-3 gap-2 border-t border-gray-200 pt-4 text-center dark:border-gray-800">
-                  <div>
-                    <dt className="text-xs text-gray-500 dark:text-gray-400">Repos</dt>
-                    <dd className="text-lg font-semibold tabular-nums text-gray-900 dark:text-white">{repos.length}</dd>
+            <section aria-labelledby="score-heading" className="card p-6 sm:p-8">
+              <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-12">
+                <div className="shrink-0">
+                  <h2 id="score-heading" className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    Overall score
+                  </h2>
+                  <p className="font-display mt-1 text-[5rem] leading-[0.85] text-gray-950 dark:text-white">
+                    {a.overallScore}
+                    <span className="text-2xl text-gray-500 dark:text-gray-400">/100</span>
+                  </p>
+                  <ChangeChip change={history?.change ?? null} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <ScoreFormula
+                    parts={CATEGORIES.map((c) => ({
+                      label: c.label,
+                      short: SHORT_LABELS[c.key],
+                      weight: c.weight,
+                      score: a.categoryScores[c.key],
+                    }))}
+                  />
+                  <p className="mt-5 text-sm text-gray-600 dark:text-gray-400">
+                    Each segment is as wide as the category’s weight and filled to your score in it.{' '}
+                    <Link to="/dashboard/analytics" className="font-medium text-primary-700 underline-offset-4 hover:underline dark:text-primary-400">
+                      See every metric
+                    </Link>
+                  </p>
+                </div>
+              </div>
+              <div className="mt-8 flex flex-wrap items-center gap-x-10 gap-y-4 border-t border-gray-200 pt-5 dark:border-gray-800">
+                <dl className="flex flex-wrap gap-x-10 gap-y-4">
+                {[
+                  ['Repositories', repos.length],
+                  ['Skills', a.skills.length],
+                  ['Badges', a.badges.length],
+                ].map(([label, value]) => (
+                  <div key={label as string} className="flex items-baseline gap-2">
+                    <dt className="text-sm text-gray-600 dark:text-gray-400">{label}</dt>
+                    <dd className="font-display order-first text-2xl text-gray-950 dark:text-white">{value}</dd>
                   </div>
-                  <div>
-                    <dt className="text-xs text-gray-500 dark:text-gray-400">Skills</dt>
-                    <dd className="text-lg font-semibold tabular-nums text-gray-900 dark:text-white">{a.skills.length}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs text-gray-500 dark:text-gray-400">Badges</dt>
-                    <dd className="text-lg font-semibold tabular-nums text-gray-900 dark:text-white">{a.badges.length}</dd>
-                  </div>
+                ))}
                 </dl>
                 {privateCount > 0 && (
-                  <p className="mt-3 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                     <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-                    Includes {privateCount} private {privateCount === 1 ? 'repo' : 'repos'}, hidden from your public profile.
+                    {privateCount} private {privateCount === 1 ? 'repo is' : 'repos are'} counted but hidden from your public profile
                   </p>
                 )}
-              </Card>
+              </div>
+            </section>
 
-              <QuickWinsCard quickWins={a.quickWins} className="lg:col-span-2" />
-            </div>
+            <div className="grid gap-6 lg:grid-cols-5">
+              <QuickWinsCard quickWins={a.quickWins} className="lg:col-span-3" />
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">How your score adds up</h2>
-                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Each category is scored 0–100, then weighted.</p>
-                  </div>
-                  <Link to="/dashboard/analytics" className="shrink-0 text-sm font-medium text-primary-700 hover:underline dark:text-primary-400">
-                    Full breakdown
-                  </Link>
-                </div>
-                <ul className="mt-5 space-y-4">
-                  {CATEGORIES.map((c) => {
-                    const score = a.categoryScores[c.key];
-                    return (
-                      <li key={c.key}>
-                        <div className="flex items-baseline justify-between gap-3 text-sm">
-                          <span className="text-gray-800 dark:text-gray-200">
-                            {c.label} <span className="text-gray-500 dark:text-gray-400">({Math.round(c.weight * 100)}%)</span>
-                          </span>
-                          <span className="tabular-nums text-gray-600 dark:text-gray-400">
-                            {score}/100, adds {contribution(score, c.weight)}
-                          </span>
-                        </div>
-                        <div
-                          className="mt-1.5 h-2 rounded-full bg-gray-100 dark:bg-gray-800"
-                          role="progressbar"
-                          aria-label={c.label}
-                          aria-valuenow={score}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                        >
-                          <div className="h-2 rounded-full bg-primary-500" style={{ width: `${score}%` }} />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </Card>
-
-              <Card>
+              <Card className="lg:col-span-2">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Score history</h2>
                 {points.length >= 2 ? (
                   <>
