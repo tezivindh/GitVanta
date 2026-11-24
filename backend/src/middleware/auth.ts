@@ -25,6 +25,11 @@ export async function authenticateToken(
       throw new AuthenticationError('User not found');
     }
 
+    // "Sign out of all sessions" stores a cut-off; older tokens stop working.
+    if (user.sessionsRevokedAt && (decoded.iat ?? 0) * 1000 < user.sessionsRevokedAt.getTime()) {
+      throw new AuthenticationError('Session has been signed out. Please sign in again.');
+    }
+
     req.user = user;
     req.userId = decoded.userId;
 

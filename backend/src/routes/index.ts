@@ -5,6 +5,7 @@ import enhancementRoutes from './enhancement';
 import repositoriesRoutes from './repositories';
 import profileRoutes from './profile';
 import settingsRoutes from './settings';
+import accountRoutes from './account';
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use('/enhance', enhancementRoutes);
 router.use('/repositories', repositoriesRoutes);
 router.use('/profile', profileRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/account', accountRoutes);
 
 export default router;
