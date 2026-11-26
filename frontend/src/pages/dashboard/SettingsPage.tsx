@@ -1,99 +1,126 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
-import { Monitor, Moon, Sun } from 'lucide-react';
-import { useThemeStore, ThemeMode } from '../../store/themeStore';
 import { PageHeader } from '../../components/ui';
 import AIProviderSection from '../../components/settings/AIProviderSection';
 import ShowcaseSection from '../../components/settings/ShowcaseSection';
 import AccountSection from '../../components/settings/AccountSection';
+import { ExportSection } from './ExportPage';
 
-const Section: React.FC<{ id: string; title: string; description: string; children: React.ReactNode }> = ({
-  id,
-  title,
-  description,
-  children,
-}) => (
-  <section id={id} aria-labelledby={`${id}-title`} className="card scroll-mt-24 p-5 sm:p-6">
-    <h2 id={`${id}-title`} className="text-lg font-semibold text-gray-900 dark:text-white">
-      {title}
-    </h2>
-    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{description}</p>
-    <div className="mt-5">{children}</div>
-  </section>
-);
+type TabId = 'ai-provider' | 'public-profile' | 'export' | 'account';
 
-const THEMES: Array<{ mode: ThemeMode; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { mode: 'light', label: 'Light', icon: Sun },
-  { mode: 'dark', label: 'Dark', icon: Moon },
-  { mode: 'system', label: 'Match system', icon: Monitor },
+const TABS: Array<{ id: TabId; label: string; description: string }> = [
+  {
+    id: 'ai-provider',
+    label: 'AI provider',
+    description: 'Choose which AI writes your README rewrites, resume bullets, summaries and roadmaps.',
+  },
+  {
+    id: 'public-profile',
+    label: 'Public profile',
+    description: 'Choose which repositories appear on your public profile and professional view.',
+  },
+  {
+    id: 'export',
+    label: 'Export',
+    description: 'Download your latest analysis as a PDF report or as JSON data.',
+  },
+  {
+    id: 'account',
+    label: 'Account',
+    description: 'Export everything, end other sessions, or delete your account.',
+  },
 ];
 
+/** Older links point at a section that now lives inside another tab. */
+const HASH_TO_TAB: Record<string, TabId> = { appearance: 'account' };
+
+const tabId = (id: TabId) => `settings-tab-${id}`;
+const panelId = (id: TabId) => `settings-panel-${id}`;
+
 const SettingsPage: React.FC = () => {
-  const { mode, setMode } = useThemeStore();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});
+
+  // The open tab lives in the URL hash, so links like settings#ai-provider keep working.
+  const hash = location.hash.replace('#', '');
+  const active: TabId = HASH_TO_TAB[hash] ?? (TABS.some((t) => t.id === hash) ? (hash as TabId) : 'ai-provider');
+  const current = TABS.find((t) => t.id === active)!;
+
+  const open = (id: TabId, focus = false) => {
+    navigate({ hash: `#${id}` }, { replace: true });
+    if (focus) tabRefs.current[id]?.focus();
+  };
+
+  // Arrow keys, Home and End move between tabs (WAI-ARIA tabs pattern).
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const i = TABS.findIndex((t) => t.id === active);
+    const next =
+      e.key === 'ArrowRight' ? (i + 1) % TABS.length
+      : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length
+      : e.key === 'Home' ? 0
+      : e.key === 'End' ? TABS.length - 1
+      : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    open(TABS[next].id, true);
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" description="Manage your AI provider, public profile, appearance and account." />
+      <PageHeader title="Settings" description="Manage your AI provider, public profile, exports and account." />
 
-      <nav aria-label="Settings sections" className="flex flex-wrap gap-2 text-sm">
-        {[
-          ['#ai-provider', 'AI provider'],
-          ['#public-profile', 'Public profile'],
-          ['#appearance', 'Appearance'],
-          ['#account', 'Account'],
-        ].map(([href, label]) => (
-          <a
-            key={href}
-            href={href}
-            className="rounded-full border border-gray-200 px-3 py-1 text-gray-700 hover:bg-paper dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900"
-          >
-            {label}
-          </a>
-        ))}
-      </nav>
-
-      <Section
-        id="ai-provider"
-        title="AI provider"
-        description="Choose which AI writes your README rewrites, resume bullets, summaries and roadmaps."
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        onKeyDown={onKeyDown}
+        className="-mt-2 flex gap-1 overflow-x-auto overscroll-x-contain border-b border-rule [scrollbar-width:none]"
       >
-        <AIProviderSection />
-      </Section>
+        {TABS.map((t) => {
+          const selected = t.id === active;
+          return (
+            <button
+              key={t.id}
+              ref={(el) => (tabRefs.current[t.id] = el)}
+              id={tabId(t.id)}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={panelId(t.id)}
+              tabIndex={selected ? 0 : -1}
+              onClick={() => open(t.id)}
+              className={clsx(
+                'relative -mb-px h-10 shrink-0 whitespace-nowrap border-b-2 px-3 text-sm transition-colors duration-[120ms] ease-out pointer-coarse:h-11 focus-visible:outline-offset-[-2px]',
+                selected ? 'border-accent font-medium text-ink' : 'border-transparent text-muted hover:text-ink active:text-ink'
+              )}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <Section
-        id="public-profile"
-        title="Public profile"
-        description="Choose which repositories appear on your public profile and professional view."
+      <section
+        id={panelId(active)}
+        role="tabpanel"
+        aria-labelledby={tabId(active)}
+        tabIndex={0}
+        className="card grid gap-5 p-5 focus-visible:outline-offset-2 sm:p-6 min-[60rem]:grid-cols-[15rem_minmax(0,1fr)] min-[60rem]:gap-10"
       >
-        <ShowcaseSection />
-      </Section>
-
-      <Section id="appearance" title="Appearance" description="Pick a theme for GitVanta on this device.">
-        <fieldset>
-          <legend className="sr-only">Theme</legend>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {THEMES.map(({ mode: m, label, icon: Icon }) => (
-              <label
-                key={m}
-                className={clsx(
-                  'flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary-500',
-                  mode === m
-                    ? 'border-primary-500 bg-gray-100 text-primary-900 dark:bg-gray-800 dark:text-primary-100'
-                    : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-800/60'
-                )}
-              >
-                <input type="radio" name="theme" value={m} checked={mode === m} onChange={() => setMode(m)} className="sr-only" />
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                {label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      </Section>
-
-      <Section id="account" title="Account" description="Export your data, end other sessions, or delete your account.">
-        <AccountSection />
-      </Section>
+        <div>
+          <h2 className="max-w-none text-md font-medium leading-snug tracking-[-0.01em] text-ink">{current.label}</h2>
+          <p className="mt-1 text-sm text-muted">{current.description}</p>
+        </div>
+        <div className="min-w-0">
+          {active === 'ai-provider' && <AIProviderSection />}
+          {active === 'public-profile' && <ShowcaseSection />}
+          {active === 'export' && <ExportSection />}
+          {active === 'account' && (
+<AccountSection />
+          )}
+        </div>
+      </section>
     </div>
   );
 };

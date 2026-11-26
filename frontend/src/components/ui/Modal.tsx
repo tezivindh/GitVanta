@@ -88,7 +88,7 @@ const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 animate-fade-in bg-gray-950/60 backdrop-blur-xs"
+        className="fixed inset-0 animate-fade-in bg-scrim motion-reduce:animate-none"
         onClick={closeOnOverlay ? onClose : undefined}
         aria-hidden="true"
       />
@@ -99,9 +99,9 @@ const Modal: React.FC<ModalProps> = ({
           ref={dialogRef}
           tabIndex={-1}
           className={clsx(
-            'relative w-full bg-paper dark:bg-gray-900 dark:ring-1 dark:ring-gray-800 rounded-lg shadow-2xl focus:outline-none',
+            'card relative w-full text-ink focus:outline-none',
             // Centered, so it scales from the center (modals are the exception to origin-aware).
-            'animate-dialog-in',
+            'animate-dialog-in motion-reduce:animate-none',
             sizes[size],
             className
           )}
@@ -111,11 +111,11 @@ const Modal: React.FC<ModalProps> = ({
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex min-h-14 items-center justify-between gap-3 border-b border-rule px-4 py-2.5">
               {title && (
                 <h2
                   id={titleId}
-                  className="text-lg font-semibold text-gray-900 dark:text-white"
+                  className="max-w-none text-lg font-medium leading-snug tracking-[-0.01em] text-ink"
                 >
                   {title}
                 </h2>
@@ -126,9 +126,8 @@ const Modal: React.FC<ModalProps> = ({
                   onClick={onClose}
                   aria-label="Close dialog"
                   className={clsx(
-                    'p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200',
-                    'hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors',
-                    'focus:outline-hidden focus:ring-2 focus:ring-primary-500',
+                    '-mr-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-pill text-muted',
+                    'transition-colors duration-[120ms] ease-out hover:bg-paper-3 hover:text-ink pointer-coarse:size-11',
                     !title && 'ml-auto'
                   )}
                 >
@@ -159,7 +158,7 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
   return (
     <div
       className={clsx(
-        'flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800 -mx-4 px-4 -mb-4 pb-4',
+        '-mx-4 -mb-4 mt-4 flex flex-wrap items-center justify-end gap-3 border-t border-rule px-4 py-3',
         className
       )}
     >

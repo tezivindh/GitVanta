@@ -49,17 +49,17 @@ interface EmptyStateProps {
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon: Icon, title, description, action, className }) => (
   <div
     className={clsx(
-      'flex flex-col items-center rounded-lg border border-dashed border-gray-300 px-6 py-12 text-center dark:border-gray-700',
+      'flex flex-col items-center rounded-card border border-dashed border-rule-2 px-6 py-12 text-center',
       className
     )}
   >
     {Icon && (
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-primary-600 dark:bg-gray-800 dark:text-primary-400">
+      <div className="mb-3 text-muted" aria-hidden="true">
         <Icon className="h-6 w-6" />
       </div>
     )}
-    <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
-    {description && <div className="mt-1 max-w-md text-sm text-gray-600 dark:text-gray-400">{description}</div>}
+    <h2 className="max-w-none text-md font-medium leading-snug tracking-[-0.01em] text-ink">{title}</h2>
+    {description && <div className="mt-1 max-w-md text-sm text-muted">{description}</div>}
     {action && <div className="mt-5">{action}</div>}
   </div>
 );
@@ -84,17 +84,17 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   <div
     role="alert"
     className={clsx(
-      'flex flex-col items-center rounded-lg border border-red-200 bg-red-50/60 px-6 py-10 text-center dark:border-red-900/60 dark:bg-red-950/30',
+      'flex flex-col items-center rounded-card border border-rule bg-bad-soft px-6 py-10 text-center',
       className
     )}
   >
-    <AlertTriangle className="mb-3 h-7 w-7 text-red-600 dark:text-red-400" aria-hidden="true" />
-    <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
-    <p className="mt-1 max-w-md text-sm text-gray-700 dark:text-gray-300">{message}</p>
+    <AlertTriangle className="mb-3 h-6 w-6 text-bad" aria-hidden="true" />
+    <h2 className="max-w-none text-md font-medium leading-snug tracking-[-0.01em] text-ink">{title}</h2>
+    <p className="mt-1 max-w-md text-sm text-ink-2">{message}</p>
     {(onRetry || action) && (
       <div className="mt-5 flex flex-wrap justify-center gap-3">
         {onRetry && (
-          <Button variant="outline" size="sm" onClick={onRetry} isLoading={retrying} leftIcon={<RotateCw className="h-4 w-4" />}>
+          <Button variant="outline" size="sm" onClick={onRetry} isLoading={retrying} leftIcon={<RotateCw className="h-4 w-4" aria-hidden="true" />}>
             Try again
           </Button>
         )}
@@ -111,10 +111,10 @@ interface PageHeaderProps {
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, actions }) => (
-  <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div className="mb-8 flex flex-col gap-4 border-b border-rule pb-6 sm:flex-row sm:items-end sm:justify-between">
     <div className="min-w-0">
-      <h1 className="font-display text-[1.75rem] leading-tight text-gray-950 sm:text-[2rem] dark:text-white">{title}</h1>
-      {description && <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{description}</p>}
+      <h1 className="max-w-none font-display text-xl font-medium leading-tight tracking-[-0.02em] text-ink sm:text-2xl">{title}</h1>
+      {description && <p className="mt-1.5 max-w-[65ch] text-sm text-muted">{description}</p>}
     </div>
     {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
   </div>

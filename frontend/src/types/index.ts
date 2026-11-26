@@ -297,9 +297,10 @@ export type AIProviderId =
 
 /** Which provider produced an AI result. */
 export interface AIMeta {
-  provider: AIProviderId;
+  /** Null for GitVanta's built-in AI: its vendor and model are never shown. */
+  provider: AIProviderId | null;
   providerLabel: string;
-  model: string;
+  model: string | null;
   source: 'user' | 'server';
 }
 

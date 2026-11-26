@@ -49,9 +49,13 @@ export interface ResolvedAI {
   source: AIKeySource;
 }
 
+/**
+ * Who wrote an AI result. Provider and model are only named when the user's
+ * own key did the work; GitVanta's built-in AI never discloses its vendor.
+ */
 export interface AIMeta {
-  provider: AIProviderId;
+  provider: AIProviderId | null;
   providerLabel: string;
-  model: string;
+  model: string | null;
   source: AIKeySource;
 }

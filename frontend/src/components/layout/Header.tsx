@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, LayoutDashboard, LogOut, Settings, ExternalLink } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { Logo, ThemeToggle } from '../ui';
+import { Logo } from '../ui';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 const itemClass =
-  'flex w-full items-center gap-2 px-4 py-2 pointer-coarse:py-3 text-sm text-gray-700 hover:bg-gray-50 focus-visible:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800';
+  'flex h-9 w-full items-center gap-2.5 px-3 text-sm text-ink-2 transition-colors duration-[120ms] ease-out pointer-coarse:h-11 hover:bg-paper-3 hover:text-ink focus-visible:bg-paper-3 focus-visible:-outline-offset-2';
 
 const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -47,8 +47,8 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
   };
 
   return (
-    <header className="dark sticky top-0 z-40 border-b border-gray-800 bg-gray-950/95 pt-[env(safe-area-inset-top)] backdrop-blur-md">
-      <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-rule bg-paper pt-[env(safe-area-inset-top)]">
+      <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6">
         <div className="flex items-center gap-2">
           {isAuthenticated && (
             <button
@@ -57,16 +57,15 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
               aria-label={isMenuOpen ? 'Close navigation' : 'Open navigation'}
               aria-expanded={!!isMenuOpen}
               aria-controls="dashboard-sidebar"
-              className="inline-flex size-10 items-center justify-center rounded-md text-gray-600 transition-[background-color,transform] duration-150 ease-[var(--ease-out)] hover:bg-gray-100 hover:text-gray-900 active:scale-[0.94] pointer-coarse:size-11 lg:hidden dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="inline-flex size-9 items-center justify-center rounded-pill text-muted transition-[background-color,color,transform] duration-[120ms] ease-out hover:bg-paper-2 hover:text-ink active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55 pointer-coarse:size-11 lg:hidden"
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
             </button>
           )}
           <Logo to="/dashboard" />
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <ThemeToggle />
           {isAuthenticated && user && (
             <div className="relative">
               <button
@@ -76,10 +75,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
                 aria-haspopup="menu"
                 aria-expanded={open}
                 aria-label={`Account menu for ${user.displayName}`}
-                className="flex items-center gap-2 rounded-full p-1 pr-1 hover:bg-gray-100 sm:pr-3 dark:hover:bg-gray-800"
+                className="flex h-9 items-center gap-2 rounded-pill border border-transparent px-1 transition-[background-color,border-color] duration-[120ms] ease-out hover:border-rule hover:bg-paper-2 aria-expanded:border-rule aria-expanded:bg-paper-2 pointer-coarse:h-11 sm:pr-2.5"
               >
-                <img src={user.avatarUrl} alt="" className="h-8 w-8 rounded-full" />
-                <span className="hidden max-w-[10rem] truncate text-sm font-medium text-gray-700 sm:block dark:text-gray-300">
+                <img src={user.avatarUrl} alt="" className="h-7 w-7 rounded-full border border-rule" />
+                <span className="hidden max-w-[10rem] truncate text-sm font-medium text-ink-2 sm:block">
                   {user.displayName}
                 </span>
               </button>
@@ -88,11 +87,11 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
                 <div
                   ref={menuRef}
                   role="menu"
-                  className="absolute right-0 mt-2 w-56 origin-top-right overflow-hidden rounded-lg border border-gray-200 bg-paper py-1 shadow-lg transition-[opacity,transform] duration-150 ease-[var(--ease-out)] starting:scale-95 starting:opacity-0 dark:border-gray-700 dark:bg-gray-900"
+                  className="card absolute right-0 z-[100] mt-2 w-60 origin-top-right overflow-hidden py-1 transition-[opacity,translate] duration-[120ms] ease-out starting:-translate-y-1 starting:opacity-0"
                 >
-                  <div className="border-b border-gray-100 px-4 py-2 dark:border-gray-800">
-                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{user.displayName}</p>
-                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">@{user.username}</p>
+                  <div className="mb-1 border-b border-rule px-3 pb-2.5 pt-2">
+                    <p className="truncate text-sm font-medium text-ink">{user.displayName}</p>
+                    <p className="measured truncate text-xs text-muted">@{user.username}</p>
                   </div>
                   <Link role="menuitem" to="/dashboard" onClick={() => setOpen(false)} className={itemClass}>
                     <LayoutDashboard className="h-4 w-4" aria-hidden="true" /> Dashboard
@@ -107,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
                     role="menuitem"
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-700 hover:bg-red-50 focus-visible:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+                    className="mt-1 flex h-9 w-full items-center gap-2.5 border-t border-rule px-3 text-sm text-bad transition-colors duration-[120ms] ease-out pointer-coarse:h-11 hover:bg-bad-soft focus-visible:bg-bad-soft focus-visible:-outline-offset-2"
                   >
                     <LogOut className="h-4 w-4" aria-hidden="true" /> Sign out
                   </button>

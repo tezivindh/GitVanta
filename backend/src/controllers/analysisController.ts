@@ -45,6 +45,9 @@ export async function compareProfiles(req: AuthenticatedRequest, res: Response):
 export async function exportToPDF(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const analysis = await requireLatest(req);
+  // The two newest runs: the one before the latest gives the change to report.
+  const history = await analysisService.getAnalysisHistory(user._id, 2).catch(() => []);
+  const previous = history.length > 1 ? history[history.length - 2] : null;
 
   const pdfBuffer = await pdfService.generatePDFReport({
     username: user.username,
@@ -57,6 +60,10 @@ export async function exportToPDF(req: AuthenticatedRequest, res: Response): Pro
     weaknesses: analysis.weaknesses,
     improvements: analysis.improvements,
     generatedAt: analysis.generatedAt,
+    detailedBreakdown: (analysis as any).detailedBreakdown ?? null,
+    quickWins: (analysis as any).quickWins ?? null,
+    repositories: (analysis as any).repositories ?? [],
+    previousScore: previous ? previous.overallScore : null,
   });
 
   res.setHeader('Content-Type', 'application/pdf');

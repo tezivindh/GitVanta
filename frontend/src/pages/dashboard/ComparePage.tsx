@@ -2,110 +2,131 @@ import React, { useState } from 'react';
 import { GitCompare } from 'lucide-react';
 import { analysisApi } from '../../api/analysis';
 import { getApiError } from '../../api/client';
-import { Button, Card, ErrorState, LoadingRegion, PageHeader, ScoreCircle, Skeleton } from '../../components/ui';
+import { Button, Card, ErrorState, LoadingRegion, PageHeader, Skeleton } from '../../components/ui';
 import { CategoryRadarChart } from '../../components/charts';
 import AnalysisGate from '../../components/AnalysisGate';
 import { ProfileComparison } from '../../types';
 import { CATEGORIES, toCategoryArray } from '../../lib/scoring';
-import { useChartTheme } from '../../lib/chartTheme';
 
 const USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/;
 
-const Swatch: React.FC<{ color: string; dashed?: boolean }> = ({ color, dashed }) => (
+const HEAD = 'max-w-none text-lg font-medium tracking-[-0.01em] text-ink';
+
+/** Series keys, matched to the radar: you are a solid amber line, they are a dashed cool one. */
+const Swatch: React.FC<{ who: 'you' | 'them' }> = ({ who }) => (
   <span
     aria-hidden="true"
-    className="inline-block h-0.5 w-4 align-middle"
-    style={dashed ? { borderTop: `2px dashed ${color}` } : { backgroundColor: color, height: 2 }}
+    className={
+      who === 'you'
+        ? 'mr-1.5 inline-block w-4 border-t-2 border-accent align-middle'
+        : 'mr-1.5 inline-block w-4 border-t-2 border-dashed border-cool align-middle'
+    }
   />
 );
 
+const Signed: React.FC<{ d: number }> = ({ d }) => (
+  <span className={d > 0 ? 'text-ok' : d < 0 ? 'text-bad' : 'text-muted'}>{d > 0 ? `+${d}` : d < 0 ? `−${-d}` : d}</span>
+);
+
 const Results: React.FC<{ c: ProfileComparison }> = ({ c }) => {
-  const t = useChartTheme();
   const you = c.user1;
   const them = c.user2;
   const diff = you.overallScore - them.overallScore;
 
   return (
     <div className="space-y-6">
-      <Card>
-        <div className="grid items-center gap-6 sm:grid-cols-[1fr_auto_1fr]">
-          <div className="text-center">
-            <ScoreCircle score={you.overallScore} size="lg" label={`You (@${you.username})`} />
-          </div>
-          <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-300">
-            {diff === 0 ? 'Level' : diff > 0 ? `You lead by ${diff}` : `@${them.username} leads by ${-diff}`}
+      <div className="panels sm:grid-cols-2">
+        {[you, them].map((p, i) => (
+          <section key={p.username} className="p-6" aria-label={i === 0 ? `You (@${you.username})` : `@${them.username}`}>
+            <p className="text-sm text-muted">
+              <Swatch who={i === 0 ? 'you' : 'them'} />
+              {i === 0 ? `You (@${you.username})` : `@${them.username}`}
+            </p>
+            <p className="measured mt-2 text-[3.5rem] leading-none tracking-[-0.04em] text-ink">
+              {p.overallScore}
+              <span className="ml-1 text-xl tracking-normal text-muted">/100</span>
+            </p>
+            <h2 className="mt-6 max-w-none text-sm font-medium tracking-normal text-ink">
+              {i === 0 ? 'Your top skills' : `@${p.username}’s top skills`}
+            </h2>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-ink-2">
+              {p.topSkills.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+            <p className="mt-3 text-sm text-muted">
+              <span className="measured text-ink-2">{p.badges}</span> badges earned
+            </p>
+          </section>
+        ))}
+        <div className="px-6 py-4 sm:col-span-2">
+          <p className="text-sm font-medium text-ink">
+            {diff === 0 ? (
+              'Level'
+            ) : diff > 0 ? (
+              <>
+                You lead by <span className="measured rounded-chip bg-ok-soft px-1.5 text-ok">{diff}</span>
+              </>
+            ) : (
+              <>
+                @{them.username} leads by <span className="measured rounded-chip bg-bad-soft px-1.5 text-bad">{-diff}</span>
+              </>
+            )}
           </p>
-          <div className="text-center">
-            <ScoreCircle score={them.overallScore} size="lg" label={`@${them.username}`} />
-          </div>
+          <p className="mt-1 text-xs text-muted">
+            Both profiles are scored by the same engine. Theirs uses public repositories only; yours includes private ones.
+          </p>
         </div>
-        <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-          Both profiles are scored by the same engine. Theirs uses public repositories only; yours includes private ones.
-        </p>
-      </Card>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Shape</h2>
-          <CategoryRadarChart
-            categoryScores={toCategoryArray(you.categoryScores)}
-            compareScores={toCategoryArray(them.categoryScores)}
-            seriesNames={['You', `@${them.username}`]}
-            height={300}
-          />
-        </Card>
-
-        <Card className="lg:col-span-3">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">By category</h2>
+      <div className="panels lg:grid-cols-5">
+        <section className="p-6 lg:col-span-3" aria-labelledby="by-category-heading">
+          <h2 id="by-category-heading" className={HEAD}>By category</h2>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[20rem] text-left text-sm">
               <caption className="sr-only">Category scores for you and @{them.username}</caption>
-              <thead className="text-gray-500 dark:text-gray-400">
-                <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <th scope="col" className="py-2 font-medium">Category</th>
-                  <th scope="col" className="py-2 text-right font-medium">
-                    <Swatch color={t.you} /> You
+              <thead className="text-muted">
+                <tr className="border-b border-rule-2">
+                  <th scope="col" className="py-2 font-medium whitespace-nowrap">Category</th>
+                  <th scope="col" className="py-2 text-right font-medium whitespace-nowrap">
+                    <Swatch who="you" />You
                   </th>
-                  <th scope="col" className="py-2 text-right font-medium">
-                    <Swatch color={t.them} dashed /> @{them.username}
+                  <th scope="col" className="py-2 text-right font-medium whitespace-nowrap">
+                    <Swatch who="them" />@{them.username}
                   </th>
-                  <th scope="col" className="py-2 text-right font-medium">Difference</th>
+                  <th scope="col" className="py-2 text-right font-medium whitespace-nowrap">Difference</th>
                 </tr>
               </thead>
-              <tbody className="tabular-nums text-gray-800 dark:text-gray-200">
+              <tbody className="text-ink-2">
                 {CATEGORIES.map((cat) => {
                   const a = you.categoryScores[cat.key];
                   const b = them.categoryScores[cat.key];
                   const d = a - b;
                   return (
-                    <tr key={cat.key} className="border-b border-gray-100 dark:border-gray-800/60">
-                      <th scope="row" className="py-2 font-normal">{cat.label}</th>
-                      <td className="py-2 text-right">{a}</td>
-                      <td className="py-2 text-right">{b}</td>
-                      <td className="py-2 text-right">{d > 0 ? `+${d}` : d}</td>
+                    <tr key={cat.key} className="border-b border-rule last:border-b-0">
+                      <th scope="row" className="py-2 font-normal text-ink">{cat.label}</th>
+                      <td className="measured py-2 text-right">{a}</td>
+                      <td className="measured py-2 text-right">{b}</td>
+                      <td className="measured py-2 text-right">
+                        <Signed d={d} />
+                      </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-        </Card>
-      </div>
+        </section>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {[you, them].map((p, i) => (
-          <Card key={p.username}>
-            <h2 className="font-semibold text-gray-900 dark:text-white">{i === 0 ? 'Your top skills' : `@${p.username}'s top skills`}</h2>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {p.topSkills.map((s) => (
-                <li key={s} className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                  {s}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{p.badges} badges earned</p>
-          </Card>
-        ))}
+        <section className="p-6 lg:col-span-2" aria-labelledby="shape-heading">
+          <h2 id="shape-heading" className={HEAD}>Shape</h2>
+          <CategoryRadarChart
+            categoryScores={toCategoryArray(you.categoryScores)}
+            compareScores={toCategoryArray(them.categoryScores)}
+            seriesNames={['You', `@${them.username}`]}
+            height={300}
+          />
+        </section>
       </div>
     </div>
   );
@@ -122,7 +143,7 @@ const ComparePage: React.FC = () => {
     e?.preventDefault();
     const name = username.trim().replace(/^@/, '');
     if (!USERNAME_RE.test(name)) {
-      setFieldError('Enter a valid GitHub username, for example "octocat".');
+      setFieldError('Enter a valid GitHub username, for example “octocat”.');
       return;
     }
     setFieldError(null);
@@ -131,7 +152,7 @@ const ComparePage: React.FC = () => {
     try {
       setComparison(await analysisApi.compareProfiles(name));
     } catch (err) {
-      setError((await getApiError(err, 'The comparison failed.')).message);
+      setError((await getApiError(err, 'The comparison didn’t finish. Check the username and try again.')).message);
     } finally {
       setLoading(false);
     }
@@ -140,18 +161,18 @@ const ComparePage: React.FC = () => {
   return (
     <AnalysisGate header={<PageHeader title="Compare" />}>
       {() => (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <PageHeader title="Compare" description="Score any public GitHub account with the same engine and see where you differ." />
 
           <Card>
             <form onSubmit={compare} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-end">
               <div className="flex-1">
-                <label htmlFor="compare-username" className="block text-sm font-medium text-gray-900 dark:text-white">
+                <label htmlFor="compare-username" className="block text-sm font-medium text-ink">
                   GitHub username
                 </label>
                 <input
                   id="compare-username"
-                  className="input mt-1.5 h-10 px-3 text-sm"
+                  className="input mt-1.5 h-9 px-3 text-sm"
                   placeholder="octocat"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -166,11 +187,11 @@ const ComparePage: React.FC = () => {
               </Button>
             </form>
             {fieldError ? (
-              <p id="compare-error" role="alert" className="mt-2 text-sm text-red-700 dark:text-red-400">
+              <p id="compare-error" role="alert" className="mt-2 min-h-[1lh] text-sm text-bad">
                 {fieldError}
               </p>
             ) : (
-              <p id="compare-hint" className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              <p id="compare-hint" className="mt-2 min-h-[1lh] text-sm text-muted">
                 Scoring another account takes up to a minute. You can run 15 comparisons an hour.
               </p>
             )}
@@ -178,8 +199,14 @@ const ComparePage: React.FC = () => {
 
           {loading && (
             <LoadingRegion label="Scoring profile" className="space-y-4">
-              <Skeleton className="h-44" />
-              <Skeleton className="h-72" />
+              <div className="grid gap-px sm:grid-cols-2">
+                <Skeleton className="h-56 rounded-none sm:rounded-l-[10px]" />
+                <Skeleton className="h-56 rounded-none sm:rounded-r-[10px]" />
+              </div>
+              <div className="grid gap-4 lg:grid-cols-5">
+                <Skeleton className="h-72 lg:col-span-3" />
+                <Skeleton className="h-72 lg:col-span-2" />
+              </div>
             </LoadingRegion>
           )}
           {error && !loading && <ErrorState title="Comparison failed" message={error} onRetry={() => compare()} />}

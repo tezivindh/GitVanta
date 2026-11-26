@@ -90,13 +90,15 @@ export function getAIStatusForUser(user: IUser) {
       message: `AI features use your own ${label} key (${own.model}).`,
     };
   }
+  // The built-in AI is described as GitVanta's own; its vendor and model are
+  // never sent to the browser. Only a user's own key is named.
   return {
     available: !!server,
     source: server ? ('server' as const) : null,
-    provider: server,
+    provider: null,
     message: server
-      ? `AI features use the shared GitVanta key: ${server.label} (${server.model}).`
-      : 'AI is not set up. Add your own API key in Settings → AI provider.',
+      ? 'AI features use GitVanta’s built-in AI. Add your own API key in Settings to use a provider you choose.'
+      : 'AI is not set up. Add your own API key in Settings, under AI provider.',
   };
 }
 

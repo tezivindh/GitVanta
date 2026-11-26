@@ -77,6 +77,10 @@ export function resolveAI(userConfig?: AIModelConfig | null): ResolvedAI {
 }
 
 export function describeAI(ai: ResolvedAI): AIMeta {
+  if (ai.source === 'server') {
+    // The built-in AI is GitVanta's; its vendor and model stay server-side.
+    return { provider: null, providerLabel: 'GitVanta AI', model: null, source: 'server' };
+  }
   return {
     provider: ai.provider.id,
     providerLabel: ai.provider.label,

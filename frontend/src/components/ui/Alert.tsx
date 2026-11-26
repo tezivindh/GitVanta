@@ -21,33 +21,35 @@ const Alert: React.FC<AlertProps> = ({
   onDismiss,
   className,
 }) => {
+  // Status only: ok and bad tints for success and failure; a warning is a
+  // deviation, so it takes the amber marker on the neutral deep step.
   const variants = {
     info: {
-      container: 'bg-gray-100 border-gray-200 dark:bg-gray-800/60 dark:border-gray-700',
-      icon: 'text-primary-600 dark:text-primary-400',
-      title: 'text-primary-900 dark:text-gray-200',
-      text: 'text-gray-800 dark:text-primary-300',
+      container: 'bg-paper-3 border-rule',
+      icon: 'text-cool',
+      title: 'text-ink',
+      text: 'text-ink-2',
       Icon: Info,
     },
     success: {
-      container: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900',
-      icon: 'text-emerald-600 dark:text-emerald-400',
-      title: 'text-emerald-900 dark:text-emerald-200',
-      text: 'text-emerald-800 dark:text-emerald-300',
+      container: 'bg-ok-soft border-rule',
+      icon: 'text-ok',
+      title: 'text-ink',
+      text: 'text-ink-2',
       Icon: CheckCircle,
     },
     warning: {
-      container: 'bg-gain-50 border-gain-300 dark:bg-gain-700/15 dark:border-gain-700/50',
-      icon: 'text-gain-600 dark:text-gain-400',
-      title: 'text-gain-700 dark:text-gain-300',
-      text: 'text-gray-800 dark:text-gray-200',
+      container: 'bg-paper-3 border-rule-2',
+      icon: 'text-accent',
+      title: 'text-ink',
+      text: 'text-ink-2',
       Icon: AlertTriangle,
     },
     error: {
-      container: 'bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-900',
-      icon: 'text-red-600 dark:text-red-400',
-      title: 'text-red-900 dark:text-red-200',
-      text: 'text-red-800 dark:text-red-300',
+      container: 'bg-bad-soft border-rule',
+      icon: 'text-bad',
+      title: 'text-ink',
+      text: 'text-ink-2',
       Icon: XCircle,
     },
   };
@@ -58,17 +60,17 @@ const Alert: React.FC<AlertProps> = ({
   return (
     <div
       className={clsx(
-        'flex p-4 rounded-lg border',
+        'flex rounded-card border p-4',
         variantStyles.container,
         className
       )}
       role="alert"
     >
-      <Icon className={clsx('w-5 h-5 shrink-0', variantStyles.icon)} />
+      <Icon className={clsx('mt-px h-5 w-5 shrink-0', variantStyles.icon)} aria-hidden="true" />
       
       <div className="ml-3 flex-1">
         {title && (
-          <h3 className={clsx('text-sm font-medium', variantStyles.title)}>
+          <h3 className={clsx('max-w-none text-sm font-medium leading-snug tracking-normal', variantStyles.title)}>
             {title}
           </h3>
         )}
@@ -82,13 +84,12 @@ const Alert: React.FC<AlertProps> = ({
           type="button"
           onClick={onDismiss}
           className={clsx(
-            'ml-3 shrink-0 inline-flex p-1 rounded-md',
-            'hover:bg-black/5 focus:outline-hidden focus:ring-2 focus:ring-offset-2',
-            variantStyles.icon
+            '-my-1 -mr-1 ml-3 inline-flex size-8 shrink-0 items-center justify-center rounded-pill text-muted',
+            'transition-colors duration-[120ms] ease-out hover:bg-paper-2 hover:text-ink pointer-coarse:size-11'
           )}
         >
           <span className="sr-only">Dismiss</span>
-          <X className="w-4 h-4" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       )}
     </div>

@@ -14,7 +14,7 @@ import {
   ResumeBullet,
   RoadmapItem,
 } from '../../types';
-import { AIAttribution, Button, Card, ErrorState, LoadingRegion, PageHeader, Skeleton } from '../../components/ui';
+import { AIAttribution, Button, ErrorState, LoadingRegion, PageHeader, Skeleton } from '../../components/ui';
 import AnalysisGate from '../../components/AnalysisGate';
 
 type Tool = 'readme' | 'resume' | 'summary' | 'roadmap';
@@ -32,6 +32,9 @@ const TOOLS: Array<{ type: Tool; icon: React.ComponentType<{ className?: string 
   { type: 'roadmap', icon: Map, title: 'Improvement roadmap', description: 'Goals for the next weeks and months, based on your weak spots.', needsRepo: false },
 ];
 
+const linkClass =
+  'font-medium text-ink underline decoration-rule-2 underline-offset-4 transition-colors duration-[120ms] ease-out hover:text-accent hover:decoration-accent';
+
 /** Plain-text version of a result, for the copy button. */
 function toText(r: Result): string {
   switch (r.kind) {
@@ -44,7 +47,11 @@ function toText(r: Result): string {
     case 'roadmap': {
       const section = (label: string, items: RoadmapItem[] = []) =>
         items.length ? [`## ${label}`, ...items.map((i) => `- ${i.title} (${i.estimatedTime}): ${i.description}`)].join('\n') : '';
-      return [section('Next 1–2 weeks', r.data.shortTerm), section('Next 1–2 months', r.data.mediumTerm), section('Next 3–6 months', r.data.longTerm)]
+      return [
+        section('Next 1 to 2 weeks', r.data.shortTerm),
+        section('Next 1 to 2 months', r.data.mediumTerm),
+        section('Next 3 to 6 months', r.data.longTerm),
+      ]
         .filter(Boolean)
         .join('\n\n');
     }
@@ -55,7 +62,7 @@ const Chips: React.FC<{ items?: string[] }> = ({ items }) =>
   items && items.length > 0 ? (
     <ul className="flex flex-wrap gap-1.5">
       {items.map((s) => (
-        <li key={s} className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+        <li key={s} className="rounded-chip border border-rule bg-paper-2 px-2 py-0.5 text-xs text-ink-2">
           {s}
         </li>
       ))}
@@ -66,14 +73,14 @@ const ResultView: React.FC<{ result: Result }> = ({ result }) => {
   switch (result.kind) {
     case 'readme':
       return (
-        <div className="space-y-4">
-          <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-lg bg-gray-50 p-4 font-mono text-sm text-gray-800 dark:bg-gray-950 dark:text-gray-200">
+        <div className="space-y-5">
+          <pre className="max-h-[32rem] overflow-auto whitespace-pre-wrap font-mono text-sm leading-relaxed text-ink">
             {result.data.enhancedContent}
           </pre>
           {result.data.suggestions?.length > 0 && (
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Also worth doing</h3>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            <div className="border-t border-rule pt-4">
+              <h3 className="max-w-none text-sm font-medium text-ink">Also worth doing</h3>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm marker:text-muted">
                 {result.data.suggestions.map((s) => (
                   <li key={s}>{s}</li>
                 ))}
@@ -85,22 +92,22 @@ const ResultView: React.FC<{ result: Result }> = ({ result }) => {
     case 'resume':
       return (
         <div className="space-y-4">
-          <ul className="list-disc space-y-2 pl-5 text-gray-800 dark:text-gray-200">
+          <ul className="list-disc space-y-2 pl-5 text-ink marker:text-muted">
             {result.data.bullets.map((b) => (
               <li key={b}>{b}</li>
             ))}
           </ul>
-          {result.data.impact && <p className="text-sm text-gray-600 dark:text-gray-400">{result.data.impact}</p>}
+          {result.data.impact && <p className="text-sm text-muted">{result.data.impact}</p>}
           <Chips items={result.data.skills} />
         </div>
       );
     case 'summary':
       return (
         <div className="space-y-4">
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">{result.data.headline}</p>
-          <p className="leading-relaxed text-gray-700 dark:text-gray-300">{result.data.summary}</p>
+          <p className="text-lg font-medium tracking-[-0.01em] text-ink">{result.data.headline}</p>
+          <p className="max-w-[68ch]">{result.data.summary}</p>
           {result.data.highlights?.length > 0 && (
-            <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700 dark:text-gray-300">
+            <ul className="list-disc space-y-1 pl-5 text-sm marker:text-muted">
               {result.data.highlights.map((h) => (
                 <li key={h}>{h}</li>
               ))}
@@ -111,21 +118,21 @@ const ResultView: React.FC<{ result: Result }> = ({ result }) => {
       );
     case 'roadmap': {
       const groups: Array<[string, RoadmapItem[] | undefined]> = [
-        ['Next 1–2 weeks', result.data.shortTerm],
-        ['Next 1–2 months', result.data.mediumTerm],
-        ['Next 3–6 months', result.data.longTerm],
+        ['Next 1 to 2 weeks', result.data.shortTerm],
+        ['Next 1 to 2 months', result.data.mediumTerm],
+        ['Next 3 to 6 months', result.data.longTerm],
       ];
       return (
         <div className="grid gap-6 lg:grid-cols-3">
           {groups.map(([label, items]) => (
             <div key={label}>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{label}</h3>
-              <ul className="mt-3 space-y-3">
+              <h3 className="max-w-none text-sm font-medium text-ink">{label}</h3>
+              <ul className="mt-2 divide-y divide-rule border-t border-rule">
                 {(items ?? []).map((i) => (
-                  <li key={i.title} className="rounded-lg border border-gray-200 p-3 dark:border-gray-800">
-                    <p className="font-medium text-gray-900 dark:text-white">{i.title}</p>
-                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{i.description}</p>
-                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <li key={i.title} className="py-3">
+                    <p className="font-medium text-ink">{i.title}</p>
+                    <p className="mt-1 text-sm">{i.description}</p>
+                    <p className="mt-1.5 text-xs text-muted">
                       {i.estimatedTime}, {i.priority} priority
                     </p>
                   </li>
@@ -208,112 +215,130 @@ const EnhancementsPage: React.FC = () => {
   return (
     <AnalysisGate header={header} emptyDescription="Run an analysis first so the AI has your repositories, skills and scores to work from.">
       {(analysis) => (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {header}
 
           {status && !status.available && (
-            <div className="flex flex-col gap-3 rounded-lg border border-gain-300 bg-gain-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-gain-700/50 dark:bg-gain-700/15">
-              <p className="text-sm text-gray-800 dark:text-gray-200">{status.message}</p>
-              <Link
-                to="/dashboard/settings#ai-provider"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
-              >
+            <div className="flex flex-col gap-3 rounded-card border border-rule-2 bg-paper-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-ink">{status.message}</p>
+              <Link to="/dashboard/settings#ai-provider" className={clsx('inline-flex items-center gap-1.5 text-sm', linkClass)}>
                 <KeyRound className="h-4 w-4" aria-hidden="true" /> Add an API key
               </Link>
             </div>
           )}
           {status?.available && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted">
               {status.message}{' '}
-              <Link to="/dashboard/settings#ai-provider" className="font-medium text-primary-700 hover:underline dark:text-primary-400">
+              <Link to="/dashboard/settings#ai-provider" className={linkClass}>
                 Change
               </Link>
             </p>
           )}
 
-          <div role="radiogroup" aria-label="AI tool" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {TOOLS.map((t) => (
-              <button
-                key={t.type}
-                type="button"
-                role="radio"
-                aria-checked={tool === t.type}
-                onClick={() => {
-                  setTool(t.type);
-                  setResult(null);
-                  setError(null);
-                }}
-                className={clsx(
-                  'rounded-lg border p-4 text-left transition-colors',
-                  tool === t.type
-                    ? 'border-primary-500 bg-gray-100 dark:bg-gray-800'
-                    : 'border-gray-200 bg-paper hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700'
-                )}
-              >
-                <t.icon
-                  className={clsx('mb-2 h-5 w-5', tool === t.type ? 'text-primary-600 dark:text-primary-400' : 'text-gray-400')}
-                />
-                <span className="block font-medium text-gray-900 dark:text-white">{t.title}</span>
-                <span className="mt-1 block text-sm text-gray-600 dark:text-gray-400">{t.description}</span>
-              </button>
-            ))}
-          </div>
-
-          <Card>
-            {current.needsRepo ? (
-              <div>
-                <label htmlFor={selectId} className="block text-sm font-medium text-gray-900 dark:text-white">
-                  Repository
-                </label>
-                <select
-                  id={selectId}
-                  value={repo}
-                  onChange={(e) => setRepo(e.target.value)}
-                  className="input mt-1.5 h-10 px-3 text-sm sm:max-w-md"
-                >
-                  <option value="">Choose a repository</option>
-                  {analysis.repositories.map((r) => (
-                    <option key={r.name} value={r.name}>
-                      {r.name}
-                      {r.isPrivate ? ' (private)' : ''}
-                    </option>
-                  ))}
-                </select>
-                {analysis.repositories.find((r) => r.name === repo)?.isPrivate && (
-                  <p className="mt-2 flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
-                    <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-                    This private repository's README is sent to the AI provider to generate the result.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                Uses your latest analysis: score {analysis.overallScore}, {analysis.skills.length} skills and{' '}
-                {analysis.weaknesses.length} areas to improve.
+          {/* The generator, as one form: what to write, from which repository, then go. */}
+          <div className="card">
+            <div className="border-b border-rule p-4 sm:p-5">
+              <p className="text-sm font-medium text-ink">
+                What to write
               </p>
-            )}
-            <div className="mt-5">
+              <div
+                role="radiogroup"
+                aria-label="AI tool"
+                className="mt-2.5 grid grid-cols-1 gap-px overflow-hidden rounded-pill border border-rule bg-rule sm:grid-cols-2 lg:grid-cols-4"
+              >
+                {TOOLS.map((t) => (
+                  <button
+                    key={t.type}
+                    type="button"
+                    role="radio"
+                    aria-checked={tool === t.type}
+                    onClick={() => {
+                      setTool(t.type);
+                      setResult(null);
+                      setError(null);
+                    }}
+                    className={clsx(
+                      'relative flex items-start gap-3 p-3 text-left transition-colors duration-[120ms] ease-out',
+                      tool === t.type ? 'bg-accent-soft' : 'bg-paper-2 hover:bg-paper-3'
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={clsx(
+                        'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border',
+                        tool === t.type ? 'border-accent' : 'border-rule-2'
+                      )}
+                    >
+                      {tool === t.type && <span className="size-2 rounded-full bg-accent" />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-ink">
+                        <t.icon className="h-4 w-4 text-muted" />
+                        {t.title}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted">{t.description}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-5">
+              {current.needsRepo ? (
+                <div className="min-w-0 flex-1">
+                  <label htmlFor={selectId} className="block text-sm font-medium text-ink">
+                    Repository
+                  </label>
+                  <select
+                    id={selectId}
+                    value={repo}
+                    onChange={(e) => setRepo(e.target.value)}
+                    className="input mt-1.5 h-9 px-3 text-sm sm:max-w-md pointer-coarse:h-11"
+                  >
+                    <option value="">Choose a repository</option>
+                    {analysis.repositories.map((r) => (
+                      <option key={r.name} value={r.name}>
+                        {r.name}
+                        {r.isPrivate ? ' (private)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {analysis.repositories.find((r) => r.name === repo)?.isPrivate && (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
+                      <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                      This private repository’s README is sent to the AI provider to generate the result.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-ink-2">
+                  Uses your latest analysis: score <span className="measured text-ink">{analysis.overallScore}</span>,{' '}
+                  <span className="measured text-ink">{analysis.skills.length}</span> skills and{' '}
+                  <span className="measured text-ink">{analysis.weaknesses.length}</span> areas to improve.
+                </p>
+              )}
               <Button
                 onClick={generate}
                 isLoading={loading}
                 disabled={current.needsRepo && !repo}
                 leftIcon={<Sparkles className="h-4 w-4" />}
+                className="shrink-0 self-start sm:self-auto"
               >
                 {loading ? 'Generating…' : 'Generate'}
               </Button>
             </div>
-          </Card>
+          </div>
 
           {loading && (
-            <Card>
+            <div className="card p-5">
               <LoadingRegion label="Generating with AI" className="space-y-3">
                 <Skeleton className="h-5 w-48" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-11/12" />
                 <Skeleton className="h-4 w-4/5" />
-                <p className="pt-2 text-sm text-gray-500 dark:text-gray-400">This can take up to a minute for long READMEs.</p>
+                <p className="pt-2 text-sm text-muted">This can take up to a minute for long READMEs.</p>
               </LoadingRegion>
-            </Card>
+            </div>
           )}
 
           {error && !loading && (
@@ -325,7 +350,7 @@ const EnhancementsPage: React.FC = () => {
                 error.settings ? (
                   <Link
                     to="/dashboard/settings#ai-provider"
-                    className="inline-flex h-8 items-center rounded-lg px-3 text-sm font-medium text-primary-700 hover:bg-gray-100 dark:text-primary-400 dark:hover:bg-primary-950"
+                    className="inline-flex h-8 items-center rounded-pill border border-rule-2 px-3 text-sm font-medium text-ink transition-colors duration-[120ms] ease-out hover:border-muted hover:bg-paper-2"
                   >
                     Open AI settings
                   </Link>
@@ -335,12 +360,11 @@ const EnhancementsPage: React.FC = () => {
           )}
 
           {result && !loading && (
-            <Card>
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{current.title}</h2>
-                  <AIAttribution ai={ai} className="mt-1" />
-                </div>
+            <section aria-labelledby="ai-result-title">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h2 id="ai-result-title" className="max-w-none text-md font-medium tracking-[-0.01em] text-ink">
+                  {current.title}
+                </h2>
                 <Button
                   variant="outline"
                   size="sm"
@@ -350,8 +374,12 @@ const EnhancementsPage: React.FC = () => {
                   {copied ? 'Copied' : 'Copy'}
                 </Button>
               </div>
-              <ResultView result={result} />
-            </Card>
+              {/* What an instrument wrote: the deepest step. */}
+              <div className="prose-gv rounded-card border border-rule bg-paper-3 p-4 sm:p-5">
+                <ResultView result={result} />
+              </div>
+              <AIAttribution ai={ai} className="mt-2" />
+            </section>
           )}
         </div>
       )}

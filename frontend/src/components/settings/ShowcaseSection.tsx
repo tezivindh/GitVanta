@@ -4,7 +4,7 @@ import { FolderGit2, Lock, Search, ExternalLink } from 'lucide-react';
 import { settingsApi } from '../../api';
 import { getApiError } from '../../api/client';
 import { ShowcaseRepo } from '../../types';
-import { Button, EmptyState, ErrorState, LoadingRegion, Skeleton } from '../ui';
+import { Button, EmptyState, ErrorState, LoadingRegion, Skeleton, Switch } from '../ui';
 import { toast } from '../../store/toastStore';
 import { useAuthStore } from '../../store/authStore';
 
@@ -107,7 +107,7 @@ const ShowcaseSection: React.FC = () => {
         title="No repositories yet"
         description="Run an analysis first. Your repositories will appear here so you can choose which ones to show."
         action={
-          <Link to="/dashboard" className="text-sm font-medium text-primary-700 hover:underline dark:text-primary-400">
+          <Link to="/dashboard" className="text-sm text-ink underline decoration-rule-2 underline-offset-[0.16em] transition-colors duration-[120ms] ease-out hover:text-accent">
             Go to the overview
           </Link>
         }
@@ -115,22 +115,22 @@ const ShowcaseSection: React.FC = () => {
     );
   }
 
-  const filters: Array<[Filter, string]> = [
-    ['all', `All (${repos.length})`],
-    ['visible', `Visible (${visibleCount})`],
-    ['hidden', `Hidden (${repos.length - visibleCount})`],
-    ['private', `Private (${repos.filter((r) => r.isPrivate).length})`],
+  const filters: Array<[Filter, string, number]> = [
+    ['all', 'All', repos.length],
+    ['visible', 'Visible', visibleCount],
+    ['hidden', 'Hidden', repos.length - visibleCount],
+    ['private', 'Private', repos.filter((r) => r.isPrivate).length],
   ];
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="max-w-[68ch] text-sm text-muted">
         Public repositories are shown unless you hide them. Private repositories stay hidden unless you turn them on, and then
         visitors see the name and description only, with no link.{' '}
         {username && (
           <Link
             to={`/profile/${username}`}
-            className="inline-flex items-center gap-0.5 font-medium text-primary-700 hover:underline dark:text-primary-400"
+            className="inline-flex items-center gap-1 text-ink underline decoration-rule-2 underline-offset-[0.16em] transition-colors duration-[120ms] ease-out hover:text-accent"
           >
             View your public profile <ExternalLink className="h-3 w-3" aria-hidden="true" />
           </Link>
@@ -139,13 +139,15 @@ const ShowcaseSection: React.FC = () => {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative sm:w-64">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           <label htmlFor="showcase-search" className="sr-only">
             Search repositories
           </label>
           <input
             id="showcase-search"
             type="search"
+            name="showcase-search"
+            autoComplete="off"
             className="input h-9 pl-9 pr-3 text-sm"
             placeholder="Search repositories"
             value={query}
@@ -153,7 +155,7 @@ const ShowcaseSection: React.FC = () => {
           />
         </div>
         <div className="flex flex-wrap gap-1" role="group" aria-label="Filter repositories">
-          {filters.map(([key, label]) => (
+          {filters.map(([key, label, count]) => (
             <button
               key={key}
               type="button"
@@ -161,62 +163,55 @@ const ShowcaseSection: React.FC = () => {
               aria-pressed={filter === key}
               className={
                 filter === key
-                  ? 'rounded-md bg-gray-900 px-2.5 py-1 text-xs font-medium text-white dark:bg-paper dark:text-gray-900'
-                  : 'rounded-md px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                  ? 'inline-flex h-8 items-center gap-1 rounded-chip border border-rule-2 bg-paper-3 px-2.5 text-xs font-medium text-ink'
+                  : 'inline-flex h-8 items-center gap-1 rounded-chip border border-transparent px-2.5 text-xs font-medium text-muted transition-colors duration-[120ms] ease-out hover:text-ink'
               }
             >
-              {label}
+              {label} <span className="measured">({count})</span>
             </button>
           ))}
         </div>
       </div>
 
-      <ul className="max-h-[28rem] divide-y divide-gray-200 overflow-y-auto rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
-        {filtered.length === 0 && <li className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">No repositories match.</li>}
+      <ul className="max-h-[28rem] divide-y divide-rule overflow-y-auto border-y border-rule" aria-label="Repositories">
+        {filtered.length === 0 && <li className="py-6 text-center text-sm text-muted">No repositories match.</li>}
         {filtered.map((r) => {
           const visible = isVisible(r);
           const id = `showcase-${r.name}`;
           return (
-            <li key={r.name} className="flex items-center gap-3 px-4 py-3">
+            <li key={r.name} className="flex items-center gap-4 py-2.5 pr-1">
               <div className="min-w-0 flex-1">
-                <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
-                  <span className="truncate">{r.name}</span>
+                <label htmlFor={id} className="flex items-center gap-2 text-sm text-ink">
+                  <span className="measured truncate">{r.name}</span>
                   {r.isPrivate && (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-normal text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-chip border border-rule px-1.5 text-xs text-muted">
                       <Lock className="h-3 w-3" aria-hidden="true" /> Private
                     </span>
                   )}
                 </label>
-                <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-0.5 truncate text-xs text-muted">
                   {[r.language, r.stars ? `${r.stars} stars` : null, r.description].filter(Boolean).join('. ') || 'No description'}
                 </p>
               </div>
-              <button
+              <Switch
                 id={id}
-                type="button"
-                role="switch"
-                aria-checked={visible}
-                onClick={() => toggle(r)}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                  visible ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'
-                }`}
-              >
-                <span className="sr-only">{visible ? 'Shown on profile' : 'Hidden from profile'}</span>
-                <span
-                  aria-hidden="true"
-                  className={`inline-block h-4 w-4 rounded-full bg-paper shadow transition-transform ${visible ? 'translate-x-6' : 'translate-x-1'}`}
-                />
-              </button>
+                label={r.name}
+                hideLabel
+                checked={visible}
+                onChange={() => toggle(r)}
+              />
             </li>
           );
         })}
       </ul>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={save} isLoading={saving} disabled={!dirty}>
+        <Button type="button" variant={dirty ? 'primary' : 'secondary'} onClick={save} isLoading={saving} disabled={!dirty}>
           Save profile repositories
         </Button>
-        {dirty && <span className="text-sm text-gray-600 dark:text-gray-400">You have unsaved changes.</span>}
+        <span className="min-h-[1lh] text-sm text-muted" aria-live="polite">
+          {dirty ? 'You have unsaved changes.' : ''}
+        </span>
       </div>
     </div>
   );

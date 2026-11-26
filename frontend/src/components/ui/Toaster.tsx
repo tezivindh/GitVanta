@@ -6,9 +6,9 @@ import { useToastStore } from '../../store/toastStore';
 
 const icons = { success: CheckCircle2, error: XCircle, info: Info };
 const tones = {
-  success: 'text-emerald-600 dark:text-emerald-400',
-  error: 'text-red-600 dark:text-red-400',
-  info: 'text-primary-600 dark:text-primary-400',
+  success: 'text-ok',
+  error: 'text-bad',
+  info: 'text-cool',
 };
 
 /** Renders toasts. Mount once inside the router. */
@@ -27,17 +27,17 @@ const Toaster: React.FC = () => {
           <div
             key={t.id}
             role={t.kind === 'error' ? 'alert' : 'status'}
-            className="pointer-events-auto flex w-full max-w-sm items-start gap-3 transition-[opacity,transform] duration-400 ease-[ease] starting:translate-y-full starting:opacity-0 rounded-lg border border-gray-200 bg-paper p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+            className="card pointer-events-auto flex w-full max-w-sm items-start gap-3 p-4 pr-2.5 transition-[opacity,translate] duration-[220ms] ease-out starting:translate-y-2 starting:opacity-0"
           >
             <Icon className={clsx('mt-0.5 h-5 w-5 shrink-0', tones[t.kind])} aria-hidden="true" />
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{t.title}</p>
-              {t.description && <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{t.description}</p>}
+              <p className="text-sm font-medium text-ink">{t.title}</p>
+              {t.description && <p className="mt-0.5 text-sm text-muted">{t.description}</p>}
               {t.action && (
                 <Link
                   to={t.action.href}
                   onClick={() => dismiss(t.id)}
-                  className="mt-2 inline-block text-sm font-medium text-primary-700 underline-offset-2 hover:underline dark:text-primary-400"
+                  className="mt-2 inline-block text-sm font-medium text-ink underline decoration-rule-2 underline-offset-[0.16em] transition-colors duration-[120ms] ease-out hover:text-accent hover:decoration-accent"
                 >
                   {t.action.label}
                 </Link>
@@ -46,10 +46,10 @@ const Toaster: React.FC = () => {
             <button
               type="button"
               onClick={() => dismiss(t.id)}
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+              className="-mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-pill text-muted transition-colors duration-[120ms] ease-out hover:bg-paper-3 hover:text-ink pointer-coarse:size-11"
               aria-label="Dismiss notification"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         );

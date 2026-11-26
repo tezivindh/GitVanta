@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import clsx from 'clsx';
 import { Brain } from 'lucide-react';
-import { Card, EmptyState, PageHeader } from '../../components/ui';
+import { EmptyState, PageHeader } from '../../components/ui';
 import AnalysisGate from '../../components/AnalysisGate';
 import { ExtractedSkill } from '../../types';
 
@@ -22,21 +22,21 @@ const PROFICIENCY_LABEL: Record<ExtractedSkill['proficiency'], string> = {
   expert: 'Expert',
 };
 
-/** Skills by number of projects: one hue, shared baseline. */
+/** Skills by number of projects: a measurement, so one cool hue on a shared baseline. Widths are static. */
 const SkillBars: React.FC<{ skills: ExtractedSkill[] }> = ({ skills }) => {
   const max = Math.max(1, ...skills.map((s) => s.projectCount));
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-rule">
       {skills.map((s) => (
-        <li key={s.name} className="grid grid-cols-[8rem_1fr_auto] items-center gap-3 text-sm sm:grid-cols-[10rem_1fr_auto]">
-          <span className="truncate text-gray-800 dark:text-gray-200" title={s.name}>
+        <li key={s.name} className="grid grid-cols-[7.5rem_1fr_auto] items-center gap-3 py-2 text-sm sm:grid-cols-[10rem_1fr_6.5rem]">
+          <span className="truncate text-ink" title={s.name}>
             {s.name}
           </span>
-          <span className="h-2 rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true">
-            <span className="block h-2 rounded-full bg-heat-3" style={{ width: `${(s.projectCount / max) * 100}%` }} />
+          <span className="h-1.5 rounded-chip bg-heat-0" aria-hidden="true">
+            <span className="block h-1.5 rounded-chip ramp-cool" style={{ width: `${(s.projectCount / max) * 100}%` }} />
           </span>
-          <span className="tabular-nums text-gray-600 dark:text-gray-400">
-            {s.projectCount} {s.projectCount === 1 ? 'project' : 'projects'}
+          <span className="text-right text-muted">
+            <span className="measured text-ink-2">{s.projectCount}</span> {s.projectCount === 1 ? 'project' : 'projects'}
           </span>
         </li>
       ))}
@@ -79,84 +79,97 @@ const SkillsContent: React.FC<{
         <EmptyState
           icon={Brain}
           title="No skills detected yet"
-          description="Skills come from your repositories' languages and topics. Add topics to your repos, then analyse again."
+          description="Skills come from your repositories’ languages and topics. Add topics to your repos, then analyse again."
         />
       </>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         title="Skills"
         description={`${skills.length} skills detected from the languages and topics in your repositories.`}
       />
 
+      {/* Category filter: a row of state chips, the chosen one on the cool tint. */}
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by category">
-        {(['all', ...byCategory.map((g) => g.key)] as const).map((key) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={category === key}
-            onClick={() => setCategory(key)}
-            className={clsx(
-              'rounded-full px-3 py-1 text-sm',
-              category === key
-                ? 'bg-gray-900 text-white dark:bg-paper dark:text-gray-900'
-                : 'border border-gray-200 text-gray-700 hover:bg-paper dark:border-gray-800 dark:text-gray-300 dark:hover:bg-gray-900'
-            )}
-          >
-            {key === 'all' ? `All (${skills.length})` : `${CATEGORY_LABELS[key]} (${byCategory.find((g) => g.key === key)!.skills.length})`}
-          </button>
-        ))}
+        {(['all', ...byCategory.map((g) => g.key)] as const).map((key) => {
+          const count = key === 'all' ? skills.length : byCategory.find((g) => g.key === key)!.skills.length;
+          return (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={category === key}
+              onClick={() => setCategory(key)}
+              className={clsx(
+                'relative inline-flex h-8 items-center gap-1.5 rounded-chip border px-2.5 text-sm transition-[background-color,color,border-color] duration-[120ms] ease-out after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-[""] pointer-coarse:after:-inset-y-2',
+                category === key
+                  ? 'border-rule-2 bg-cool-soft text-ink'
+                  : 'border-rule bg-paper-2 text-ink-2 hover:border-rule-2 hover:text-ink'
+              )}
+            >
+              {key === 'all' ? 'All' : CATEGORY_LABELS[key]}
+              <span className="measured text-xs text-muted">({count})</span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Used in the most projects</h2>
-          <div className="mt-4">
+      <div className="panels lg:grid-cols-5">
+        <section className="p-5 lg:col-span-3" aria-labelledby="skills-most">
+          <h2 id="skills-most" className="max-w-none text-md font-medium tracking-[-0.01em] text-ink">
+            Used in the most projects
+          </h2>
+          <div className="mt-3">
             <SkillBars skills={visible.slice(0, 12)} />
           </div>
-        </Card>
+        </section>
 
-        <Card className="lg:col-span-2">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">By proficiency</h2>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Estimated from how many projects use each skill.</p>
-          <dl className="mt-4 space-y-3">
+        <section className="p-5 lg:col-span-2" aria-labelledby="skills-proficiency">
+          <h2 id="skills-proficiency" className="max-w-none text-md font-medium tracking-[-0.01em] text-ink">
+            By proficiency
+          </h2>
+          <p className="mt-1 text-sm text-muted">Estimated from how many projects use each skill.</p>
+          <dl className="mt-4 divide-y divide-rule">
             {(['expert', 'advanced', 'intermediate', 'beginner'] as const).map((level) => {
               const names = visible.filter((s) => s.proficiency === level).map((s) => s.name);
               if (names.length === 0) return null;
               return (
-                <div key={level}>
-                  <dt className="text-sm font-medium text-gray-900 dark:text-white">
-                    {PROFICIENCY_LABEL[level]} ({names.length})
+                <div key={level} className="py-2.5 first:pt-0">
+                  <dt className="flex items-baseline justify-between gap-3 text-sm font-medium text-ink">
+                    {PROFICIENCY_LABEL[level]}
+                    <span className="measured text-xs font-normal text-muted">({names.length})</span>
                   </dt>
-                  <dd className="mt-1 text-sm text-gray-600 dark:text-gray-400">{names.join(', ')}</dd>
+                  <dd className="mt-1 text-sm text-ink-2">{names.join(', ')}</dd>
                 </div>
               );
             })}
           </dl>
-        </Card>
+        </section>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="panels sm:grid-cols-2 xl:grid-cols-3">
         {byCategory
           .filter((g) => category === 'all' || g.key === category)
           .map((g) => (
-            <Card key={g.key}>
-              <h2 className="font-semibold text-gray-900 dark:text-white">{CATEGORY_LABELS[g.key]}</h2>
-              <ul className="mt-3 flex flex-wrap gap-2">
+            <section key={g.key} className="p-5">
+              <h2 className="flex max-w-none items-baseline justify-between gap-3 text-sm font-medium text-ink">
+                {CATEGORY_LABELS[g.key]}
+                <span className="measured text-xs font-normal text-muted">{g.skills.length}</span>
+              </h2>
+              <ul className="mt-3 flex flex-wrap gap-1.5">
                 {g.skills.map((s) => (
                   <li
                     key={s.name}
-                    className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                    className="rounded-chip border border-rule bg-paper-3 px-2 py-0.5 text-sm text-ink-2"
                     title={`${PROFICIENCY_LABEL[s.proficiency]}, ${s.projectCount} projects`}
                   >
                     {s.name}
                   </li>
                 ))}
               </ul>
-            </Card>
+            </section>
           ))}
       </div>
     </div>

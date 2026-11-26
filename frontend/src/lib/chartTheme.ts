@@ -1,56 +1,67 @@
-import { useThemeStore } from '../store/themeStore';
+import { useMemo } from 'react';
 
 /**
- * Chart colours per theme. The "you"/"them" pair is validated for
- * colour-blind separation and contrast against each theme's surface
- * (dataviz validate_palette: all checks pass in light and dark).
+ * Chart colours, read once from the live Console tokens so charts and pages
+ * never drift apart.
+ * Meanings follow the theme: amber is a person ("you"), cool is an
+ * instrument (a trace, a measured bar, the comparison reference).
  */
-const LIGHT = {
-  you: '#D95434',
+export interface ChartTheme {
+  /** The signed-in person's own series. */
+  you: string;
+  /** The person being compared against. */
+  them: string;
+  /** A measured series over time (the score trace). */
+  trace: string;
   /** One-series magnitude bars. */
-  bar: '#2E3A5A',
-  them: '#3F5FA8',
-  grid: '#EEE7D9',
-  axis: '#646C82',
-  surface: '#FBF8F2',
-  tooltipBg: '#FBF8F2',
-  tooltipBorder: '#E0D6C4',
-  ink: '#172039',
-  muted: '#646C82',
-};
-
-const DARK = {
-  you: '#E8603C',
-  bar: '#B8B1A3',
-  them: '#6F8BD6',
-  grid: '#222D49',
-  axis: '#9AA0B0',
-  surface: '#172039',
-  tooltipBg: '#0E1629',
-  tooltipBorder: '#34405D',
-  ink: '#F6F1E7',
-  muted: '#9AA0B0',
-};
-
-export type ChartTheme = typeof LIGHT;
-
-export function useChartTheme(): ChartTheme {
-  const isDark = useThemeStore((s) => s.isDark);
-  return isDark ? DARK : LIGHT;
+  bar: string;
+  grid: string;
+  axis: string;
+  surface: string;
+  tooltipBg: string;
+  tooltipBorder: string;
+  ink: string;
+  muted: string;
+  mono: string;
 }
 
-/** Props for Recharts <Tooltip> so it matches the theme. */
+function read(name: string): string {
+  if (typeof window === 'undefined') return '';
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+export function useChartTheme(): ChartTheme {
+  return useMemo<ChartTheme>(
+    () => ({
+      you: read('--color-accent'),
+      them: read('--color-cool'),
+      trace: read('--color-cool'),
+      bar: read('--color-cool'),
+      grid: read('--color-rule'),
+      axis: read('--color-muted'),
+      surface: read('--color-paper-2'),
+      tooltipBg: read('--color-paper-2'),
+      tooltipBorder: read('--color-rule-2'),
+      ink: read('--color-ink'),
+      muted: read('--color-muted'),
+      mono: read('--font-outlier'),
+    }),
+    []
+  );
+}
+
+/** Props for Recharts <Tooltip> so it matches the theme: a hairline panel, no shadow. */
 export function tooltipStyle(t: ChartTheme) {
   return {
     contentStyle: {
       backgroundColor: t.tooltipBg,
       border: `1px solid ${t.tooltipBorder}`,
-      borderRadius: 8,
-      boxShadow: '0 8px 24px -12px rgb(14 22 41 / 0.35)',
+      borderRadius: 6,
+      boxShadow: 'none',
       color: t.ink,
       fontSize: 13,
     },
     labelStyle: { color: t.muted, marginBottom: 4 },
-    itemStyle: { color: t.ink },
+    itemStyle: { color: t.ink, fontFamily: t.mono, fontVariantNumeric: 'tabular-nums' as const },
   };
 }

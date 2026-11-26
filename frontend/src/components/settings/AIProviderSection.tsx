@@ -17,9 +17,11 @@ interface FormState {
   apiKey: string;
 }
 
-const fieldClass = 'input h-10 px-3 text-sm';
-const labelClass = 'block text-sm font-medium text-gray-900 dark:text-white';
-const hintClass = 'mt-1 text-xs text-gray-600 dark:text-gray-400';
+const fieldClass = 'input h-9 px-3 text-sm';
+const labelClass = 'mb-1.5 block text-sm font-medium text-ink-2';
+const hintClass = 'mt-1.5 min-h-[1lh] text-xs text-muted';
+const linkClass =
+  'text-ink underline decoration-rule-2 underline-offset-[0.16em] transition-colors duration-[120ms] ease-out hover:text-accent active:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus';
 
 const AIProviderSection: React.FC = () => {
   const ids = { provider: useId(), model: useId(), custom: useId(), key: useId(), url: useId() };
@@ -221,48 +223,50 @@ const AIProviderSection: React.FC = () => {
         <div
           className={
             status.available
-              ? 'flex items-start gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm dark:bg-gray-950/60'
-              : 'flex items-start gap-3 rounded-lg bg-gain-50 px-4 py-3 text-sm dark:bg-gain-700/15'
+              ? 'flex items-start gap-3 rounded-pill bg-paper-3 px-3.5 py-2.5 text-sm text-ink-2'
+              : 'flex items-start gap-3 rounded-pill bg-bad-soft px-3.5 py-2.5 text-sm text-ink'
           }
         >
-          <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-gray-500 dark:text-gray-400" aria-hidden="true" />
-          <p className="text-gray-800 dark:text-gray-200">{status.message}</p>
+          <KeyRound className={`mt-0.5 h-4 w-4 shrink-0 ${status.available ? 'text-muted' : 'text-bad'}`} aria-hidden="true" />
+          <p>{status.message}</p>
         </div>
       )}
 
       {!canStoreKeys && (
         <Alert variant="warning" title="Saving keys is turned off on this server">
-          The server has no ENCRYPTION_KEY set, so personal keys can't be stored safely. You can still test a key.
+          The server has no <span className="measured">ENCRYPTION_KEY</span> set, so personal keys can’t be stored safely. You can
+          still test a key.
         </Alert>
       )}
 
       {/* Saved key summary */}
       {settings && !editing && (
-        <div className="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-              <dt className="text-gray-500 dark:text-gray-400">Provider</dt>
-              <dd className="font-medium text-gray-900 dark:text-white">{settings.providerLabel}</dd>
-              <dt className="text-gray-500 dark:text-gray-400">Model</dt>
-              <dd className="break-all font-mono text-gray-900 dark:text-white">{settings.model}</dd>
+        <div>
+          <div className="flex flex-col gap-5 min-[60rem]:flex-row min-[60rem]:items-start min-[60rem]:justify-between">
+            <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
+              <dt className="text-muted">Provider</dt>
+              <dd className="text-ink">{settings.providerLabel}</dd>
+              <dt className="text-muted">Model</dt>
+              <dd className="measured break-all text-ink">{settings.model}</dd>
               {settings.baseUrl && (
                 <>
-                  <dt className="text-gray-500 dark:text-gray-400">Base URL</dt>
-                  <dd className="break-all font-mono text-gray-900 dark:text-white">{settings.baseUrl}</dd>
+                  <dt className="text-muted">Base URL</dt>
+                  <dd className="measured break-all text-ink">{settings.baseUrl}</dd>
                 </>
               )}
-              <dt className="text-gray-500 dark:text-gray-400">Key</dt>
-              <dd className="font-mono text-gray-900 dark:text-white">{settings.keyHint ?? 'None (not required)'}</dd>
+              <dt className="text-muted">Key</dt>
+              <dd className={settings.keyHint ? 'measured text-ink' : 'text-ink'}>{settings.keyHint ?? 'None (not required)'}</dd>
               {settings.lastTestedAt && (
                 <>
-                  <dt className="text-gray-500 dark:text-gray-400">Last test</dt>
-                  <dd className={settings.lastTestOk ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-700 dark:text-red-400'}>
-                    {settings.lastTestOk ? 'Passed' : 'Failed'} {formatRelative(settings.lastTestedAt)}
+                  <dt className="text-muted">Last test</dt>
+                  <dd className={settings.lastTestOk ? 'text-ok' : 'text-bad'}>
+                    {settings.lastTestOk ? 'Passed' : 'Failed'}{' '}
+                    <span className="measured">{formatRelative(settings.lastTestedAt)}</span>
                   </dd>
                 </>
               )}
             </dl>
-            <div className="sm:w-56">
+            <div className="min-[60rem]:w-64">
               <Switch
                 label="Use my own API key"
                 description={settings.enabled ? 'On: AI requests use this key.' : 'Off: AI requests use the GitVanta key.'}
@@ -272,21 +276,27 @@ const AIProviderSection: React.FC = () => {
               />
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
-            <Button size="sm" variant="outline" onClick={() => startEditing(true)}>
+          <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-rule pt-4">
+            <Button type="button" size="sm" variant="outline" onClick={() => startEditing(true)}>
               Change key or model
             </Button>
             {!confirmDelete ? (
-              <Button size="sm" variant="ghost" leftIcon={<Trash2 className="h-4 w-4" />} onClick={() => setConfirmDelete(true)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                leftIcon={<Trash2 className="h-4 w-4" />}
+                onClick={() => setConfirmDelete(true)}
+              >
                 Remove key
               </Button>
             ) : (
               <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Confirm key removal">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Remove this key?</span>
-                <Button size="sm" variant="danger" isLoading={busy === 'delete'} onClick={remove}>
+                <span className="text-sm text-ink-2">Remove this key?</span>
+                <Button type="button" size="sm" variant="danger" isLoading={busy === 'delete'} onClick={remove}>
                   Remove
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
+                <Button type="button" size="sm" variant="ghost" onClick={() => setConfirmDelete(false)}>
                   Keep it
                 </Button>
               </div>
@@ -296,21 +306,21 @@ const AIProviderSection: React.FC = () => {
       )}
 
       {!settings && !editing && (
-        <Button leftIcon={<KeyRound className="h-4 w-4" />} onClick={() => startEditing(false)}>
+        <Button type="button" variant="outline" leftIcon={<KeyRound className="h-4 w-4" />} onClick={() => startEditing(false)}>
           Use my own API key
         </Button>
       )}
 
       {/* Editor */}
       {editing && (
-        <form onSubmit={save} className="space-y-5 rounded-lg border border-gray-200 p-4 sm:p-5 dark:border-gray-800" noValidate>
+        <form onSubmit={save} className="max-w-xl space-y-4" noValidate>
           <div>
             <label htmlFor={ids.provider} className={labelClass}>
               Provider
             </label>
             <select
               id={ids.provider}
-              className={`${fieldClass} mt-1.5`}
+              className={fieldClass}
               value={form.provider}
               onChange={(e) => changeProvider(e.target.value as AIProviderId)}
             >
@@ -320,21 +330,18 @@ const AIProviderSection: React.FC = () => {
                 </option>
               ))}
             </select>
-            {info && (
-              <p className={hintClass}>
-                {info.description}{' '}
-                {info.keyUrl && (
-                  <a
-                    href={info.keyUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-0.5 font-medium text-primary-700 underline-offset-2 hover:underline dark:text-primary-400"
-                  >
-                    Get a key <ExternalLink className="h-3 w-3" aria-hidden="true" />
-                  </a>
-                )}
-              </p>
-            )}
+            <p className={hintClass}>
+              {info && (
+                <>
+                  {info.description}{' '}
+                  {info.keyUrl && (
+                    <a href={info.keyUrl} target="_blank" rel="noreferrer" className={`inline-flex items-center gap-0.5 ${linkClass}`}>
+                      Get a key <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    </a>
+                  )}
+                </>
+              )}
+            </p>
           </div>
 
           {info?.requiresBaseUrl && (
@@ -346,7 +353,7 @@ const AIProviderSection: React.FC = () => {
                 id={ids.url}
                 type="url"
                 inputMode="url"
-                className={`${fieldClass} mt-1.5 font-mono`}
+                className={`${fieldClass} measured`}
                 placeholder="https://api.together.xyz/v1"
                 value={form.baseUrl}
                 onChange={(e) => setForm({ ...form, baseUrl: e.target.value })}
@@ -354,9 +361,9 @@ const AIProviderSection: React.FC = () => {
                 spellCheck={false}
               />
               <p className={hintClass}>
-                Any server with an OpenAI-style <span className="font-mono">/chat/completions</span> endpoint. Examples: Ollama{' '}
-                <span className="font-mono">http://localhost:11434/v1</span>, LM Studio{' '}
-                <span className="font-mono">http://localhost:1234/v1</span>. Local addresses work only when GitVanta runs on
+                Any server with an OpenAI-style <span className="measured">/chat/completions</span> endpoint. Examples: Ollama{' '}
+                <span className="measured">http://localhost:11434/v1</span>, LM Studio{' '}
+                <span className="measured">http://localhost:1234/v1</span>. Local addresses work only when GitVanta runs on
                 your own machine.
               </p>
             </div>
@@ -364,13 +371,13 @@ const AIProviderSection: React.FC = () => {
 
           <div>
             <label htmlFor={ids.key} className={labelClass}>
-              API key{!info?.requiresKey && <span className="font-normal text-gray-500 dark:text-gray-400"> (optional)</span>}
+              API key{!info?.requiresKey && <span className="font-normal text-muted"> (optional)</span>}
             </label>
-            <div className="relative mt-1.5">
+            <div className="relative">
               <input
                 id={ids.key}
                 type={showKey ? 'text' : 'password'}
-                className={`${fieldClass} pr-11 font-mono`}
+                className={`${fieldClass} measured pr-11`}
                 placeholder={sameAsSaved ? `Saved: ${settings?.keyHint}. Leave blank to keep it.` : info?.keyPlaceholder}
                 value={form.apiKey}
                 onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
@@ -381,7 +388,7 @@ const AIProviderSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowKey((v) => !v)}
-                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white"
+                className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-pill text-muted transition-colors duration-[120ms] ease-out hover:text-ink active:text-ink focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
                 aria-label={showKey ? 'Hide API key' : 'Show API key'}
                 aria-pressed={showKey}
               >
@@ -394,23 +401,23 @@ const AIProviderSection: React.FC = () => {
           </div>
 
           <div>
-            <div className="flex items-end justify-between gap-3">
-              <label htmlFor={ids.model} className={labelClass}>
+            <div className="mb-1.5 flex items-end justify-between gap-3">
+              <label htmlFor={ids.model} className="block text-sm font-medium text-ink-2">
                 Model
               </label>
               <button
                 type="button"
                 onClick={loadModels}
                 disabled={busy === 'models'}
-                className="inline-flex items-center gap-1 rounded-md text-xs font-medium text-primary-700 hover:underline disabled:opacity-50 dark:text-primary-400"
+                className="inline-flex items-center gap-1 rounded-chip text-xs text-ink underline decoration-rule-2 underline-offset-[0.16em] transition-colors duration-[120ms] ease-out hover:text-accent disabled:cursor-not-allowed disabled:opacity-55"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${busy === 'models' ? 'animate-spin' : ''}`} aria-hidden="true" />
+                <RefreshCw className={`h-3.5 w-3.5 ${busy === 'models' ? 'animate-spin motion-reduce:animate-none' : ''}`} aria-hidden="true" />
                 {liveModels ? 'Reload models from provider' : 'Load models from provider'}
               </button>
             </div>
             <select
               id={ids.model}
-              className={`${fieldClass} mt-1.5`}
+              className={`${fieldClass} measured`}
               value={form.model}
               onChange={(e) => setForm({ ...form, model: e.target.value })}
             >
@@ -429,7 +436,7 @@ const AIProviderSection: React.FC = () => {
                 </label>
                 <input
                   id={ids.custom}
-                  className={`${fieldClass} font-mono`}
+                  className={`${fieldClass} measured`}
                   placeholder="Exact model ID, e.g. llama3.1:8b"
                   value={form.customModel}
                   onChange={(e) => setForm({ ...form, customModel: e.target.value })}
@@ -439,14 +446,18 @@ const AIProviderSection: React.FC = () => {
               </div>
             )}
             <p className={hintClass}>
-              {liveModels
-                ? `${liveModels.length} models available to this key.`
-                : 'Suggested models. Load the list from the provider to see every model your key can use.'}
+              {liveModels ? (
+                <>
+                  <span className="measured">{liveModels.length}</span> models available to this key.
+                </>
+              ) : (
+                'Suggested models. Load the list from the provider to see every model your key can use.'
+              )}
             </p>
           </div>
 
           {formError && (
-            <p role="alert" className="text-sm text-red-700 dark:text-red-400">
+            <p role="alert" className="text-sm text-bad">
               {formError}
             </p>
           )}
@@ -456,26 +467,31 @@ const AIProviderSection: React.FC = () => {
               role="status"
               className={
                 testResult.ok
-                  ? 'flex items-start gap-2 rounded-lg bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200'
-                  : 'flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200'
+                  ? 'flex items-start gap-2 rounded-pill bg-ok-soft px-3 py-2.5 text-sm text-ink'
+                  : 'flex items-start gap-2 rounded-pill bg-bad-soft px-3 py-2.5 text-sm text-ink'
               }
             >
               {testResult.ok ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-ok" aria-hidden="true" />
               ) : (
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-bad" aria-hidden="true" />
               )}
               <span>
-                {testResult.ok
-                  ? `Connected to ${testResult.result.providerLabel} (${testResult.result.model}) in ${testResult.result.latencyMs} ms.${
-                      testResult.result.warning ? ` ${testResult.result.warning}` : ''
-                    }`
-                  : testResult.message}
+                {testResult.ok ? (
+                  <>
+                    Connected to {testResult.result.providerLabel} (
+                    <span className="measured">{testResult.result.model}</span>) in{' '}
+                    <span className="measured">{testResult.result.latencyMs}&nbsp;ms</span>.
+                    {testResult.result.warning ? ` ${testResult.result.warning}` : ''}
+                  </>
+                ) : (
+                  testResult.message
+                )}
               </span>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-4 dark:border-gray-800">
+          <div className="flex flex-wrap gap-2 border-t border-rule pt-4">
             <Button type="submit" isLoading={busy === 'save'} disabled={!canStoreKeys || (busy !== null && busy !== 'save')}>
               Save
             </Button>
@@ -496,9 +512,20 @@ const AIProviderSection: React.FC = () => {
         </form>
       )}
 
-      <p className="text-sm text-gray-600 dark:text-gray-400">
-        With your own key you pay your provider directly and get a higher limit: 500 AI requests an hour instead of 50.
-      </p>
+      <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-4 gap-y-1.5 border-t border-rule pt-4 text-xs">
+        <dt className="text-muted">Encryption</dt>
+        <dd className="text-ink-2">
+          <span className="measured">AES-256-GCM</span> at rest
+        </dd>
+        <dt className="text-muted">Shown</dt>
+        <dd className="text-ink-2">The last four characters only, never the full key</dd>
+        <dt className="text-muted">Billing</dt>
+        <dd className="text-ink-2">With your own key you pay your provider directly</dd>
+        <dt className="text-muted">Limit</dt>
+        <dd className="text-ink-2">
+          <span className="measured">500</span> AI requests an hour instead of <span className="measured">50</span>
+        </dd>
+      </dl>
     </div>
   );
 };

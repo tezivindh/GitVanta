@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { Github, ShieldCheck, EyeOff, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../store';
-import { Button, LogoMark, ThemeToggle } from '../components/ui';
+import { Button, LogoMark } from '../components/ui';
 
 const ERROR_MESSAGES: Record<string, string> = {
   session_expired: 'Your session ended. Sign in again to continue.',
@@ -46,57 +46,57 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="dark flex min-h-dvh flex-col bg-gray-950 pt-[env(safe-area-inset-top)] text-gray-100">
-      <div className="flex justify-end p-4">
-        <ThemeToggle />
-      </div>
-      <main className="flex flex-1 items-center justify-center px-4 pb-16">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <Link to="/" className="inline-flex rounded-lg" aria-label="GitVanta home">
-              <LogoMark className="h-12 w-12" />
-            </Link>
-            <h1 className="font-display mt-5 text-[2rem] leading-tight text-gray-950 dark:text-white">Sign in to GitVanta</h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-400">Score your GitHub portfolio and see what to improve.</p>
-          </div>
+    <div className="relative min-h-dvh bg-paper pt-[env(safe-area-inset-top)] text-ink">
+      {/* Corridor: one centred column, the head carries the page. */}
+      <main className="flex min-h-dvh items-center justify-center px-4 py-20">
+        <div className="w-full max-w-[44ch]">
+          <Link to="/" className="inline-flex rounded-pill focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus" aria-label="GitVanta home">
+            <LogoMark className="h-10 w-10" />
+          </Link>
+          <h1 className="mt-8 max-w-none font-display text-display-s font-medium leading-[1.02] tracking-[-0.03em] text-ink">
+            Sign in to GitVanta
+          </h1>
+          <p className="mt-4 text-lead leading-[1.45] text-ink-2">Score your GitHub portfolio and see what to improve.</p>
 
           {errorMessage && (
             <div
               role="alert"
-              className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+              className="mt-8 rounded-pill border border-bad bg-bad-soft px-4 py-3 text-sm text-ink"
             >
               {errorMessage}
             </div>
           )}
 
-          <div className="card p-6 sm:p-8">
-            <Button
-              onClick={handleGitHubLogin}
-              variant="primary"
-              size="lg"
-              fullWidth
-              leftIcon={<Github className="h-5 w-5" />}
-              loading={isLoading}
-            >
-              Continue with GitHub
-            </Button>
+          <Button
+            onClick={handleGitHubLogin}
+            variant="primary"
+            size="lg"
+            fullWidth
+            leftIcon={<Github className="h-5 w-5" />}
+            loading={isLoading}
+            className="mt-8 h-12"
+          >
+            Continue with GitHub
+          </Button>
 
-            <ul className="mt-6 space-y-4">
-              {POINTS.map((p) => (
-                <li key={p.title} className="flex items-start gap-3">
-                  <p.icon className="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" aria-hidden="true" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{p.title}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{p.text}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ul className="mt-10 border-b border-rule">
+            {POINTS.map((p) => (
+              <li key={p.title} className="flex items-start gap-3 border-t border-rule py-4">
+                <p.icon className="mt-[3px] h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink">{p.title}</p>
+                  <p className="mt-0.5 text-sm text-muted">{p.text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
 
-          <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-6 text-sm text-muted">
             GitHub will ask for access to your repositories. GitVanta only reads them.{' '}
-            <Link to="/#faq" className="font-medium text-primary-700 underline-offset-2 hover:underline dark:text-primary-400">
+            <Link
+              to="/#faq"
+              className="text-ink-2 underline decoration-rule-2 underline-offset-4 transition-[color,text-decoration-color] duration-[120ms] ease-out hover:text-accent hover:decoration-accent"
+            >
               Why this access?
             </Link>
           </p>

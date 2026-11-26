@@ -6,6 +6,7 @@ import {
   PortfolioSummary,
   ImprovementRoadmap,
   AIStatus,
+  RepoReview,
   RepoReviews,
   WithAI,
 } from '../types';
@@ -53,6 +54,16 @@ export const enhancementApi = {
 
   async reviewRepositories(): Promise<RepoReviews> {
     const res = await apiClient.post<ApiResponse<RepoReviews>>('/enhance/repo-reviews', {}, slow);
+    return res.data.data!;
+  },
+
+  /** Rate one repository; returns the merged reviews and the new rating. */
+  async reviewRepository(repoName: string): Promise<{ reviews: RepoReviews; item: RepoReview }> {
+    const res = await apiClient.post<ApiResponse<{ reviews: RepoReviews; item: RepoReview }>>(
+      `/enhance/repo-reviews/${repoPath(repoName)}`,
+      {},
+      slow
+    );
     return res.data.data!;
   },
 

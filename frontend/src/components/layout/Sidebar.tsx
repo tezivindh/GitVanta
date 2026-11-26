@@ -7,7 +7,6 @@ import {
   Sparkles,
   Brain,
   Users,
-  FileDown,
   Trophy,
   BarChart3,
   GitCompare,
@@ -28,8 +27,7 @@ const navigation = [
   { name: 'Badges', href: '/dashboard/badges', icon: Trophy },
   { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { name: 'Compare', href: '/dashboard/compare', icon: GitCompare },
-  { name: 'Professional View', href: '/dashboard/professional-profile', icon: Users },
-  { name: 'Export', href: '/dashboard/export', icon: FileDown },
+  { name: 'Professional view', href: '/dashboard/professional-profile', icon: Users },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
@@ -55,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 animate-fade-in bg-gray-950/50 lg:hidden"
+          className="fixed inset-0 z-40 animate-fade-in bg-scrim motion-reduce:animate-none lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -66,27 +64,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         id="dashboard-sidebar"
         aria-label="Dashboard"
         className={clsx(
-          'dark fixed top-16 left-0 h-[calc(100dvh-4rem)] w-64 bg-gray-950 border-r border-gray-800',
-          'transform transition-transform duration-300 ease-[var(--ease-drawer)] z-50',
+          'fixed left-0 top-[calc(3.5rem+env(safe-area-inset-top))] z-50 h-[calc(100dvh-3.5rem-env(safe-area-inset-top))] w-64 border-r border-rule bg-paper-2 lg:w-60',
+          'transition-transform duration-[220ms] ease-out',
           'lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full invisible lg:visible'
         )}
       >
         {/* Mobile close button */}
-        <div className="flex items-center justify-between p-4 lg:hidden border-b border-gray-200 dark:border-gray-800">
-          <span className="font-semibold text-gray-900 dark:text-white">Menu</span>
+        <div className="flex h-14 items-center justify-between border-b border-rule px-4 lg:hidden">
+          <span className="text-sm font-medium text-ink">Menu</span>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close navigation"
-            className="p-1 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="inline-flex size-9 items-center justify-center rounded-pill text-muted transition-colors duration-[120ms] ease-out hover:bg-paper-3 hover:text-ink pointer-coarse:size-11"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav aria-label="Dashboard sections" className="h-full space-y-1 overflow-y-auto overscroll-contain p-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+        <nav aria-label="Dashboard sections" className="h-full space-y-px overflow-y-auto overscroll-contain px-3 py-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
           {navigation.map((item) => {
             const active = isActive(item.href, item.exact);
             return (
@@ -96,17 +94,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 aria-current={active ? 'page' : undefined}
                 className={clsx(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-[15px] transition-colors pointer-coarse:py-3',
+                  'relative flex h-9 items-center gap-3 rounded-pill px-3 text-sm transition-colors duration-[120ms] ease-out pointer-coarse:h-11',
+                  'before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:content-[""]',
                   active
-                    ? 'bg-paper font-semibold text-gray-950 shadow-[inset_3px_0_0_var(--color-primary-400)] dark:bg-gray-900 dark:text-white'
-                    : 'font-medium text-gray-600 dark:text-gray-400 hover:text-gray-950 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-900'
+                    ? 'bg-paper-3 font-medium text-ink before:bg-accent'
+                    : 'text-muted hover:bg-paper-3 hover:text-ink before:bg-transparent'
                 )}
               >
                 <item.icon
                   aria-hidden="true"
                   className={clsx(
-                    'h-[18px] w-[18px]',
-                    active ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-500'
+                    'h-4 w-4 shrink-0',
+                    active ? 'text-accent' : 'text-muted'
                   )}
                 />
                 {item.name}

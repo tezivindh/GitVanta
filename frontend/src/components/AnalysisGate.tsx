@@ -4,6 +4,7 @@ import { useAnalysisStore } from '../store/analysisStore';
 import { AnalysisReport } from '../types';
 import { Button, EmptyState, ErrorState, PageSkeleton } from './ui';
 import { toast } from '../store/toastStore';
+import LatticeLoader from './LatticeLoader';
 
 /** Run a new analysis with toasts for the outcome. Shared by every page. */
 export async function runAnalysisWithFeedback(): Promise<void> {
@@ -71,9 +72,13 @@ const AnalysisGate: React.FC<AnalysisGateProps> = ({ children, header, emptyDesc
             : emptyDescription ?? 'Run your first analysis to see your score, skills, badges and suggested fixes.'
         }
         action={
-          <Button leftIcon={<Play className="h-4 w-4" />} isLoading={isAnalyzing} onClick={runAnalysisWithFeedback}>
-            Run analysis
-          </Button>
+          isAnalyzing ? (
+            <LatticeLoader label="Analysing" pattern="snake" cellSize={7} fontSize={15} className="text-ink" />
+          ) : (
+            <Button leftIcon={<Play className="h-4 w-4" />} onClick={runAnalysisWithFeedback}>
+              Run analysis
+            </Button>
+          )
         }
       />
     </>

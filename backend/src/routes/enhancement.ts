@@ -20,5 +20,6 @@ router.post('/summary', aiLimiter, asyncHandler(enhancementController.generatePo
 router.post('/roadmap', aiLimiter, asyncHandler(enhancementController.generateImprovementRoadmap));
 router.post('/description/:repoName', repo, aiLimiter, asyncHandler(enhancementController.generateProjectDescription));
 router.post('/repo-reviews', aiLimiter, asyncHandler(enhancementController.reviewRepositories));
+router.post('/repo-reviews/:repoName', repo, aiLimiter, asyncHandler(enhancementController.reviewRepository));
 
 export default router;

@@ -2,7 +2,6 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { DashboardLayout } from './components/layout';
 import { useAuthStore } from './store/authStore';
-import { useThemeStore } from './store/themeStore';
 import { Toaster, PageSkeleton } from './components/ui';
 import ErrorBoundary from './components/ErrorBoundary';
 import LandingPage from './pages/LandingPage';
@@ -20,7 +19,6 @@ const BadgesPage = lazy(() => import('./pages/dashboard/BadgesPage'));
 const AnalyticsPage = lazy(() => import('./pages/dashboard/AnalyticsPage'));
 const ComparePage = lazy(() => import('./pages/dashboard/ComparePage'));
 const ProfessionalProfilePage = lazy(() => import('./pages/dashboard/ProfessionalProfilePage'));
-const ExportPage = lazy(() => import('./pages/dashboard/ExportPage'));
 const SettingsPage = lazy(() => import('./pages/dashboard/SettingsPage'));
 
 /** Scroll to top on navigation, or to #anchor when there is one. */
@@ -47,9 +45,6 @@ const PageFallback: React.FC = () => (
 
 const App: React.FC = () => {
   const { token, user, fetchUser } = useAuthStore();
-
-  // Subscribe so the theme class stays in sync with the stored preference.
-  useThemeStore();
 
   // Fetch user on app load if token exists but user is null
   useEffect(() => {
@@ -84,7 +79,8 @@ const App: React.FC = () => {
           <Route path="analytics" element={page(<AnalyticsPage />)} />
           <Route path="compare" element={page(<ComparePage />)} />
           <Route path="professional-profile" element={page(<ProfessionalProfilePage />)} />
-          <Route path="export" element={page(<ExportPage />)} />
+          {/* Export now lives in Settings; keep old links and bookmarks working. */}
+          <Route path="export" element={<Navigate to={{ pathname: '/dashboard/settings', hash: '#export' }} replace />} />
           <Route path="settings" element={page(<SettingsPage />)} />
         </Route>
 

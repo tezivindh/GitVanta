@@ -3,7 +3,8 @@ import clsx from 'clsx';
 
 /**
  * A contribution graph (weeks × 7 days) with a number drawn into it at the
- * highest level. It's decorative: callers describe it in text for screen readers.
+ * highest level of the cool heat ramp (it is a measurement). It's decorative:
+ * callers describe it in text for screen readers.
  */
 
 // 5×7 pixel digits, one string per row.
@@ -116,7 +117,7 @@ const HeatGrid: React.FC<HeatGridProps> = ({
   return (
     <div className={clsx('heat', className)} style={style} aria-hidden="true">
       {showMonths && (
-        <div className="heat-grid heat-months mb-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+        <div className="heat-grid heat-months mb-1.5 text-xs text-muted">
           {Array.from({ length: weeks }).map((_, w) => {
             const m = months.find((x) => x.week === w);
             return (
@@ -131,12 +132,11 @@ const HeatGrid: React.FC<HeatGridProps> = ({
         {cells.map((c) => (
           <span
             key={`${c.week}:${c.day}`}
-            className={clsx('heat-cell', c.week < lead && 'heat-lead', animate && 'heat-animate', c.digit && 'heat-digit')}
+            className={clsx('heat-cell', c.week < lead && 'heat-lead', animate && 'heat-animate')}
             style={
               {
-                backgroundColor: `var(--heat-${c.level})`,
+                backgroundColor: `var(--color-heat-${c.level})`,
                 '--d': `${c.week * 16 + c.day * 8}ms`,
-                '--dd': `${1100 + (c.week - (weeks - rightPad - value.length * 6)) * 30 + c.day * 18}ms`,
               } as React.CSSProperties
             }
           />

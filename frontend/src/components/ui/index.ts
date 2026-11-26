@@ -10,4 +10,4 @@ export { default as Modal, ModalFooter } from './Modal';
 export { Skeleton, LoadingRegion, PageSkeleton, EmptyState, ErrorState, PageHeader } from './States';
 export { default as Toaster } from './Toaster';
 export { default as Switch } from './Switch';
-export { Logo, LogoMark, ThemeToggle, AIAttribution } from './Brand';
+export { Logo, LogoMark, AIAttribution } from './Brand';

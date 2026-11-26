@@ -21,11 +21,11 @@ const Switch: React.FC<SwitchProps> = ({ checked, onChange, label, description, 
     <div className="flex items-start justify-between gap-4">
       {!hideLabel && (
         <div className="min-w-0">
-          <label htmlFor={switchId} className="text-sm font-medium text-gray-900 dark:text-white">
+          <label htmlFor={switchId} className={clsx('text-sm font-medium text-ink', disabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer')}>
             {label}
           </label>
           {description && (
-            <p id={descId} className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
+            <p id={descId} className="mt-0.5 text-sm text-muted">
               {description}
             </p>
           )}
@@ -41,15 +41,21 @@ const Switch: React.FC<SwitchProps> = ({ checked, onChange, label, description, 
         disabled={disabled}
         onClick={() => onChange(!checked)}
         className={clsx(
-          'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-          checked ? 'bg-primary-600' : 'bg-gray-300 dark:bg-gray-700'
+          'group relative inline-flex h-6 w-10 shrink-0 items-center rounded-full border',
+          'transition-[background-color,border-color] duration-[120ms] ease-out',
+          // 44px hit target around the 40 by 24 control.
+          'after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[""]',
+          'disabled:cursor-not-allowed disabled:opacity-55',
+          checked
+            ? 'border-accent bg-accent hover:not-disabled:brightness-[1.06]'
+            : 'border-rule-2 bg-paper-3 hover:not-disabled:border-muted'
         )}
       >
         <span
           aria-hidden="true"
           className={clsx(
-            'inline-block h-4 w-4 rounded-full bg-paper shadow transition-transform',
-            checked ? 'translate-x-6' : 'translate-x-1'
+            'inline-block h-4 w-4 rounded-full transition-[translate,scale,background-color] duration-[120ms] ease-out group-enabled:group-active:scale-90',
+            checked ? 'translate-x-[19px] bg-accent-ink' : 'translate-x-[3px] bg-muted'
           )}
         />
       </button>

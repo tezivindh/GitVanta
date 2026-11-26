@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { FullPageLoader } from '../components/ui/Loader';
-import { Alert } from '../components/ui';
+import { LogoMark } from '../components/ui';
 
 const AuthCallbackPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { setAuth, logout } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
+  // The spinner waits a beat so a fast sign-in never flashes it.
+  const [showSpinner, setShowSpinner] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowSpinner(true), 200);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -62,20 +69,40 @@ const AuthCallbackPage: React.FC = () => {
     handleCallback();
   }, [searchParams, setAuth, navigate, logout]);
 
-  if (error) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-gray-50 p-4 dark:bg-gray-950">
-        <div className="max-w-md w-full">
-          <Alert variant="error" title="Sign-in did not complete">
-            {error}
-            <p className="mt-2 text-sm">Taking you back to the sign-in page…</p>
-          </Alert>
-        </div>
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-paper px-4 py-16 text-ink">
+      <div className="w-full max-w-[44ch]">
+        <LogoMark className="h-9 w-9" />
+        {error ? (
+          <div role="alert" className="mt-8">
+            <h1 className="max-w-none font-display text-2xl font-medium tracking-[-0.02em] text-ink">
+              Sign-in did not complete
+            </h1>
+            <p className="mt-4 rounded-pill border border-bad bg-bad-soft px-4 py-3 text-sm text-ink">{error}</p>
+            <p className="mt-4 text-sm text-muted">
+              Taking you back to the sign-in page…{' '}
+              <Link
+                to="/login"
+                className="text-ink-2 underline decoration-rule-2 underline-offset-4 transition-[color,text-decoration-color] duration-[120ms] ease-out hover:text-accent hover:decoration-accent"
+              >
+                Go now
+              </Link>
+            </p>
+          </div>
+        ) : (
+          <div role="status" aria-live="polite" className="mt-8 flex min-h-6 items-center gap-3">
+            {showSpinner && (
+              <>
+                <Loader2 className="h-5 w-5 shrink-0 animate-spin text-cool motion-reduce:animate-none" aria-hidden="true" />
+                <p className="text-md text-ink-2">Completing authentication…</p>
+              </>
+            )}
+            {!showSpinner && <span className="sr-only">Completing authentication…</span>}
+          </div>
+        )}
       </div>
-    );
-  }
-
-  return <FullPageLoader text="Completing authentication..." />;
+    </div>
+  );
 };
 
 export default AuthCallbackPage;

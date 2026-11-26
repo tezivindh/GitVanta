@@ -1,142 +1,65 @@
+/* Hallmark · shape: Bento Grid (/), app screen (/dashboard/*) · draw: e3f209 · genre: modern-minimal · theme: Console (deal 1/3, seed developer-tool-scores-github-b807·efcb99de·2026-11-26·r0) · redesign: full
+ * hero: Settled (/), Corridor (/login), Banner (/profile/:username) · nav: floating pill (/), the project's own sidebar shell (/dashboard) · footer: colophon block · imagery: the product (the score breakdown and the fix trail, built from the page's own example) · signature: the score as a reading, 66 struck to 69 with the three fixes that moved it · console: graphite, data ramps
+ * axes: dark/grotesk-sans/chromatic-amber · posture: restrained · contrast: pass · fold: pass · modes: dark · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V4 · weakest: E, fourteen routes share one Tailwind system, so every page was rebuilt on the same tokens and primitives rather than restyled class by class */
 @import 'tailwindcss';
+@import './tokens.css';
+@import './base.css' layer(base);
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/*
-  GitVanta design tokens
-  - Ink/paper neutrals are navy-tinted (the gray scale is overridden so every
-    page picks them up in both themes).
-  - Teal is the brand colour; amber is reserved for score gains.
-*/
 @theme {
-  /* Neutrals run from cream (50) to navy (950), so every mid-tone sits
-     between the two brand colours instead of drifting grey. */
-  --color-gray-50: #f6f1e7;
-  --color-gray-100: #eee7d9;
-  --color-gray-200: #e0d6c4;
-  --color-gray-300: #c5bcad;
-  --color-gray-400: #9aa0b0;
-  --color-gray-500: #646c82;
-  --color-gray-600: #4a5470;
-  --color-gray-700: #34405d;
-  --color-gray-800: #222d49;
-  --color-gray-900: #172039;
-  --color-gray-950: #0e1629;
-
-  /* Card surface on cream. */
-  --color-paper: #fbf8f2;
-
-  /* Coral: the accent. Actions, links, focus, the score's gains. */
-  --color-primary-50: #fff3ee;
-  --color-primary-100: #ffe3d8;
-  --color-primary-200: #ffc6b1;
-  --color-primary-300: #ffa486;
-  --color-primary-400: #ff8461;
-  --color-primary-500: #f36a45;
-  --color-primary-600: #d95434;
-  --color-primary-700: #b54127;
-  --color-primary-800: #8f3420;
-  --color-primary-900: #6e2a1b;
-  --color-primary-950: #3d140a;
-
-  /* Gains share the coral: a gain is the thing you act on. */
-  --color-gain-50: #fff3ee;
-  --color-gain-100: #ffe3d8;
-  --color-gain-300: #ffa486;
-  --color-gain-400: #ff8461;
-  --color-gain-500: #f36a45;
-  --color-gain-600: #d95434;
-  --color-gain-700: #b54127;
-
-  --color-github: #24292f;
-
-  --font-sans: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  /* Motion: strong custom curves (emil-design-eng). */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
-
-  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
-  --animate-dialog-in: dialog-in 220ms cubic-bezier(0.23, 1, 0.32, 1);
-  --animate-fade-in: fade-in 200ms ease;
+  --animate-shimmer: shimmer 1.4s var(--ease-in-out) infinite;
+  --animate-dialog-in: dialog-in 220ms var(--ease-out);
+  --animate-fade-in: fade-in 220ms var(--ease-out);
 
   @keyframes shimmer {
-    0% { background-position: -400px 0; }
-    100% { background-position: 400px 0; }
+    0% { opacity: 1; }
+    50% { opacity: 0.55; }
+    100% { opacity: 1; }
   }
   @keyframes cell-in {
     from { opacity: 0; transform: scale(0.6); }
     to { opacity: 1; transform: scale(1); }
   }
   @keyframes dialog-in {
-    from { opacity: 0; transform: scale(0.96); }
-    to { opacity: 1; transform: scale(1); }
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: none; }
   }
   @keyframes fade-in {
     from { opacity: 0; }
   }
-  @keyframes digit-in {
-    from { background-color: var(--heat-1); }
-    to { background-color: var(--heat-4); }
-  }
-}
-
-/* Inline: bg-heat-* resolves var(--heat-*) on the element itself, so a navy
-   band marked .dark inside a light page gets the dark ramp. */
-@theme inline {
-  --color-heat-0: var(--heat-0);
-  --color-heat-1: var(--heat-1);
-  --color-heat-2: var(--heat-2);
-  --color-heat-3: var(--heat-3);
-  --color-heat-4: var(--heat-4);
-
 }
 
 @layer base {
-  :root {
-    --heat-0: #e6ddcc;
-    --heat-1: #b9bcc6;
-    --heat-2: #7c849a;
-    --heat-3: #2e3a5a;
-    --heat-4: #e5582f;
-  }
-  .dark {
-    --heat-0: #212c4a;
-    --heat-1: #36446b;
-    --heat-2: #59627c;
-    --heat-3: #b8b1a3;
-    --heat-4: #ff8461;
-  }
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--color-rule);
   }
 
-  .dark *,
-  .dark ::after,
-  .dark ::before {
-    border-color: var(--color-gray-700, currentcolor);
+  /* The dashboard is an app screen: no rubber-band overscroll dragging the
+     fixed header and sidebar around. Marketing pages keep pull-to-refresh. */
+  html:has(#dashboard-main) {
+    overscroll-behavior-y: none;
   }
 
   html {
-    color-scheme: light;
     -webkit-text-size-adjust: 100%;
-    /* No grey flash on tap; every control has its own :active state instead. */
     -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
   }
 
   body {
-    /* viewport-fit=cover lets the page run under the notch in landscape. */
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
+    font-feature-settings: 'kern', 'liga';
+    text-rendering: optimizeLegibility;
   }
 
-  /* Controls fire on tap without the double-tap wait, and long-press doesn't select their label. */
+  /* Controls fire on tap without the double-tap wait; long-press doesn't select their label. */
   button,
   a,
   summary,
@@ -149,108 +72,126 @@
     -webkit-user-select: none;
     user-select: none;
   }
-  html.dark {
-    color-scheme: dark;
-  }
 
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100;
-    font-feature-settings: 'kern', 'liga';
-    text-rendering: optimizeLegibility;
-  }
-
-  h1, h2, h3, h4 {
+  h4 {
     text-wrap: balance;
-  }
-  p {
-    text-wrap: pretty;
+    font-weight: 500;
   }
 
-  /* One visible focus style everywhere, keyboard only. */
+  /* One focus style everywhere, keyboard only, never animated. */
   :focus-visible {
-    outline: 2px solid var(--color-primary-500);
+    outline: 2px solid var(--color-focus);
     outline-offset: 2px;
-    border-radius: 4px;
-  }
-
-  ::selection {
-    background: var(--color-primary-200);
-    color: var(--color-gray-900);
-  }
-
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-gray-300);
-    border-radius: 8px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-  }
-  .dark ::-webkit-scrollbar-thumb {
-    background: var(--color-gray-700);
-    background-clip: content-box;
+    border-radius: var(--radius-chip);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *,
-    ::before,
-    ::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      animation-delay: 0s !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
+    html {
+      scroll-behavior: auto;
     }
   }
+}
 
-  html {
-    scroll-behavior: smooth;
+/* What an instrument measured: ids, timestamps, diffs, every figure. Tabular, slashed zero. */
+@utility measured {
+  font-family: var(--font-outlier);
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* A single value at display size in the measured face: the theme's loudest thing. */
+@utility reading {
+  font-family: var(--font-outlier);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--color-ink);
+}
+
+/* Hairline panels cut from one surface: children sit on paper-2, 1px seams between. */
+@utility panels {
+  display: grid;
+  gap: var(--rule-hair);
+  background: var(--color-rule);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  & > * {
+    background: var(--color-paper-2);
   }
 }
 
-/* Wide, heavy Archivo: headlines, scores, the wordmark. */
-@utility font-display {
-  font-family: var(--font-sans);
-  font-stretch: 118%;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
+/*
+  Data ramps: the one place GitVanta uses gradients. A measured fill brightens
+  toward its value in a single hue, so the strong end sits on the reading.
+  Never on surfaces, text or controls (DESIGN.md, Variants).
+*/
+@utility ramp-cool {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-cool) 55%, var(--color-paper-2)),
+    var(--color-cool)
+  );
 }
 
+@utility ramp-ok {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-ok) 55%, var(--color-paper-2)),
+    var(--color-ok)
+  );
+}
+
+/* A single panel: 1px rule, paper-2 inside, 10px radius. No shadow. */
 @utility card {
-  @apply rounded-lg border border-gray-200 bg-paper dark:border-gray-800 dark:bg-gray-900;
+  border: var(--rule-hair) solid var(--color-rule);
+  background: var(--color-paper-2);
+  border-radius: var(--radius-card);
 }
 
 @utility input {
-  @apply block w-full rounded-lg border border-gray-300 bg-paper text-gray-900 shadow-xs;
-  @apply dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100;
-  @apply focus:border-primary-500 focus:ring-2 focus:ring-primary-500/30 focus:outline-none;
-  @apply placeholder:text-gray-400 dark:placeholder:text-gray-500;
-}
-
-@utility skeleton {
-  @apply rounded-md bg-gray-200 dark:bg-gray-800;
-  background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / 0.45) 50%, transparent 100%);
-  background-size: 400px 100%;
-  background-repeat: no-repeat;
-  animation: var(--animate-shimmer);
-  .dark & {
-    background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / 0.06) 50%, transparent 100%);
+  display: block;
+  width: 100%;
+  /* Field edges take muted: 3:1 against the ground in both modes (WCAG 1.4.11). */
+  border: var(--rule-hair) solid var(--color-muted);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-3);
+  color: var(--color-ink);
+  transition: border-color var(--dur-micro) var(--ease-out);
+  &::placeholder {
+    color: var(--color-muted);
+  }
+  &:hover:not(:disabled) {
+    border-color: var(--color-ink-2);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -1px;
+  }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  &[aria-invalid='true'] {
+    border-color: var(--color-bad);
   }
 }
 
+@utility skeleton {
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-3);
+  animation: var(--animate-shimmer);
+}
 
 /* Content rendered from Markdown-ish AI output */
 @utility prose-gv {
-  @apply text-gray-700 dark:text-gray-300;
+  color: var(--color-ink-2);
   line-height: 1.65;
 }
 
 /* Contribution grid (components/brand/HeatGrid.tsx) */
 .heat {
-  --heat-gap: clamp(2px, 0.32vw, 5px);
+  --heat-gap: clamp(2px, 0.32vw, 4px);
 }
 .heat-grid {
   display: grid;
@@ -265,7 +206,7 @@
 .heat-cell {
   display: block;
   aspect-ratio: 1;
-  border-radius: 22%;
+  border-radius: 2px;
 }
 .heat-lead {
   display: none;
@@ -281,10 +222,10 @@
 .heat-animate {
   animation: cell-in 380ms var(--ease-out) var(--d) both;
 }
-.heat-animate.heat-digit {
-  animation:
-    cell-in 380ms var(--ease-out) var(--d) both,
-    digit-in 520ms ease-out var(--dd) both;
+@media (prefers-reduced-motion: reduce) {
+  .heat-animate {
+    animation: none;
+  }
 }
 
 /* iOS Safari zooms the page into any input under 16px and never zooms back. */
@@ -294,4 +235,51 @@
   select {
     font-size: 16px;
   }
+}
+
+/*
+  shadcn bridge. Components added with `npx shadcn add` read shadcn's names
+  (bg-background, text-foreground, bg-primary, border-border ...). They point
+  at the Console tokens here, so CLI components inherit the GitVanta look in
+  both modes instead of shadcn's own palette. `accent` and `muted` are not
+  remapped: those names already belong to Console (amber signal, muted text),
+  so shadcn components get Console's meaning for them.
+*/
+:root {
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+  --card: var(--color-paper-2);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-paper-2);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-accent);
+  --primary-foreground: var(--color-accent-ink);
+  --secondary: var(--color-paper-3);
+  --secondary-foreground: var(--color-ink-2);
+  --muted-foreground: var(--color-muted);
+  --accent-foreground: var(--color-ink);
+  --destructive: var(--color-bad);
+  --border: var(--color-rule);
+  --input: var(--color-rule-2);
+  --ring: var(--color-focus);
+  --radius: var(--radius-card);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }

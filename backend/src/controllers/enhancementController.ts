@@ -189,6 +189,33 @@ function calculateBasicReadmeScore(content: string): number {
 
 const MAX_REVIEWED_REPOS = 30;
 
+/** The facts the AI sees for each repository; shared by "rate all" and "rate one" so both judge the same way. */
+async function buildReviewInputs(user: IUser, repos: any[]) {
+  const insights = await RepoInsight.find({ userId: user._id }).lean();
+  const byName = new Map(insights.map((i: any) => [i.repoName, i]));
+  const readmes = await Promise.all(
+    repos.map((r: any) => githubService.getReadmeContent(user.accessToken, user.username, r.name).catch(() => null))
+  );
+  return repos.map((r: any, i: number) => {
+    const insight: any = byName.get(r.name);
+    const readme = readmes[i] || '';
+    return {
+      name: r.name,
+      description: r.description,
+      language: r.language,
+      topics: r.topics || [],
+      stars: r.stars || 0,
+      hasReadme: !!readme,
+      readmeLength: readme.length,
+      readmeExcerpt: readme.replace(/\s+/g, ' ').slice(0, 400),
+      hasLicense: !!insight?.hasLicense,
+      hasTests: !!insight?.hasTests,
+      hasContributing: !!insight?.hasContributing,
+      lastPush: r.pushedAt || null,
+    };
+  });
+}
+
 /** Rate every analysed repository (up to 30) in one AI request; cached on the report. */
 export async function reviewRepositories(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
@@ -196,40 +223,43 @@ export async function reviewRepositories(req: AuthenticatedRequest, res: Respons
   if (!analysis) throw new NotFoundError('No analysis found. Run an analysis first.');
 
   const ai = await resolveAIForUser(user);
-  const insights = await RepoInsight.find({ userId: user._id }).lean();
-  const byName = new Map(insights.map((i: any) => [i.repoName, i]));
-
   const repos = [...(analysis.repositories ?? [])]
     .sort((x: any, y: any) => new Date(y.pushedAt || 0).getTime() - new Date(x.pushedAt || 0).getTime())
     .slice(0, MAX_REVIEWED_REPOS);
 
-  const readmes = await Promise.all(
-    repos.map((r: any) => githubService.getReadmeContent(user.accessToken, user.username, r.name).catch(() => null))
-  );
-
-  const items = await aiService.reviewRepositories(
-    ai,
-    repos.map((r: any, i: number) => {
-      const insight: any = byName.get(r.name);
-      const readme = readmes[i] || '';
-      return {
-        name: r.name,
-        description: r.description,
-        language: r.language,
-        topics: r.topics || [],
-        stars: r.stars || 0,
-        hasReadme: !!readme,
-        readmeLength: readme.length,
-        readmeExcerpt: readme.replace(/\s+/g, ' ').slice(0, 400),
-        hasLicense: !!insight?.hasLicense,
-        hasTests: !!insight?.hasTests,
-        hasContributing: !!insight?.hasContributing,
-        lastPush: r.pushedAt || null,
-      };
-    })
-  );
+  const items = await aiService.reviewRepositories(ai, await buildReviewInputs(user, repos));
 
   const reviews = { items, ai: describeAI(ai), generatedAt: new Date() };
   await AnalysisReport.updateOne({ _id: analysis._id }, { $set: { aiRepoReviews: reviews } });
   res.json({ success: true, data: reviews, ai: reviews.ai });
+}
+
+/**
+ * Rate one repository and merge its review into the cached reviews on the report:
+ * that repository's entry is replaced, every other rating is kept as it was.
+ */
+export async function reviewRepository(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const { repoName } = req.params;
+  const analysis: any = await analysisService.getLatestAnalysis(user._id);
+  if (!analysis) throw new NotFoundError('No analysis found. Run an analysis first.');
+
+  const repo = (analysis.repositories ?? []).find((r: any) => r.name === repoName);
+  if (!repo) throw new NotFoundError(`${repoName} is not in your latest analysis. Analyse again to include it.`);
+
+  const ai = await resolveAIForUser(user);
+  const [item] = await aiService.reviewRepositories(ai, await buildReviewInputs(user, [repo]));
+  if (!item) throw new Error('The AI did not return a rating for this repository. Please try again.');
+
+  const previous = analysis.aiRepoReviews;
+  const items = [...(previous?.items ?? []).filter((r: any) => r.name !== repoName), item];
+  const reviews = {
+    items,
+    // The attribution names whichever AI wrote the newest rating.
+    ai: describeAI(ai),
+    // "Rated N minutes ago" refers to the full run when there is one.
+    generatedAt: previous?.generatedAt ?? new Date(),
+  };
+  await AnalysisReport.updateOne({ _id: analysis._id }, { $set: { aiRepoReviews: reviews } });
+  res.json({ success: true, data: { reviews, item }, ai: reviews.ai });
 }

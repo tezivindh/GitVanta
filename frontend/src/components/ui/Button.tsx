@@ -26,21 +26,23 @@ const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const isLoadingState = isLoading || loading || false;
+  // Console controls: Host Grotesk 500, 6px radius, one 1px rule. Amber is the one
+  // primary action; everything else is the outline pair on paper-2.
   const baseStyles =
-    'inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold rounded-md transition-[background-color,color,border-color,transform] duration-150 ease-[var(--ease-out)] active:scale-[0.97] disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:opacity-50 disabled:cursor-not-allowed';
+    'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium rounded-pill border transition-[background-color,color,border-color,transform,filter] duration-[120ms] ease-out active:translate-y-px disabled:active:translate-y-0 disabled:opacity-55 disabled:cursor-not-allowed after:absolute after:-inset-y-1 after:inset-x-0 after:content-[""] pointer-coarse:after:-inset-y-2';
 
   const variants = {
-    primary: 'bg-primary-400 text-gray-950 hover:bg-primary-300',
-    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700',
-    outline: 'border border-gray-300 bg-paper text-gray-900 hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800',
-    ghost: 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
-    danger: 'bg-red-600 text-white hover:bg-red-700',
+    primary: 'border-accent bg-accent text-accent-ink hover:not-disabled:brightness-[1.06]',
+    secondary: 'border-rule-2 bg-paper-2 text-ink hover:not-disabled:bg-paper-3 hover:not-disabled:border-muted',
+    outline: 'border-rule-2 bg-transparent text-ink hover:not-disabled:bg-paper-2 hover:not-disabled:border-muted',
+    ghost: 'border-transparent bg-transparent text-ink-2 hover:not-disabled:bg-paper-2 hover:not-disabled:text-ink',
+    danger: 'border-bad bg-transparent text-bad hover:not-disabled:bg-bad-soft',
   };
 
   const sizes = {
     sm: 'h-8 px-3 text-sm',
-    md: 'h-10 px-4 text-sm',
-    lg: 'h-12 px-6 text-base',
+    md: 'h-9 px-3.5 text-sm',
+    lg: 'h-11 px-5 text-md',
   };
 
   return (
