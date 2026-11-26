@@ -1,6 +1,21 @@
 import mongoose, { Schema } from 'mongoose';
 import { IUser } from '../types';
 
+const aiSettingsSchema = new Schema(
+  {
+    enabled: { type: Boolean, default: false },
+    provider: { type: String, required: true },
+    model: { type: String, default: '' },
+    baseUrl: { type: String },
+    encryptedKey: { type: String, select: false },
+    keyHint: { type: String },
+    updatedAt: { type: Date },
+    lastTestedAt: { type: Date },
+    lastTestOk: { type: Boolean },
+  },
+  { _id: false }
+);
+
 const userSchema = new Schema<IUser>(
   {
     githubId: {
@@ -64,6 +79,17 @@ const userSchema = new Schema<IUser>(
       required: true,
       select: false, //don't include in queries by default
     },
+    aiSettings: {
+      type: aiSettingsSchema,
+      default: undefined,
+    },
+    sessionsRevokedAt: {
+      type: Date,
+    },
+    profileSettings: {
+      hiddenRepos: { type: [String], default: [] },
+      shownPrivateRepos: { type: [String], default: [] },
+    },
   },
   {
     timestamps: true,
@@ -71,6 +97,8 @@ const userSchema = new Schema<IUser>(
       transform: (_doc, ret: Record<string, unknown>) => {
         delete ret.accessToken;
         delete ret.__v;
+        const ai = ret.aiSettings as Record<string, unknown> | undefined;
+        if (ai) delete ai.encryptedKey;
         return ret;
       },
     },

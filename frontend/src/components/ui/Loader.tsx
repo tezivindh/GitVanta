@@ -16,8 +16,9 @@ const Loader: React.FC<LoaderProps> = ({ size = 'md', className }) => {
   return (
     <div className={clsx('flex items-center justify-center', className)}>
       <div
+        aria-hidden="true"
         className={clsx(
-          'animate-spin rounded-full border-2 border-gray-300 border-t-primary-600',
+          'animate-spin motion-reduce:animate-none rounded-full border-2 border-rule-2 border-t-cool',
           sizes[size]
         )}
       />
@@ -31,10 +32,10 @@ interface FullPageLoaderProps {
 }
 
 export const FullPageLoader: React.FC<FullPageLoaderProps> = ({ message, text }) => (
-  <div className="fixed inset-0 bg-white dark:bg-gray-900 bg-opacity-80 dark:bg-opacity-80 flex items-center justify-center z-50">
+  <div role="status" aria-live="polite" className="fixed inset-0 z-50 flex items-center justify-center bg-paper">
     <div className="text-center">
-      <Loader size="lg" />
-      {(message || text) && <p className="mt-4 text-gray-600 dark:text-gray-400">{message || text}</p>}
+      <Loader size="md" />
+      {(message || text) && <p className="mt-4 text-sm text-muted">{message || text}</p>}
     </div>
   </div>
 );

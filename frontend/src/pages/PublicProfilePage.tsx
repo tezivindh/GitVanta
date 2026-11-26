@@ -1,25 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import {
   Star,
   GitFork,
   MapPin,
   Building2,
   Globe,
-  ExternalLink,
-  Trophy,
-  Code,
-  Folder,
-  ArrowLeft,
   Github,
-  Loader2,
   Linkedin,
   Instagram,
   Youtube,
   Twitter,
   Link as LinkIcon,
+  Lock,
+  Users,
+  Check,
+  Copy,
 } from 'lucide-react';
-import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
+import { getApiError } from '../api/client';
+import { Badge, CategoryScores, ExtractedSkill, PublicRepo } from '../types';
+import { CATEGORIES } from '../lib/scoring';
+import { ErrorState, LoadingRegion, Logo, Skeleton } from '../components/ui';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -36,553 +39,421 @@ interface PublicProfile {
   publicRepos: number;
   socialAccounts: { provider: string; url: string }[];
   overallScore: number;
-  categoryScores: {
-    codeQuality: number;
-    documentation: number;
-    activity: number;
-    diversity: number;
-    community: number;
-    professionalism: number;
-  };
-  skills: {
-    name: string;
-    category: string;
-    proficiency: string;
-    projectCount: number;
-  }[];
-  badges: {
-    id: string;
-    name: string;
-    description: string;
-    icon: string;
-    category: string;
-  }[];
-  repositories: {
-    name: string;
-    url: string;
-    description: string | null;
-    language: string | null;
-    stars: number;
-    forks: number;
-    topics: string[];
-  }[];
+  categoryScores: CategoryScores;
+  skills: ExtractedSkill[];
+  badges: Badge[];
+  repositories: PublicRepo[];
+  headline: string | null;
+  summary: string | null;
   generatedAt: string;
 }
 
-// Score color helper
-function getScoreColor(score: number): string {
-  if (score >= 80) return 'text-green-400';
-  if (score >= 60) return 'text-blue-400';
-  if (score >= 40) return 'text-yellow-400';
-  return 'text-red-400';
-}
-
-function getScoreBg(score: number): string {
-  if (score >= 80) return 'from-green-500 to-emerald-600';
-  if (score >= 60) return 'from-blue-500 to-indigo-600';
-  if (score >= 40) return 'from-yellow-500 to-orange-600';
-  return 'from-red-500 to-rose-600';
-}
-
-function getGrade(score: number): string {
-  if (score >= 90) return 'A+';
-  if (score >= 80) return 'A';
-  if (score >= 70) return 'B';
-  if (score >= 60) return 'C';
-  if (score >= 50) return 'D';
-  return 'F';
-}
-
-// Language color map
-const languageColors: Record<string, string> = {
-  TypeScript: 'bg-blue-500',
-  JavaScript: 'bg-yellow-400',
-  Python: 'bg-green-500',
-  Java: 'bg-red-500',
-  'C++': 'bg-pink-500',
-  C: 'bg-gray-500',
-  'C#': 'bg-purple-500',
-  Go: 'bg-cyan-500',
-  Rust: 'bg-orange-600',
-  Ruby: 'bg-red-600',
-  PHP: 'bg-indigo-400',
-  Swift: 'bg-orange-500',
-  Kotlin: 'bg-purple-400',
-  Dart: 'bg-blue-400',
-  HTML: 'bg-orange-500',
-  CSS: 'bg-blue-600',
-  Shell: 'bg-green-600',
-  Vue: 'bg-emerald-500',
+const SOCIAL: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+  linkedin: { label: 'LinkedIn', icon: Linkedin },
+  twitter: { label: 'X / Twitter', icon: Twitter },
+  instagram: { label: 'Instagram', icon: Instagram },
+  youtube: { label: 'YouTube', icon: Youtube },
 };
 
-// Proficiency badge colors
-const proficiencyColors: Record<string, string> = {
-  expert: 'bg-purple-100 text-purple-700 border-purple-200',
-  advanced: 'bg-blue-100 text-blue-700 border-blue-200',
-  intermediate: 'bg-green-100 text-green-700 border-green-200',
-  beginner: 'bg-gray-100 text-gray-700 border-gray-200',
-};
+function socialInfo(account: { provider: string; url: string }) {
+  const provider = account.provider.toLowerCase();
+  const url = account.url.toLowerCase();
+  const key = Object.keys(SOCIAL).find((k) => provider.includes(k) || url.includes(k === 'twitter' ? 'x.com' : k) || url.includes(k));
+  if (key) return SOCIAL[key];
+  try {
+    return { label: new URL(account.url).hostname.replace(/^www\./, ''), icon: LinkIcon };
+  } catch {
+    return { label: account.provider || 'Link', icon: LinkIcon };
+  }
+}
+
+const withProtocol = (url: string) => (/^https?:\/\//i.test(url) ? url : `https://${url}`);
+
+/** Console links: underline in rule-2, amber on hover. */
+const linkClass =
+  'inline-flex items-center gap-1.5 text-ink-2 underline decoration-rule-2 underline-offset-4 transition-[color,text-decoration-color] duration-[120ms] ease-out hover:text-accent hover:decoration-accent';
+
+const wrap = 'mx-auto w-full max-w-[76rem] px-4 sm:px-6 lg:px-8';
+
+const RepoRow: React.FC<{ repo: PublicRepo }> = ({ repo }) => (
+  <li className="grid gap-x-6 gap-y-1 py-3.5 sm:grid-cols-[minmax(0,15rem)_1fr_auto] sm:items-baseline">
+    <p className="flex min-w-0 items-center gap-1.5 measured text-[0.9375rem]">
+      {repo.url ? (
+        <a
+          href={repo.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="truncate text-ink underline decoration-rule-2 underline-offset-4 transition-[color,text-decoration-color] duration-[120ms] ease-out hover:text-accent hover:decoration-accent"
+        >
+          {repo.name}
+        </a>
+      ) : (
+        <span className="truncate text-ink">{repo.name}</span>
+      )}
+      {repo.isPrivate && <Lock className="h-3.5 w-3.5 shrink-0 text-muted" aria-label="Private project, no public link" />}
+    </p>
+    <p className="text-sm text-muted">{repo.description || (repo.isPrivate ? 'Private project' : 'No description')}</p>
+    <p className="flex items-center gap-4 text-sm text-muted sm:justify-end">
+      {repo.language && <span className="text-ink-2">{repo.language}</span>}
+      {!repo.isPrivate && repo.stars > 0 && (
+        <span className="inline-flex items-center gap-1 measured">
+          <Star className="h-3.5 w-3.5" aria-hidden="true" /> {repo.stars}
+          <span className="sr-only">stars</span>
+        </span>
+      )}
+      {!repo.isPrivate && repo.forks > 0 && (
+        <span className="inline-flex items-center gap-1 measured">
+          <GitFork className="h-3.5 w-3.5" aria-hidden="true" /> {repo.forks}
+          <span className="sr-only">forks</span>
+        </span>
+      )}
+    </p>
+  </li>
+);
+
+/** One section of the résumé layout: heading on the left, content on the right. */
+const Band: React.FC<{ id: string; title: React.ReactNode; children: React.ReactNode; first?: boolean }> = ({
+  id,
+  title,
+  children,
+  first,
+}) => (
+  <section
+    aria-labelledby={id}
+    className={`grid gap-6 py-14 lg:grid-cols-12 lg:gap-8 lg:py-16 ${first ? '' : 'border-t border-rule'}`}
+  >
+    <h2
+      id={id}
+      className="max-w-none font-display text-[2rem] font-medium leading-[1.05] tracking-[-0.03em] text-ink lg:col-span-4 lg:text-[2.5rem]"
+    >
+      {title}
+    </h2>
+    <div className="min-w-0 lg:col-span-8">{children}</div>
+  </section>
+);
 
 const PublicProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
+  const viewer = useAuthStore((s) => s.user?.username);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; notFound: boolean } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/profile/${encodeURIComponent(username ?? '')}`, { timeout: 30_000 });
+      setProfile(res.data.data);
+    } catch (e) {
+      const info = await getApiError(e, 'This profile could not be loaded.');
+      setError({ message: info.message, notFound: info.status === 404 || info.status === 400 });
+    } finally {
+      setLoading(false);
+    }
+  }, [username]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!username) return;
-      setLoading(true);
-      setError(null);
+    load();
+  }, [load]);
 
-      try {
-        const response = await axios.get(`${API_BASE_URL}/profile/${username}`);
-        if (response.data.success) {
-          setProfile(response.data.data);
-        } else {
-          setError(response.data.error || 'Failed to load profile');
-        }
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          setError(err.response.data.error || 'Profile not found');
-        } else {
-          setError('Failed to load profile. Please try again later.');
-        }
-      } finally {
-        setLoading(false);
-      }
+  // Per-profile title and description for shared links and browser tabs.
+  useEffect(() => {
+    if (!profile) return;
+    const prevTitle = document.title;
+    document.title = `${profile.displayName} (@${profile.username}): GitVanta score ${profile.overallScore}`;
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    const prevDesc = meta?.content;
+    if (meta) {
+      meta.content = profile.headline || profile.bio || `${profile.displayName}'s developer portfolio on GitVanta.`;
+    }
+    return () => {
+      document.title = prevTitle;
+      if (meta && prevDesc) meta.content = prevDesc;
     };
+  }, [profile]);
 
-    fetchProfile();
-  }, [username]);
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const nav = (
+    <header className="sticky top-0 z-40 border-b border-rule bg-paper pt-[env(safe-area-inset-top)]">
+      <div className={`${wrap} flex h-16 items-center justify-between gap-3`}>
+        <Logo />
+        <div className="flex items-center gap-1 sm:gap-2">
+          {profile && (
+            <button
+              type="button"
+              onClick={copyLink}
+              className="inline-flex h-9 items-center gap-1.5 rounded-pill px-3 text-sm font-medium text-ink-2 transition-[background-color,color,transform] duration-[120ms] ease-out hover:bg-paper-2 hover:text-ink active:translate-y-px pointer-coarse:h-11"
+            >
+              {copied ? <Check className="h-4 w-4 text-ok" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}
+              {copied ? 'Link copied' : 'Copy link'}
+            </button>
+          )}
+          {!viewer && (
+            <Link
+              to="/"
+              className="hidden h-9 items-center rounded-pill border border-accent bg-accent px-3.5 text-sm font-medium text-accent-ink transition-[filter,transform] duration-[120ms] ease-out hover:brightness-[1.06] active:translate-y-px sm:inline-flex"
+            >
+              Get your score
+            </Link>
+          )}
+        </div>
+      </div>
+    </header>
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 text-blue-400 animate-spin mx-auto" />
-          <p className="mt-4 text-gray-400">Loading portfolio...</p>
-        </div>
+      <div className="min-h-dvh bg-paper text-ink">
+        {nav}
+        <LoadingRegion label="Loading profile" className={`${wrap} pt-12 sm:pt-16`}>
+          {/* Same shape as the hero: identity left, reading right, six panels beneath. */}
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
+            <div className="flex gap-6 lg:col-span-8">
+              <Skeleton className="h-20 w-20 shrink-0 rounded-card" />
+              <div className="flex-1 space-y-3">
+                <Skeleton className="h-12 w-80 max-w-full" />
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-5 w-[28rem] max-w-full" />
+                <Skeleton className="h-4 w-64 max-w-full" />
+              </div>
+            </div>
+            <div className="space-y-3 lg:col-span-4 lg:flex lg:flex-col lg:items-end">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-24 w-48" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          </div>
+          <div className="panels mt-10 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            {CATEGORIES.map((c) => (
+              <div key={c.key} className="space-y-3 p-4">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-7 w-12" />
+                <Skeleton className="h-1.5" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-14 space-y-4 border-t border-rule pt-14">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-6" />
+            ))}
+          </div>
+        </LoadingRegion>
       </div>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center max-w-md px-6">
-          <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Github className="w-8 h-8 text-gray-500" />
-          </div>
-          <h1 className="text-xl font-bold text-white mb-2">Profile Not Found</h1>
-          <p className="text-gray-400 mb-6">{error || 'This portfolio does not exist.'}</p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Go to GitVanta
-          </Link>
-        </div>
+      <div className="flex min-h-dvh flex-col bg-paper text-ink">
+        {nav}
+        <main className="flex flex-1 items-center justify-center px-4 py-20">
+          {error?.notFound ? (
+            <div className="w-full max-w-[44ch]">
+              <Github className="h-8 w-8 text-muted" aria-hidden="true" />
+              <h1 className="mt-6 max-w-none font-display text-display-s font-medium leading-[1.02] tracking-[-0.03em] text-ink">
+                No GitVanta profile here
+              </h1>
+              <p className="mt-4 text-lead text-ink-2">{error.message}</p>
+              <Link to="/" className={`mt-8 text-md ${linkClass}`}>
+                Score your own GitHub profile
+              </Link>
+            </div>
+          ) : (
+            <div className="w-full max-w-lg">
+              <h1 className="sr-only">Profile for @{username}</h1>
+              <ErrorState message={error?.message ?? 'Something went wrong.'} onRetry={load} />
+            </div>
+          )}
+        </main>
       </div>
     );
   }
 
-  const featuredRepos = [...profile.repositories]
-    .sort((a, b) => b.stars - a.stars)
-    .slice(0, 6);
-
-  const categoryLabels: Record<string, string> = {
-    codeQuality: 'Code Quality',
-    documentation: 'Documentation',
-    activity: 'Activity',
-    diversity: 'Diversity',
-    community: 'Community',
-    professionalism: 'Professionalism',
-  };
+  const repos = [...profile.repositories].sort((a, b) => Number(a.isPrivate) - Number(b.isPrivate) || b.stars - a.stars);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Navigation bar */}
-      <nav className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-white font-bold text-lg">
-            <Github className="w-5 h-5" />
-            GitVanta
-          </Link>
-          <a
-            href={profile.profileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors"
-          >
-            <Github className="w-4 h-4" />
-            View on GitHub
-          </a>
-        </div>
-      </nav>
-
-      {/* Hero section — profile + score */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-br from-gray-900 via-gray-950 to-gray-900" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
-        
-        <div className="relative max-w-6xl mx-auto px-6 py-16">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-8">
-            {/* Left — Avatar, Name, Meta */}
-            <div className="flex items-start gap-6 flex-1">
-              <img
-                src={profile.avatarUrl}
-                alt={profile.displayName}
-                className="w-28 h-28 rounded-2xl border-2 border-gray-700 shadow-2xl"
-              />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold text-white truncate">
-                  {profile.displayName}
-                </h1>
-                <p className="text-gray-400 text-lg mt-0.5">@{profile.username}</p>
-                {profile.bio && (
-                  <p className="text-gray-300 mt-3 leading-relaxed max-w-xl">
-                    {profile.bio}
-                  </p>
-                )}
-                <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-gray-400">
-                  {profile.location && (
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="w-4 h-4" /> {profile.location}
-                    </span>
-                  )}
-                  {profile.company && (
-                    <span className="flex items-center gap-1.5">
-                      <Building2 className="w-4 h-4" /> {profile.company}
-                    </span>
-                  )}
-                  {profile.blog && (
-                    <a
-                      href={profile.blog.startsWith('http') ? profile.blog : `https://${profile.blog}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300"
-                    >
-                      <Globe className="w-4 h-4" /> {profile.blog}
-                    </a>
-                  )}
-                </div>
-                {/* Social accounts */}
-                {profile.socialAccounts.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 mt-3">
-                    {profile.socialAccounts.map((account, idx) => {
-                      const url = account.url;
-                      const provider = account.provider.toLowerCase();
-                      let icon = <LinkIcon className="w-3.5 h-3.5" />;
-                      let label = 'Link';
-                      let colors = 'bg-gray-800 hover:bg-gray-700 text-gray-300';
-
-                      if (url.includes('linkedin.com') || provider === 'linkedin') {
-                        icon = <Linkedin className="w-3.5 h-3.5" />;
-                        label = 'LinkedIn';
-                        colors = 'bg-blue-900/40 hover:bg-blue-800/50 text-blue-300 border-blue-800/50';
-                      } else if (url.includes('instagram.com') || provider === 'instagram') {
-                        icon = <Instagram className="w-3.5 h-3.5" />;
-                        label = 'Instagram';
-                        colors = 'bg-pink-900/40 hover:bg-pink-800/50 text-pink-300 border-pink-800/50';
-                      } else if (url.includes('youtube.com') || url.includes('youtu.be') || provider === 'youtube') {
-                        icon = <Youtube className="w-3.5 h-3.5" />;
-                        label = 'YouTube';
-                        colors = 'bg-red-900/40 hover:bg-red-800/50 text-red-300 border-red-800/50';
-                      } else if (url.includes('twitter.com') || url.includes('x.com') || provider === 'twitter') {
-                        icon = <Twitter className="w-3.5 h-3.5" />;
-                        label = 'Twitter/X';
-                        colors = 'bg-sky-900/40 hover:bg-sky-800/50 text-sky-300 border-sky-800/50';
-                      } else if (url.includes('mastodon') || provider === 'mastodon') {
-                        icon = <Globe className="w-3.5 h-3.5" />;
-                        label = 'Mastodon';
-                        colors = 'bg-purple-900/40 hover:bg-purple-800/50 text-purple-300 border-purple-800/50';
-                      } else if (url.includes('dev.to')) {
-                        label = 'Dev.to';
-                        colors = 'bg-gray-800 hover:bg-gray-700 text-gray-200';
-                      } else if (url.includes('medium.com')) {
-                        label = 'Medium';
-                        colors = 'bg-gray-800 hover:bg-gray-700 text-gray-200';
-                      } else if (url.includes('hashnode')) {
-                        label = 'Hashnode';
-                        colors = 'bg-blue-900/40 hover:bg-blue-800/50 text-blue-300 border-blue-800/50';
-                      } else {
-                        // Try to extract domain name
-                        try {
-                          const domain = new URL(url).hostname.replace('www.', '');
-                          label = domain;
-                        } catch {
-                          label = 'Website';
-                        }
-                      }
-
-                      return (
-                        <a
-                          key={idx}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border border-transparent transition-all ${colors}`}
-                        >
-                          {icon}
-                          {label}
+    <div className="min-h-dvh bg-paper text-ink">
+      {nav}
+      <main>
+        {/* Banner: identity and the score as a reading, then the six measurements. */}
+        <div className="border-b border-rule">
+          <div className={`${wrap} pb-12 pt-12 sm:pt-16`}>
+            <section className="grid gap-10 lg:grid-cols-12 lg:items-end lg:gap-8">
+              <div className="flex min-w-0 flex-col gap-6 sm:flex-row sm:items-start lg:col-span-8">
+                <img src={profile.avatarUrl} alt="" className="h-20 w-20 shrink-0 rounded-card border border-rule" />
+                <div className="min-w-0 flex-1">
+                  <h1 className="max-w-none font-display text-display-s font-medium leading-[1.02] tracking-[-0.03em] text-ink">
+                    {profile.displayName}
+                  </h1>
+                  <p className="mt-2 measured text-sm text-muted">@{profile.username}</p>
+                  {profile.headline && <p className="mt-5 max-w-[60ch] text-lead leading-[1.45] text-ink-2">{profile.headline}</p>}
+                  {profile.bio && <p className="mt-2 max-w-[65ch] text-muted">{profile.bio}</p>}
+                  <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
+                    {profile.company && (
+                      <li className="inline-flex items-center gap-1.5">
+                        <Building2 className="h-4 w-4" aria-hidden="true" /> {profile.company}
+                      </li>
+                    )}
+                    {profile.location && (
+                      <li className="inline-flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4" aria-hidden="true" /> {profile.location}
+                      </li>
+                    )}
+                    <li className="inline-flex items-center gap-1.5">
+                      <Users className="h-4 w-4" aria-hidden="true" /> <span className="measured">{profile.followers}</span> followers
+                    </li>
+                  </ul>
+                  <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                    <li>
+                      <a href={profile.profileUrl} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                        <Github className="h-4 w-4" aria-hidden="true" /> GitHub
+                      </a>
+                    </li>
+                    {profile.blog && (
+                      <li>
+                        <a href={withProtocol(profile.blog)} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                          <Globe className="h-4 w-4" aria-hidden="true" /> {profile.blog.replace(/^https?:\/\//, '').replace(/\/$/, '')}
                         </a>
+                      </li>
+                    )}
+                    {profile.socialAccounts.map((acc) => {
+                      const { label, icon: Icon } = socialInfo(acc);
+                      return (
+                        <li key={acc.url}>
+                          <a href={acc.url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+                            <Icon className="h-4 w-4" aria-hidden="true" /> {label}
+                          </a>
+                        </li>
                       );
                     })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right — Score card */}
-            <div className="lg:ml-auto shrink-0">
-              <div className={`w-44 h-44 rounded-2xl bg-linear-to-br ${getScoreBg(profile.overallScore)} p-0.5`}>
-                <div className="w-full h-full rounded-2xl bg-gray-950 flex flex-col items-center justify-center">
-                  <span className={`text-5xl font-bold ${getScoreColor(profile.overallScore)}`}>
-                    {profile.overallScore}
-                  </span>
-                  <span className="text-gray-400 text-sm mt-1">out of 100</span>
-                  <span className={`text-lg font-semibold mt-1 ${getScoreColor(profile.overallScore)}`}>
-                    Grade {getGrade(profile.overallScore)}
-                  </span>
+                  </ul>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Stats row */}
-          <div className="flex flex-wrap gap-6 mt-8 pt-6 border-t border-gray-800">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{profile.publicRepos}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Repos</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{profile.followers}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Followers</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{profile.badges.length}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Badges</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{profile.skills.length}</p>
-              <p className="text-xs text-gray-500 uppercase tracking-wider">Skills</p>
-            </div>
+              <div className="lg:col-span-4 lg:text-right">
+                <p className="text-sm font-medium text-muted">GitVanta score</p>
+                <p className="mt-2 reading text-[6rem] sm:text-[7.5rem]">
+                  {profile.overallScore}
+                  <span className="ml-1 text-[1.75rem] tracking-normal text-muted">/100</span>
+                </p>
+                <p className="mt-4 text-sm text-muted">
+                  Analysed{' '}
+                  <span className="measured text-ink-2">
+                    {new Date(profile.generatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                  </span>
+                  .{' '}
+                  <Link to="/#scoring" className={linkClass}>
+                    How it’s scored
+                  </Link>
+                </p>
+              </div>
+            </section>
+
+            <section aria-labelledby="score-title" className="mt-10">
+              <h2 id="score-title" className="sr-only">
+                Score by category
+              </h2>
+              <ul className="panels grid-cols-2 md:grid-cols-3 lg:grid-cols-6" aria-label="Score by category">
+                {CATEGORIES.map((c) => {
+                  const score = Math.round(profile.categoryScores[c.key] ?? 0);
+                  return (
+                    <li key={c.key} className="flex flex-col p-4">
+                      <p className="flex items-baseline justify-between gap-2 text-sm">
+                        <span className="truncate text-ink-2" title={c.label}>
+                          {c.label}
+                        </span>
+                        <span className="shrink-0 measured text-xs text-muted">
+                          <span className="sr-only">counts </span>
+                          {Math.round(c.weight * 100)}%
+                        </span>
+                      </p>
+                      <p className="mt-3 measured text-[1.75rem] leading-none text-ink">{score}</p>
+                      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-heat-0" aria-hidden="true">
+                        <div className="h-full rounded-full ramp-cool" style={{ width: `${Math.min(100, Math.max(0, score))}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
           </div>
         </div>
-      </header>
 
-      {/* Main content */}
-      <main className="max-w-6xl mx-auto px-6 py-12 space-y-12">
+        <div className={`${wrap} pb-16`}>
+          {profile.summary && (
+            <Band id="about-title" title="About" first>
+              <p className="max-w-[65ch] text-lead leading-[1.6] text-ink-2">{profile.summary}</p>
+            </Band>
+          )}
 
-        {/* Category Scores */}
-        <section>
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-400" />
-            Score Breakdown
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {Object.entries(profile.categoryScores).map(([key, score]) => (
-              <div
-                key={key}
-                className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center"
-              >
-                <p className={`text-2xl font-bold ${getScoreColor(score)}`}>{score}</p>
-                <p className="text-xs text-gray-500 mt-1">{categoryLabels[key] || key}</p>
-                {/* Progress bar */}
-                <div className="mt-3 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full bg-linear-to-r ${getScoreBg(score)}`}
-                    style={{ width: `${score}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+          <Band
+            id="projects-title"
+            first={!profile.summary}
+            title={
+              <>
+                Projects <span className="measured text-muted">{repos.length}</span>
+              </>
+            }
+          >
+            {repos.length === 0 ? (
+              <p className="text-muted">No public projects to show yet.</p>
+            ) : (
+              <ul className="divide-y divide-rule border-y border-rule">
+                {repos.map((r) => (
+                  <RepoRow key={r.name} repo={r} />
+                ))}
+              </ul>
+            )}
+          </Band>
 
-        {/* Badges */}
-        {profile.badges.length > 0 && (
-          <section>
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-400" />
-              Achievements
-            </h2>
-            <div className="flex flex-wrap gap-3">
-              {profile.badges.map((badge) => (
-                <div
-                  key={badge.id}
-                  className="group relative inline-flex items-center gap-2 px-4 py-2 bg-gray-900 border border-gray-800 rounded-full hover:border-yellow-600/50 hover:bg-gray-800 transition-all"
-                >
-                  <span className="text-yellow-400">★</span>
-                  <span className="text-sm font-medium text-gray-200">{badge.name}</span>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                    <div className="bg-gray-800 text-gray-300 text-xs px-3 py-2 rounded-lg shadow-xl whitespace-nowrap border border-gray-700">
-                      {badge.description}
-                    </div>
-                  </div>
-                </div>
+          <Band id="skills-title" title="Skills">
+            <ul className="grid grid-cols-2 gap-x-6 border-t border-rule sm:grid-cols-3">
+              {profile.skills.slice(0, 30).map((s) => (
+                <li key={s.name} className="truncate border-b border-rule py-2.5 text-ink-2">
+                  {s.name}
+                </li>
               ))}
-            </div>
-          </section>
-        )}
+            </ul>
+          </Band>
 
-        {/* Skills */}
-        {profile.skills.length > 0 && (
-          <section>
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Code className="w-5 h-5 text-blue-400" />
-              Technical Skills
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {profile.skills.slice(0, 18).map((skill) => (
-                <div
-                  key={skill.name}
-                  className="flex items-center justify-between p-3 bg-gray-900 border border-gray-800 rounded-xl"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${languageColors[skill.name] || 'bg-gray-500'}`} />
-                    <span className="text-sm font-medium text-gray-200">{skill.name}</span>
+          {profile.badges.length > 0 && (
+            <Band
+              id="badges-title"
+              title={
+                <>
+                  Badges <span className="measured text-muted">{profile.badges.length}</span>
+                </>
+              }
+            >
+              <dl className="panels sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
+                {profile.badges.map((b) => (
+                  <div key={b.id} className="p-5">
+                    <dt className="font-medium text-ink">{b.name}</dt>
+                    <dd className="mt-1 text-sm text-muted">{b.description}</dd>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${proficiencyColors[skill.proficiency] || proficiencyColors.beginner}`}>
-                    {skill.proficiency}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Featured Projects */}
-        {featuredRepos.length > 0 && (
-          <section>
-            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-400" />
-              Featured Projects
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {featuredRepos.map((repo) => (
-                <a
-                  key={repo.name}
-                  href={repo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-600 transition-all"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Folder className="w-4 h-4 text-blue-400" />
-                      <h3 className="font-semibold text-blue-400 group-hover:text-blue-300 transition-colors">
-                        {repo.name}
-                      </h3>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors" />
-                  </div>
-                  {repo.description && (
-                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                      {repo.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    {repo.language && (
-                      <span className="flex items-center gap-1.5">
-                        <span className={`w-2.5 h-2.5 rounded-full ${languageColors[repo.language] || 'bg-gray-500'}`} />
-                        {repo.language}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Star className="w-3 h-3" /> {repo.stars}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <GitFork className="w-3 h-3" /> {repo.forks}
-                    </span>
-                  </div>
-                  {repo.topics.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {repo.topics.slice(0, 4).map((topic) => (
-                        <span
-                          key={topic}
-                          className="px-2 py-0.5 bg-gray-800 text-gray-400 rounded text-xs"
-                        >
-                          {topic}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* All Repositories */}
-        {profile.repositories.length > 0 && (
-          <section>
-            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-              <Folder className="w-5 h-5 text-gray-400" />
-              All Repositories
-            </h2>
-            <p className="text-gray-500 text-sm mb-6">{profile.repositories.length} public repositories</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {profile.repositories.map((repo) => (
-                <a
-                  key={repo.name}
-                  href={repo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block p-4 bg-gray-900 border border-gray-800 rounded-xl hover:border-gray-700 transition-all"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-blue-400 group-hover:text-blue-300 text-sm truncate">
-                      {repo.name}
-                    </h4>
-                    <ExternalLink className="w-3 h-3 text-gray-600 shrink-0" />
-                  </div>
-                  {repo.description && (
-                    <p className="text-gray-500 text-xs mb-2 line-clamp-2">{repo.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    {repo.language && (
-                      <span className="flex items-center gap-1">
-                        <span className={`w-2 h-2 rounded-full ${languageColors[repo.language] || 'bg-gray-500'}`} />
-                        {repo.language}
-                      </span>
-                    )}
-                    {repo.stars > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Star className="w-3 h-3" /> {repo.stars}
-                      </span>
-                    )}
-                    {repo.forks > 0 && (
-                      <span className="flex items-center gap-1">
-                        <GitFork className="w-3 h-3" /> {repo.forks}
-                      </span>
-                    )}
-                  </div>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
+                ))}
+              </dl>
+            </Band>
+          )}
+        </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-800 mt-12">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-gray-500 text-sm">
-            <Github className="w-4 h-4" />
-            <span>Generated with <strong className="text-gray-300">GitVanta</strong></span>
-          </div>
-          <p className="text-gray-600 text-xs">
-            Last analyzed: {new Date(profile.generatedAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
+      <footer className="border-t border-rule py-8 text-center text-sm text-muted">
+        Portfolio scored by{' '}
+        <Link to="/" className={linkClass}>
+          GitVanta
+        </Link>
       </footer>
     </div>
   );

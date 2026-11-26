@@ -101,6 +101,9 @@ const analyzedRepositorySchema = new Schema(
     stars: { type: Number, default: 0 },
     forks: { type: Number, default: 0 },
     topics: [{ type: String }],
+    isPrivate: { type: Boolean, default: false },
+    homepage: { type: String, default: null },
+    pushedAt: { type: String },
   },
   { _id: false }
 );
@@ -132,14 +135,21 @@ const analysisReportSchema = new Schema<IAnalysisReport>(
     improvements: [improvementSchema],
     badges: [badgeSchema],
     repositories: [analyzedRepositorySchema],
+    quickWins: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
+    aiSummary: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
+    aiRepoReviews: {
+      type: Schema.Types.Mixed,
+      default: undefined,
+    },
     generatedAt: {
       type: Date,
       default: Date.now,
-    },
-    expiresAt: {
-      type: Date,
-      required: true,
-      index: true,
     },
   },
   {
@@ -149,7 +159,6 @@ const analysisReportSchema = new Schema<IAnalysisReport>(
 
 // Indexes
 analysisReportSchema.index({ userId: 1, generatedAt: -1 });
-analysisReportSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const AnalysisReport = mongoose.model<IAnalysisReport>('AnalysisReport', analysisReportSchema);
 

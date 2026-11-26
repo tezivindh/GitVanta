@@ -10,7 +10,7 @@ const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (isLoading) {
-    return <FullPageLoader text="Loading your portfolio..." />;
+    return <FullPageLoader text="Loading your portfolio…" />;
   }
 
   if (!isAuthenticated) {
@@ -18,7 +18,13 @@ const DashboardLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-dvh bg-paper pt-[calc(3.5rem+env(safe-area-inset-top))] text-ink">
+      <a
+        href="#dashboard-main"
+        className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-4 focus-visible:z-[60] focus-visible:rounded-pill focus-visible:border focus-visible:border-rule-2 focus-visible:bg-paper-2 focus-visible:px-3 focus-visible:py-2 focus-visible:text-sm focus-visible:text-ink"
+      >
+        Skip to content
+      </a>
       <Header
         onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         isMenuOpen={sidebarOpen}
@@ -28,7 +34,7 @@ const DashboardLayout: React.FC = () => {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         {/* Main content */}
-        <main className="flex-1 lg:ml-64 p-4 lg:p-8 min-h-[calc(100vh-4rem)]">
+        <main id="dashboard-main" className="min-h-[calc(100dvh-3.5rem)] min-w-0 flex-1 px-4 py-6 sm:px-6 lg:ml-60 lg:px-10 lg:py-8">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>

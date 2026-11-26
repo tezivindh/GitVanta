@@ -1,414 +1,265 @@
 import { Response } from 'express';
 import { aiService, githubService, analysisService } from '../services';
-import { AuthenticatedRequest } from '../types';
-import logger from '../utils/logger';
+import { resolveAIForUser, getAIStatusForUser } from '../services/userAIService';
+import { describeAI } from '../ai';
+import { AuthenticatedRequest, GitHubRepository, IUser } from '../types';
+import { NotFoundError } from '../utils/errors';
+import { AnalysisReport, RepoInsight } from '../models';
 
-
-export async function checkAiStatus(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  res.json({
-    success: true,
-    data: {
-      available: aiService.isAiAvailable(),
-      message: aiService.isAiAvailable() 
-        ? 'AI features are available' 
-        : 'AI features require a Google API key',
-    },
-  });
+async function findOwnRepo(user: IUser, repoName: string): Promise<GitHubRepository> {
+  const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
+  const repo = repos.find((r) => r.name === repoName);
+  if (!repo) throw new NotFoundError(`Repository "${repoName}" was not found in your account.`);
+  return repo;
 }
 
+async function latestOrFreshAnalysis(user: IUser) {
+  const analysis = await analysisService.getLatestAnalysis(user._id);
+  return analysis ?? analysisService.analyzePortfolio(user._id, user.username, user.accessToken);
+}
 
-export async function enhanceReadme(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function checkAiStatus(req: AuthenticatedRequest, res: Response): Promise<void> {
+  res.json({ success: true, data: getAIStatusForUser(req.user!) });
+}
+
+export async function enhanceReadme(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const { repoName } = req.params;
+  const ai = await resolveAIForUser(user);
+
+  const repo = await findOwnRepo(user, repoName);
+  const [currentReadme, languages] = await Promise.all([
+    githubService.getReadmeContent(user.accessToken, user.username, repoName),
+    githubService.getRepositoryLanguages(user.accessToken, user.username, repoName),
+  ]);
+
+  const data = await aiService.enhanceReadme(
+    ai,
+    repoName,
+    currentReadme || '',
+    repo.description || '',
+    Object.keys(languages),
+    repo.topics || []
+  );
+  res.json({ success: true, data, ai: describeAI(ai) });
+}
+
+export async function generateResumeBullets(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const { repoName } = req.params;
+  const ai = await resolveAIForUser(user);
+
+  const repo = await findOwnRepo(user, repoName);
+  const [languages, readme] = await Promise.all([
+    githubService.getRepositoryLanguages(user.accessToken, user.username, repoName),
+    githubService.getReadmeContent(user.accessToken, user.username, repoName),
+  ]);
+
+  const data = await aiService.generateResumeBullets(ai, repo, languages, readme);
+  res.json({ success: true, data, ai: describeAI(ai) });
+}
+
+export async function generateAllResumeBullets(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const limit = Number(req.query.limit ?? 5);
+  const ai = await resolveAIForUser(user);
+
+  const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
+  const topRepos = repos
+    .filter((r) => !r.fork)
+    .sort((a, b) => b.stargazers_count - a.stargazers_count)
+    .slice(0, limit);
+
+  const results = await Promise.all(
+    topRepos.map(async (repo) => {
+      try {
+        const [languages, readme] = await Promise.all([
+          githubService.getRepositoryLanguages(user.accessToken, user.username, repo.name),
+          githubService.getReadmeContent(user.accessToken, user.username, repo.name),
+        ]);
+        return await aiService.generateResumeBullets(ai, repo, languages, readme);
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  res.json({ success: true, data: results.filter(Boolean), ai: describeAI(ai) });
+}
+
+export async function generatePortfolioSummary(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const ai = await resolveAIForUser(user);
+
+  const analysis = await latestOrFreshAnalysis(user);
+  const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
+
+  const data = await aiService.generatePortfolioSummary(
+    ai,
+    user.username,
+    repos.filter((r) => !r.fork),
+    analysis.skills,
+    analysis.overallScore
+  );
+  res.json({ success: true, data, ai: describeAI(ai) });
+}
+
+export async function generateImprovementRoadmap(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const ai = await resolveAIForUser(user);
+
+  const analysis = await latestOrFreshAnalysis(user);
+  const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
+
+  const data = await aiService.generateImprovementRoadmap(
+    ai,
+    user.username,
+    analysis.overallScore,
+    analysis.skills,
+    analysis.weaknesses.map((w: { issue: string }) => w.issue),
+    repos.filter((r) => !r.fork)
+  );
+  res.json({ success: true, data, ai: describeAI(ai) });
+}
+
+export async function analyzeReadmeQuality(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const { repoName } = req.params;
 
-  if (!aiService.isAiAvailable()) {
-    res.status(503).json({
-      success: false,
-      error: 'AI features are not available. Please configure Google API key.',
-    });
-    return;
-  }
-
-  try {
-    const currentReadme = await githubService.getReadmeContent(
-      user.accessToken,
-      user.username,
-      repoName
-    );
-
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-    const repo = repos.find(r => r.name === repoName);
-
-    if (!repo) {
-      res.status(404).json({
-        success: false,
-        error: 'Repository not found',
-      });
-      return;
-    }
-
-    const languages = await githubService.getRepositoryLanguages(
-      user.accessToken,
-      user.username,
-      repoName
-    );
-
-    const enhancement = await aiService.enhanceReadme(
-      repoName,
-      currentReadme || '',
-      repo.description || '',
-      Object.keys(languages),
-      repo.topics
-    );
-
+  const readme = await githubService.getReadmeContent(user.accessToken, user.username, repoName);
+  if (!readme) {
     res.json({
       success: true,
-      data: enhancement,
-    });
-  } catch (error: any) {
-    logger.error('Enhance README error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to enhance README',
-    });
-  }
-}
-
-
-export async function generateResumeBullets(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-  const { repoName } = req.params;
-
-  if (!aiService.isAiAvailable()) {
-    res.status(503).json({
-      success: false,
-      error: 'AI features are not available. Please configure Google API key.',
+      data: { score: 0, feedback: ['No README file found'], missingElements: ['README file'] },
     });
     return;
   }
 
+  let ai;
   try {
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-    const repo = repos.find(r => r.name === repoName);
-
-    if (!repo) {
-      res.status(404).json({
-        success: false,
-        error: 'Repository not found',
-      });
-      return;
-    }
-
-    // Get languages and README
-    const [languages, readme] = await Promise.all([
-      githubService.getRepositoryLanguages(user.accessToken, user.username, repoName),
-      githubService.getReadmeContent(user.accessToken, user.username, repoName),
-    ]);
-
-    const bullets = await aiService.generateResumeBullets(repo, languages, readme);
-
-    res.json({
-      success: true,
-      data: bullets,
-    });
-  } catch (error: any) {
-    logger.error('Generate resume bullets error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate resume bullets',
-    });
-  }
-}
-
-
-export async function generateAllResumeBullets(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-  const limit = parseInt(req.query.limit as string) || 5;
-
-  if (!aiService.isAiAvailable()) {
-    res.status(503).json({
-      success: false,
-      error: 'AI features are not available. Please configure LLM API key.',
-    });
-    return;
-  }
-
-  try {
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-    const topRepos = repos
-      .filter(r => !r.fork)
-      .sort((a, b) => b.stargazers_count - a.stargazers_count)
-      .slice(0, limit);
-
-    const results = await Promise.all(
-      topRepos.map(async (repo) => {
-        try {
-          const [languages, readme] = await Promise.all([
-            githubService.getRepositoryLanguages(user.accessToken, user.username, repo.name),
-            githubService.getReadmeContent(user.accessToken, user.username, repo.name),
-          ]);
-          return await aiService.generateResumeBullets(repo, languages, readme);
-        } catch (error) {
-          return null;
-        }
-      })
-    );
-
-    res.json({
-      success: true,
-      data: results.filter(Boolean),
-    });
-  } catch (error: any) {
-    logger.error('Generate all resume bullets error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate resume bullets',
-    });
-  }
-}
-
-export async function generatePortfolioSummary(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  if (!aiService.isAiAvailable()) {
-    res.status(503).json({
-      success: false,
-      error: 'AI features are not available. Please configure LLM API key.',
-    });
-    return;
-  }
-
-  try {
-    // Get analysis
-    let analysis = await analysisService.getLatestAnalysis(user._id);
-    if (!analysis) {
-      analysis = await analysisService.analyzePortfolio(
-        user._id,
-        user.username,
-        user.accessToken
-      );
-    }
-
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-
-    const summary = await aiService.generatePortfolioSummary(
-      user.username,
-      repos,
-      analysis.skills,
-      analysis.overallScore
-    );
-
-    res.json({
-      success: true,
-      data: summary,
-    });
-  } catch (error: any) {
-    logger.error('Generate portfolio summary error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate portfolio summary',
-    });
-  }
-}
-
-export async function generateImprovementRoadmap(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-
-  if (!aiService.isAiAvailable()) {
-    res.status(503).json({
-      success: false,
-      error: 'AI features are not available. Please configure LLM API key.',
-    });
-    return;
-  }
-
-  try {
-    let analysis = await analysisService.getLatestAnalysis(user._id);
-    if (!analysis) {
-      analysis = await analysisService.analyzePortfolio(
-        user._id,
-        user.username,
-        user.accessToken
-      );
-    }
-
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-
-    const roadmap = await aiService.generateImprovementRoadmap(
-      user.username,
-      analysis.overallScore,
-      analysis.skills,
-      analysis.weaknesses.map((w: any) => w.issue),
-      repos
-    );
-
-    res.json({
-      success: true,
-      data: roadmap,
-    });
-  } catch (error: any) {
-    logger.error('Generate improvement roadmap error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate improvement roadmap',
-    });
-  }
-}
-
-export async function analyzeReadmeQuality(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-  const { repoName } = req.params;
-
-  try {
-    const readme = await githubService.getReadmeContent(
-      user.accessToken,
-      user.username,
-      repoName
-    );
-
-    if (!readme) {
-      res.json({
-        success: true,
-        data: {
-          score: 0,
-          feedback: ['No README file found'],
-          missingElements: ['README file'],
-        },
-      });
-      return;
-    }
-
-    if (aiService.isAiAvailable()) {
-      const analysis = await aiService.analyzeReadmeQuality(readme);
-      res.json({
-        success: true,
-        data: analysis,
-      });
-    } else {
-      const score = calculateBasicReadmeScore(readme);
-      res.json({
-        success: true,
-        data: {
-          score,
-          feedback: ['Basic analysis (AI not available)'],
-          missingElements: [],
-        },
-      });
-    }
-  } catch (error: any) {
-    logger.error('Analyze README quality error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to analyze README',
-    });
-  }
-}
-
-
-export async function generateProjectDescription(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
-  const user = req.user!;
-  const { repoName } = req.params;
-
-  if (!aiService.isAiAvailable()) {
-    res.status(503).json({
-      success: false,
-      error: 'AI features are not available. Please configure Google API key.',
-    });
-    return;
-  }
-
-  try {
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-    const repo = repos.find(r => r.name === repoName);
-
-    if (!repo) {
-      res.status(404).json({
-        success: false,
-        error: 'Repository not found',
-      });
-      return;
-    }
-
-    const languages = await githubService.getRepositoryLanguages(
-      user.accessToken,
-      user.username,
-      repoName
-    );
-
-    const description = await aiService.generateProjectDescription(
-      repoName,
-      Object.keys(languages),
-      repo.topics,
-      repo.description
-    );
-
+    ai = await resolveAIForUser(user);
+  } catch {
     res.json({
       success: true,
       data: {
-        description,
+        score: calculateBasicReadmeScore(readme),
+        feedback: ['Basic analysis (AI is not set up)'],
+        missingElements: [],
       },
     });
-  } catch (error: any) {
-    logger.error('Generate project description error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate project description',
-    });
+    return;
   }
+
+  const data = await aiService.analyzeReadmeQuality(ai, readme);
+  res.json({ success: true, data, ai: describeAI(ai) });
+}
+
+export async function generateProjectDescription(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const { repoName } = req.params;
+  const ai = await resolveAIForUser(user);
+
+  const repo = await findOwnRepo(user, repoName);
+  const languages = await githubService.getRepositoryLanguages(user.accessToken, user.username, repoName);
+
+  const description = await aiService.generateProjectDescription(
+    ai,
+    repoName,
+    Object.keys(languages),
+    repo.topics || [],
+    repo.description
+  );
+  res.json({ success: true, data: { description }, ai: describeAI(ai) });
 }
 
 function calculateBasicReadmeScore(content: string): number {
+  const lower = content.toLowerCase();
   let score = 0;
   if (content.length > 100) score += 10;
   if (content.length > 500) score += 15;
   if (content.length > 1000) score += 10;
   if (content.includes('#')) score += 10;
   if (content.includes('```')) score += 15;
-  if (content.includes('install')) score += 10;
-  if (content.includes('usage') || content.includes('example')) score += 10;
-  if (content.includes('license') || content.includes('License')) score += 10;
-  if (content.includes('contributing') || content.includes('Contributing')) score += 10;
+  if (lower.includes('install')) score += 10;
+  if (lower.includes('usage') || lower.includes('example')) score += 10;
+  if (lower.includes('license')) score += 10;
+  if (lower.includes('contributing')) score += 10;
   return Math.min(100, score);
+}
+
+const MAX_REVIEWED_REPOS = 30;
+
+/** The facts the AI sees for each repository; shared by "rate all" and "rate one" so both judge the same way. */
+async function buildReviewInputs(user: IUser, repos: any[]) {
+  const insights = await RepoInsight.find({ userId: user._id }).lean();
+  const byName = new Map(insights.map((i: any) => [i.repoName, i]));
+  const readmes = await Promise.all(
+    repos.map((r: any) => githubService.getReadmeContent(user.accessToken, user.username, r.name).catch(() => null))
+  );
+  return repos.map((r: any, i: number) => {
+    const insight: any = byName.get(r.name);
+    const readme = readmes[i] || '';
+    return {
+      name: r.name,
+      description: r.description,
+      language: r.language,
+      topics: r.topics || [],
+      stars: r.stars || 0,
+      hasReadme: !!readme,
+      readmeLength: readme.length,
+      readmeExcerpt: readme.replace(/\s+/g, ' ').slice(0, 400),
+      hasLicense: !!insight?.hasLicense,
+      hasTests: !!insight?.hasTests,
+      hasContributing: !!insight?.hasContributing,
+      lastPush: r.pushedAt || null,
+    };
+  });
+}
+
+/** Rate every analysed repository (up to 30) in one AI request; cached on the report. */
+export async function reviewRepositories(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const analysis: any = await analysisService.getLatestAnalysis(user._id);
+  if (!analysis) throw new NotFoundError('No analysis found. Run an analysis first.');
+
+  const ai = await resolveAIForUser(user);
+  const repos = [...(analysis.repositories ?? [])]
+    .sort((x: any, y: any) => new Date(y.pushedAt || 0).getTime() - new Date(x.pushedAt || 0).getTime())
+    .slice(0, MAX_REVIEWED_REPOS);
+
+  const items = await aiService.reviewRepositories(ai, await buildReviewInputs(user, repos));
+
+  const reviews = { items, ai: describeAI(ai), generatedAt: new Date() };
+  await AnalysisReport.updateOne({ _id: analysis._id }, { $set: { aiRepoReviews: reviews } });
+  res.json({ success: true, data: reviews, ai: reviews.ai });
+}
+
+/**
+ * Rate one repository and merge its review into the cached reviews on the report:
+ * that repository's entry is replaced, every other rating is kept as it was.
+ */
+export async function reviewRepository(req: AuthenticatedRequest, res: Response): Promise<void> {
+  const user = req.user!;
+  const { repoName } = req.params;
+  const analysis: any = await analysisService.getLatestAnalysis(user._id);
+  if (!analysis) throw new NotFoundError('No analysis found. Run an analysis first.');
+
+  const repo = (analysis.repositories ?? []).find((r: any) => r.name === repoName);
+  if (!repo) throw new NotFoundError(`${repoName} is not in your latest analysis. Analyse again to include it.`);
+
+  const ai = await resolveAIForUser(user);
+  const [item] = await aiService.reviewRepositories(ai, await buildReviewInputs(user, [repo]));
+  if (!item) throw new Error('The AI did not return a rating for this repository. Please try again.');
+
+  const previous = analysis.aiRepoReviews;
+  const items = [...(previous?.items ?? []).filter((r: any) => r.name !== repoName), item];
+  const reviews = {
+    items,
+    // The attribution names whichever AI wrote the newest rating.
+    ai: describeAI(ai),
+    // "Rated N minutes ago" refers to the full run when there is one.
+    generatedAt: previous?.generatedAt ?? new Date(),
+  };
+  await AnalysisReport.updateOne({ _id: analysis._id }, { $set: { aiRepoReviews: reviews } });
+  res.json({ success: true, data: { reviews, item }, ai: reviews.ai });
 }

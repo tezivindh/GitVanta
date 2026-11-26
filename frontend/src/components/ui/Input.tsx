@@ -26,14 +26,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={className}>
         {label && (
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor={props.id} className="mb-1.5 block text-sm font-medium text-ink-2">
             {label}
           </label>
         )}
         
         <div className="relative">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 dark:text-gray-500">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-muted">
               {leftIcon}
             </div>
           )}
@@ -42,22 +42,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             disabled={disabled}
             className={clsx(
-              'block w-full rounded-lg border shadow-xs transition-colors',
-              'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-              'placeholder:text-gray-400 dark:placeholder:text-gray-500',
-              leftIcon ? 'pl-10' : 'pl-4',
-              rightIcon ? 'pr-10' : 'pr-4',
-              'py-2.5',
-              error
-                ? 'border-red-300 bg-red-50 text-red-900 focus:ring-red-500'
-                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
-              disabled && 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
+              'input h-10 text-sm',
+              leftIcon ? 'pl-10' : 'pl-3',
+              rightIcon ? 'pr-10' : 'pr-3'
             )}
+            aria-invalid={error ? true : undefined}
             {...props}
           />
           
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400">
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted">
               {rightIcon}
             </div>
           )}
@@ -66,8 +60,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {(error || helperText) && (
           <p
             className={clsx(
-              'mt-1 text-sm',
-              error ? 'text-red-600' : 'text-gray-500'
+              'mt-1.5 min-h-[1lh] text-sm',
+              error ? 'text-bad' : 'text-muted'
             )}
           >
             {error || helperText}
@@ -92,7 +86,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className={className}>
         {label && (
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label htmlFor={props.id} className="mb-1.5 block text-sm font-medium text-ink-2">
             {label}
           </label>
         )}
@@ -101,22 +95,17 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           disabled={disabled}
           className={clsx(
-            'block w-full rounded-lg border shadow-xs transition-colors',
-            'focus:outline-hidden focus:ring-2 focus:ring-primary-500 focus:border-transparent',
-            'placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 py-2.5',
-            error
-              ? 'border-red-300 bg-red-50 text-red-900 focus:ring-red-500'
-              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100',
-            disabled && 'bg-gray-100 dark:bg-gray-700 cursor-not-allowed opacity-60'
+            'input px-3 py-2.5 text-sm leading-relaxed'
           )}
+          aria-invalid={error ? true : undefined}
           {...props}
         />
         
         {(error || helperText) && (
           <p
             className={clsx(
-              'mt-1 text-sm',
-              error ? 'text-red-600' : 'text-gray-500'
+              'mt-1.5 min-h-[1lh] text-sm',
+              error ? 'text-bad' : 'text-muted'
             )}
           >
             {error || helperText}

@@ -6,7 +6,7 @@ import {
   GitHubSocialAccount,
 } from '../types';
 import logger from '../utils/logger';
-import { ExternalServiceError } from '../utils/errors';
+import { ExternalServiceError, NotFoundError } from '../utils/errors';
 import { cacheGet, cacheSet } from '../config/redis';
 
 const GITHUB_API_BASE = 'https://api.github.com';
@@ -61,6 +61,9 @@ export async function getUserRepositories(
     await cacheSet(cacheKey, response.data, { prefix: 'github', ttl: 3600 });
     return response.data;
   } catch (error: any) {
+    if (error.response?.status === 404) {
+      throw new NotFoundError(`GitHub user "${username}" does not exist.`);
+    }
     logger.error('Failed to get user repositories:', error.message);
     throw new ExternalServiceError('GitHub', 'Failed to fetch repositories');
   }
@@ -93,8 +96,41 @@ export async function getAllUserRepositories(
     await cacheSet(cacheKey, allRepos, { prefix: 'github', ttl: 3600 });
     return allRepos;
   } catch (error: any) {
+    if (error instanceof NotFoundError) throw error;
     logger.error('Failed to get all repositories:', error.message);
     throw new ExternalServiceError('GitHub', 'Failed to fetch all repositories');
+  }
+}
+
+/**
+ * Every repository the signed-in user owns, public and private.
+ * Uses /user/repos, so it only works with that user's own token.
+ */
+export async function getOwnRepositories(
+  accessToken: string,
+  username: string
+): Promise<GitHubRepository[]> {
+  const cacheKey = `own-repos:${username}`;
+  const cached = await cacheGet<GitHubRepository[]>(cacheKey, { prefix: 'github' });
+  if (cached) return cached;
+
+  const client = createGitHubClient(accessToken);
+  const allRepos: GitHubRepository[] = [];
+  const perPage = 100;
+
+  try {
+    for (let page = 1; page <= 10; page++) {
+      const response = await client.get<GitHubRepository[]>('/user/repos', {
+        params: { affiliation: 'owner', visibility: 'all', sort: 'updated', per_page: perPage, page },
+      });
+      allRepos.push(...response.data);
+      if (response.data.length < perPage) break;
+    }
+    await cacheSet(cacheKey, allRepos, { prefix: 'github', ttl: 3600 });
+    return allRepos;
+  } catch (error: any) {
+    logger.error(`Failed to get own repositories for ${username}: ${error.message}`);
+    throw new ExternalServiceError('GitHub', 'Failed to fetch your repositories');
   }
 }
 
@@ -215,7 +251,10 @@ export async function getUserByUsername(
     await cacheSet(cacheKey, response.data, { prefix: 'github', ttl: 3600 });
     return response.data;
   } catch (error: any) {
-    logger.error(`Failed to get user ${username}:`, error.message);
+    if (error.response?.status === 404) {
+      throw new NotFoundError(`GitHub user "${username}" does not exist.`);
+    }
+    logger.error(`Failed to get user ${username}: ${error.message}`);
     throw new ExternalServiceError('GitHub', `Failed to fetch user: ${username}`);
   }
 }
@@ -302,6 +341,7 @@ export default {
   getAuthenticatedUser,
   getUserRepositories,
   getAllUserRepositories,
+  getOwnRepositories,
   getRepositoryLanguages,
   getRepositoryCommits,
   getReadmeContent,

@@ -1,265 +1,233 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RefreshCw, TrendingUp, ArrowRight } from 'lucide-react';
+import { RefreshCw, Lock, Star } from 'lucide-react';
 import { useAnalysisStore } from '../../store/analysisStore';
-import { useAuthStore } from '../../store/authStore';
-import { Card, CardHeader, Button, ScoreCircle, ProgressBar, Alert } from '../../components/ui';
-import { CategoryRadarChart } from '../../components/charts';
-import { Loader } from '../../components/ui';
+import { Card, Button, PageHeader } from '../../components/ui';
+import { ScoreHistoryChart } from '../../components/charts';
+import AnalysisGate, { runAnalysisWithFeedback } from '../../components/AnalysisGate';
+import LatticeLoader from '../../components/LatticeLoader';
+import QuickWinsCard from '../../components/QuickWinsCard';
+import { CATEGORIES, CategoryKey } from '../../lib/scoring';
+
+const SHORT_LABELS: Partial<Record<CategoryKey, string>> = { professionalism: 'Profile' };
+import { formatRelative } from '../../lib/errors';
+
+const HEAD = 'max-w-none text-lg font-medium tracking-[-0.01em] text-ink';
+
+/** What changed since the last analysis, set as a diff: the struck previous value and the signed change. */
+const ScoreDiff: React.FC<{ score: number; change: number | null }> = ({ score, change }) => {
+  if (change === null) return <p className="mt-4 text-sm text-muted">Your first analysis</p>;
+  if (change === 0) return <p className="mt-4 text-sm text-muted">No change since last analysis</p>;
+  const up = change > 0;
+  return (
+    <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-muted">
+      <del className="measured text-lg text-muted decoration-1">
+        <span className="sr-only">Previously </span>
+        {score - change}
+      </del>
+      <span
+        className={
+          up
+            ? 'measured rounded-chip bg-ok-soft px-1.5 text-lg text-ok'
+            : 'measured rounded-chip bg-bad-soft px-1.5 text-lg text-bad'
+        }
+      >
+        {up ? `+${change}` : `−${-change}`}
+      </span>
+      <span>since last analysis</span>
+    </p>
+  );
+};
 
 const DashboardOverview: React.FC = () => {
-  const { user } = useAuthStore();
-  const {
-    currentReport,
-    isAnalyzing,
-    error,
-    fetchLatestReport,
-    runAnalysis,
-  } = useAnalysisStore();
+  const { isAnalyzing, history, fetchHistory } = useAnalysisStore();
 
   useEffect(() => {
-    fetchLatestReport();
-  }, [fetchLatestReport]);
+    fetchHistory();
+  }, [fetchHistory]);
 
-  const handleRunAnalysis = async () => {
-    if (user?.username) {
-      await runAnalysis(user.username);
-    }
-  };
-
-  if (isAnalyzing) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader size="lg" />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Analyzing your portfolio...</p>
-        <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-          This may take a few minutes depending on the number of repositories.
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="py-8">
-        <Alert variant="error" title="Analysis Error">
-          {error}
-        </Alert>
-        <div className="mt-4">
-          <Button onClick={handleRunAnalysis} leftIcon={<RefreshCw className="w-4 h-4" />}>
-            Retry Analysis
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!currentReport) {
-    return (
-      <div className="py-20 text-center">
-        <div className="max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Welcome to GitVanta
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Run your first analysis to get a comprehensive score and insights
-            about your GitHub portfolio.
-          </p>
-          <Button
-            size="lg"
-            onClick={handleRunAnalysis}
-            loading={isAnalyzing}
-            leftIcon={<TrendingUp className="w-5 h-5" />}
-          >
-            Analyze My Portfolio
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const { result } = currentReport;
+  // While a re-analysis runs, the button gives way to the lattice loader and its timer;
+  // the current score stays on screen underneath.
+  const reanalyse = isAnalyzing ? (
+    <span className="inline-flex h-9 items-center rounded-pill border border-rule-2 bg-paper-2 px-3.5">
+      <LatticeLoader label="Analysing" pattern="snake" fontSize={14} className="text-ink" />
+    </span>
+  ) : (
+    <Button variant="outline" className="disabled:cursor-not-allowed" onClick={runAnalysisWithFeedback} leftIcon={<RefreshCw className="h-4 w-4" />}>
+      Analyse again
+    </Button>
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Last analyzed:{' '}
-            {new Date(currentReport.createdAt).toLocaleDateString('en-US', {
-              dateStyle: 'medium',
-            })}
-          </p>
-        </div>
-        <Button
-          onClick={handleRunAnalysis}
-          variant="outline"
-          leftIcon={<RefreshCw className="w-4 h-4" />}
-        >
-          Re-analyze
-        </Button>
-      </div>
+    <AnalysisGate header={<PageHeader title="Overview" />}>
+      {(a) => {
+        const points = history?.points ?? [];
+        const repos = a.repositories ?? [];
+        const privateCount = repos.filter((r) => r.isPrivate).length;
+        const topRepos = [...repos].sort((x, y) => (y.stars || 0) - (x.stars || 0)).slice(0, 4);
+        const weightCols = CATEGORIES.map((c) => `${c.weight}fr`).join(' ');
 
-      {/* Main Score Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Overall Score */}
-        <Card className="lg:col-span-1 flex flex-col items-center justify-center py-8">
-          <ScoreCircle
-            score={result.score.overall}
-            size="xl"
-            label="Overall Score"
-          />
-          <div className="mt-6 w-full px-6">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {result.repositories.length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Repositories</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {result.skills.length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Skills</div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Category Scores Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader title="Score Breakdown" />
-          <div className="grid md:grid-cols-2 gap-6">
-            <CategoryRadarChart
-              categoryScores={result.score.categories}
-              height={250}
+        return (
+          <div className="space-y-8">
+            <PageHeader
+              title="Overview"
+              description={
+                <>
+                  Last analysed {formatRelative(a.generatedAt)}. You can run 3 analyses a day.
+                </>
+              }
+              actions={reanalyse}
             />
-            <div className="space-y-4">
-              {result.score.categories.map((category) => (
-                <ProgressBar
-                  key={category.category}
-                  value={category.score}
-                  max={category.maxScore}
-                  label={category.category.replace(/([A-Z])/g, ' $1').trim()}
-                  showValue
-                />
-              ))}
+
+            <section aria-labelledby="score-heading" className="space-y-6">
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <div>
+                  <h2 id="score-heading" className="max-w-none text-sm font-medium tracking-normal text-muted">
+                    Overall score
+                  </h2>
+                  <p className="reading mt-3 text-[clamp(4.5rem,8vw+1rem,7.5rem)]">
+                    {a.overallScore}
+                    <span className="measured ml-1 text-2xl tracking-normal text-muted">/100</span>
+                  </p>
+                  <ScoreDiff score={a.overallScore} change={history?.change ?? null} />
+                </div>
+
+                <dl className="grid grid-cols-3 gap-x-10 gap-y-1 lg:pb-1">
+                  {[
+                    ['Repositories', repos.length],
+                    ['Skills', a.skills.length],
+                    ['Badges', a.badges.length],
+                  ].map(([label, value]) => (
+                    <div key={label as string} className="flex flex-col">
+                      <dt className="text-sm text-muted">{label}</dt>
+                      <dd className="measured order-first text-3xl text-ink">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+
+              <div>
+                <ul
+                  className="panels grid-cols-2 sm:grid-cols-3 md:grid-cols-(--weights)"
+                  style={{ '--weights': weightCols } as React.CSSProperties}
+                  aria-label="Score by category"
+                >
+                  {CATEGORIES.map((c) => {
+                    const score = a.categoryScores[c.key];
+                    const short = SHORT_LABELS[c.key];
+                    return (
+                      <li key={c.key} className="min-w-0 p-4">
+                        <p className="measured text-2xl text-ink">{Math.round(score)}</p>
+                        <p className="mt-1 truncate text-sm text-ink-2" title={c.label}>
+                          {short && c.weight <= 0.1 ? (
+                            <>
+                              <span aria-hidden="true" className="hidden md:inline">{short}</span>
+                              <span className="md:sr-only">{c.label}</span>
+                            </>
+                          ) : (
+                            c.label
+                          )}
+                        </p>
+                        <p className="text-sm text-muted">
+                          <span className="sr-only">counts </span>
+                          <span className="measured">{Math.round(c.weight * 100)}%</span>
+                        </p>
+                        <div className="mt-3 h-1 overflow-hidden rounded-[2px] bg-paper-3" aria-hidden="true">
+                          <div
+                            className="h-full origin-left ramp-cool"
+                            style={{ transform: `scaleX(${Math.max(0, Math.min(100, score)) / 100})` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                  <p className="text-sm text-muted">
+                    Each segment is as wide as the category’s weight and filled to your score in it.{' '}
+                    <Link to="/dashboard/analytics" className="text-sm text-ink-2 underline decoration-rule-2 underline-offset-4 transition-colors duration-[120ms] ease-out hover:text-accent focus-visible:text-accent active:text-accent">
+                      See every metric
+                    </Link>
+                  </p>
+                  {privateCount > 0 && (
+                    <p className="flex items-center gap-1.5 text-sm text-muted">
+                      <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                      {privateCount} private {privateCount === 1 ? 'repo is' : 'repos are'} counted but hidden from your public profile
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <div className="grid gap-6 lg:grid-cols-5">
+              <QuickWinsCard quickWins={a.quickWins} className="lg:col-span-3" />
+
+              <Card className="lg:col-span-2">
+                <h2 className={HEAD}>Score history</h2>
+                {points.length >= 2 ? (
+                  <>
+                    <p className="mt-1 text-sm text-muted">
+                      {points.length} analyses since {new Date(points[0].generatedAt).toLocaleDateString()}.
+                    </p>
+                    <div className="mt-4">
+                      <ScoreHistoryChart points={points} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-muted">
+                    Your trend appears here after your next analysis. Make one of the suggested fixes, then analyse again to
+                    see the change.
+                  </p>
+                )}
+              </Card>
+            </div>
+
+            <div className="panels lg:grid-cols-2">
+              <section className="p-6" aria-labelledby="skills-heading">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 id="skills-heading" className={HEAD}>Top skills</h2>
+                  <Link to="/dashboard/skills" className="text-sm text-ink-2 underline decoration-rule-2 underline-offset-4 transition-colors duration-[120ms] ease-out hover:text-accent focus-visible:text-accent active:text-accent">
+                    All skills
+                  </Link>
+                </div>
+                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-ink-2">
+                  {a.skills.slice(0, 12).map((s) => (
+                    <li key={s.name} className="text-sm">
+                      {s.name}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <section className="p-6" aria-labelledby="stars-heading">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 id="stars-heading" className={HEAD}>Most starred</h2>
+                  <Link to="/dashboard/repositories" className="text-sm text-ink-2 underline decoration-rule-2 underline-offset-4 transition-colors duration-[120ms] ease-out hover:text-accent focus-visible:text-accent active:text-accent">
+                    All repositories
+                  </Link>
+                </div>
+                <ul className="mt-3 divide-y divide-rule">
+                  {topRepos.map((r) => (
+                    <li key={r.name} className="flex items-center justify-between gap-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 truncate">
+                          <span className="measured truncate text-sm text-ink">{r.name}</span>
+                          {r.isPrivate && <Lock className="h-3.5 w-3.5 shrink-0 text-muted" aria-label="Private" />}
+                        </p>
+                        <p className="text-sm text-muted">{r.language ?? 'No language detected'}</p>
+                      </div>
+                      <span className="flex shrink-0 items-center gap-1.5 text-sm text-ink-2">
+                        <Star className="h-3.5 w-3.5 text-muted" aria-hidden="true" /> <span className="measured">{r.stars}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
             </div>
           </div>
-        </Card>
-      </div>
-
-      {/* Weaknesses Alert */}
-      {result.weaknesses && result.weaknesses.length > 0 && (
-        <Alert variant="warning" title="Areas for Improvement">
-          <ul className="list-disc list-inside mt-2 space-y-1">
-            {result.weaknesses.slice(0, 3).map((weakness, index) => (
-              <li key={index}>{weakness}</li>
-            ))}
-          </ul>
-          <Link
-            to="/dashboard/enhancements"
-            className="inline-flex items-center gap-1 mt-3 text-yellow-800 hover:text-yellow-900 font-medium"
-          >
-            View all suggestions
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Alert>
-      )}
-
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Total Stars</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {result.repositories.reduce((sum, r) => sum + (r.stars || 0), 0)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Total Forks</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {result.repositories.reduce((sum, r) => sum + (r.forks || 0), 0)}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Languages</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {new Set(result.repositories.map((r) => r.language).filter(Boolean)).size}
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-sm text-gray-500 dark:text-gray-400">Badges Earned</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {result.badges?.length || 0}
-          </div>
-        </Card>
-      </div>
-
-      {/* Top Skills & Top Repos */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Top Skills */}
-        <Card>
-          <CardHeader
-            title="Top Skills"
-            action={
-              <Link
-                to="/dashboard/skills"
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
-                View all
-              </Link>
-            }
-          />
-          <div className="flex flex-wrap gap-2">
-            {result.skills.slice(0, 8).map((skill, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full text-sm font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </Card>
-
-        {/* Top Repositories */}
-        <Card>
-          <CardHeader
-            title="Top Repositories"
-            action={
-              <Link
-                to="/dashboard/repositories"
-                className="text-sm text-primary-600 hover:text-primary-700"
-              >
-                View all
-              </Link>
-            }
-          />
-          <div className="space-y-3">
-            {result.repositories
-              .sort((a, b) => (b.stars || 0) - (a.stars || 0))
-              .slice(0, 3)
-              .map((repo, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-                >
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">{repo.name}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{repo.language}</div>
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {repo.stars} stars
-                  </div>
-                </div>
-              ))}
-          </div>
-        </Card>
-      </div>
-    </div>
+        );
+      }}
+    </AnalysisGate>
   );
 };
 

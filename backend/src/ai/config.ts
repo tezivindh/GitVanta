@@ -1,50 +1,55 @@
-import { AIModelConfig, AIProvider } from "./types";
+import { AIModelConfig, AIProviderId } from './types';
+import { PROVIDERS, isProviderId } from './catalog';
 
-const DEFAULT_MODELS: Record<AIProvider, string> = {
-    groq: 'llama-3.3-70b-versatile',
-    gemini: 'gemini-2.0-flash',
-    openai: 'gpt-4o-mini',
-    anthropic: 'claude-3-5-sonnet-20241022'
+/** Env var holding the server key for each provider. */
+const SERVER_KEY_ENV: Record<AIProviderId, string> = {
+  openai: 'OPENAI_API_KEY',
+  anthropic: 'ANTHROPIC_API_KEY',
+  gemini: 'GOOGLE_API_KEY',
+  groq: 'GROQ_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
+  mistral: 'MISTRAL_API_KEY',
+  deepseek: 'DEEPSEEK_API_KEY',
+  together: 'TOGETHER_API_KEY',
+  custom: 'AI_API_KEY',
+};
+
+function parseNumber(value: string | undefined, fallback: number): number {
+  if (value === undefined || value.trim() === '') return fallback;
+  const n = Number.parseFloat(value);
+  return Number.isFinite(n) ? n : fallback;
 }
 
-export function getAIConfig(): AIModelConfig {
-    const provider = (process.env.AI_PROVIDER || 'groq') as AIProvider;
+/**
+ * The server-wide AI config from the environment. Returns null when no
+ * provider key is configured, so callers can fall back or report clearly.
+ */
+export function getServerAIConfig(): AIModelConfig | null {
+  const raw = (process.env.AI_PROVIDER || 'groq').trim().toLowerCase();
+  if (!isProviderId(raw)) return null;
+  const provider: AIProviderId = raw;
+  const info = PROVIDERS[provider];
 
-    let apiKey = ''
-    switch(provider){
-        case "gemini":
-            apiKey = process.env.GOOGLE_API_KEY || '';
-            break;
-        case "groq":
-            apiKey = process.env.GROQ_API_KEY || '';
-            break;
-        case "openai":
-            apiKey = process.env.OPENAI_API_KEY || '';
-            break;
-        case "anthropic":
-            apiKey = process.env.ANTHROPIC_API_KEY || '';
-            break;
-    }
+  // GEMINI_API_KEY is accepted as an alias because older docs used it.
+  const apiKey =
+    process.env[SERVER_KEY_ENV[provider]] ||
+    (provider === 'gemini' ? process.env.GEMINI_API_KEY : undefined) ||
+    '';
+  const baseUrl = process.env.AI_BASE_URL || info.baseUrl;
 
-    const model = process.env.AI_MODEL || DEFAULT_MODELS[provider];
-    
-    return{
-        provider,
-        model,
-        apiKey,
-        maxTokens:parseInt(process.env.AI_MAX_TOKENS || '4096',10),
-        temperature:parseInt(process.env.AI_TEMPERATURE || '0.7')
-    }
+  if (info.requiresKey && !apiKey) return null;
+  if (info.requiresBaseUrl && !baseUrl) return null;
+
+  return {
+    provider,
+    model: process.env.AI_MODEL || info.defaultModel,
+    apiKey,
+    baseUrl,
+    maxTokens: Math.round(parseNumber(process.env.AI_MAX_TOKENS, 4096)),
+    temperature: parseNumber(process.env.AI_TEMPERATURE, 0.7),
+  };
 }
 
-export function validateAIConfig(config: AIModelConfig): { valid: boolean; error?: string} {
-    if(!config.apiKey){
-        return{
-            valid:false,
-            error:`API key is not configured for ${config.provider}. Set the appropriate env variables.`
-        };
-    }
-    return {valid:true};
+export function getServerKeyEnvName(provider: AIProviderId): string {
+  return SERVER_KEY_ENV[provider];
 }
-
-export {AIProvider, AIModelConfig}

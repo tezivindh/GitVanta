@@ -1,266 +1,108 @@
 import { Response } from 'express';
 import { githubService } from '../services';
 import { AuthenticatedRequest } from '../types';
-import logger from '../utils/logger';
+import { NotFoundError } from '../utils/errors';
 
-export async function getRepositories(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+type RepoListQuery = { page: number; per_page: number; sort: 'updated' | 'stars' | 'name' | 'created' };
+
+export async function getRepositories(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const page = parseInt(req.query.page as string) || 1;
-  const perPage = parseInt(req.query.per_page as string) || 30;
-  const sort = (req.query.sort as string) || 'updated';
+  const { page, per_page: perPage, sort } = req.query as unknown as RepoListQuery;
 
-  try {
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
+  const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
+  const ownRepos = repos.filter((r) => !r.fork);
 
-    let filteredRepos = repos.filter(r => !r.fork);
+  const time = (d: string) => new Date(d).getTime();
+  const comparators = {
+    stars: (a: any, b: any) => b.stargazers_count - a.stargazers_count,
+    name: (a: any, b: any) => a.name.localeCompare(b.name),
+    created: (a: any, b: any) => time(b.created_at) - time(a.created_at),
+    updated: (a: any, b: any) => time(b.updated_at) - time(a.updated_at),
+  };
+  ownRepos.sort(comparators[sort]);
 
-    switch (sort) {
-      case 'stars':
-        filteredRepos.sort((a, b) => b.stargazers_count - a.stargazers_count);
-        break;
-      case 'name':
-        filteredRepos.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case 'created':
-        filteredRepos.sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        break;
-      default:
-        filteredRepos.sort((a, b) => 
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-        );
-    }
-
-    // Paginate
-    const startIndex = (page - 1) * perPage;
-    const paginatedRepos = filteredRepos.slice(startIndex, startIndex + perPage);
-
-    res.json({
-      success: true,
-      data: paginatedRepos,
-      pagination: {
-        page,
-        perPage,
-        total: filteredRepos.length,
-        totalPages: Math.ceil(filteredRepos.length / perPage),
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get repositories error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch repositories',
-    });
-  }
+  const start = (page - 1) * perPage;
+  res.json({
+    success: true,
+    data: ownRepos.slice(start, start + perPage),
+    pagination: {
+      page,
+      perPage,
+      total: ownRepos.length,
+      totalPages: Math.ceil(ownRepos.length / perPage),
+    },
+  });
 }
 
-export async function getRepository(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function getRepository(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
   const { repoName } = req.params;
 
-  try {
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-    
-    const repo = repos.find(r => r.name === repoName);
+  const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
+  const repo = repos.find((r) => r.name === repoName);
+  if (!repo) throw new NotFoundError('Repository not found.');
 
-    if (!repo) {
-      res.status(404).json({
-        success: false,
-        error: 'Repository not found',
-      });
-      return;
-    }
+  const [languages, readme] = await Promise.all([
+    githubService.getRepositoryLanguages(user.accessToken, user.username, repoName),
+    githubService.getReadmeContent(user.accessToken, user.username, repoName),
+  ]);
 
-    // Get additional details
-    const [languages, readme] = await Promise.all([
-      githubService.getRepositoryLanguages(user.accessToken, user.username, repoName),
-      githubService.getReadmeContent(user.accessToken, user.username, repoName),
-    ]);
-
-    res.json({
-      success: true,
-      data: {
-        ...repo,
-        languages,
-        hasReadme: !!readme,
-        readmeLength: readme?.length || 0,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get repository error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch repository',
-    });
-  }
+  res.json({
+    success: true,
+    data: { ...repo, languages, hasReadme: !!readme, readmeLength: readme?.length || 0 },
+  });
 }
 
-
-export async function getRepositoryLanguages(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function getRepositoryLanguages(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const { repoName } = req.params;
-
-  try {
-    const languages = await githubService.getRepositoryLanguages(
-      user.accessToken,
-      user.username,
-      repoName
-    );
-
-    res.json({
-      success: true,
-      data: languages,
-    });
-  } catch (error: any) {
-    logger.error('Get languages error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch languages',
-    });
-  }
+  const data = await githubService.getRepositoryLanguages(user.accessToken, user.username, req.params.repoName);
+  res.json({ success: true, data });
 }
 
-
-export async function getRepositoryReadme(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function getRepositoryReadme(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const { repoName } = req.params;
-
-  try {
-    const readme = await githubService.getReadmeContent(
-      user.accessToken,
-      user.username,
-      repoName
-    );
-
-    if (!readme) {
-      res.status(404).json({
-        success: false,
-        error: 'README not found',
-      });
-      return;
-    }
-
-    res.json({
-      success: true,
-      data: {
-        content: readme,
-        length: readme.length,
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get README error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch README',
-    });
-  }
+  const readme = await githubService.getReadmeContent(user.accessToken, user.username, req.params.repoName);
+  if (!readme) throw new NotFoundError('README not found.');
+  res.json({ success: true, data: { content: readme, length: readme.length } });
 }
 
-export async function getRepositoryCommits(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function getRepositoryCommits(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
-  const { repoName } = req.params;
-  const limit = parseInt(req.query.limit as string) || 30;
-
-  try {
-    const commits = await githubService.getRepositoryCommits(
-      user.accessToken,
-      user.username,
-      repoName,
-      limit
-    );
-
-    res.json({
-      success: true,
-      data: commits,
-    });
-  } catch (error: any) {
-    logger.error('Get commits error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch commits',
-    });
-  }
+  const { limit } = req.query as unknown as { limit: number };
+  const data = await githubService.getRepositoryCommits(
+    user.accessToken,
+    user.username,
+    req.params.repoName,
+    limit
+  );
+  res.json({ success: true, data });
 }
 
-
-export async function getRepositoriesStats(
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> {
+export async function getRepositoriesStats(req: AuthenticatedRequest, res: Response): Promise<void> {
   const user = req.user!;
+  const repos = await githubService.getOwnRepositories(user.accessToken, user.username);
+  const ownRepos = repos.filter((r) => !r.fork);
 
-  try {
-    const repos = await githubService.getAllUserRepositories(
-      user.accessToken,
-      user.username
-    );
-
-    const ownRepos = repos.filter(r => !r.fork);
-
-    // Calculate statistics
-    const totalStars = ownRepos.reduce((sum, r) => sum + r.stargazers_count, 0);
-    const totalForks = ownRepos.reduce((sum, r) => sum + r.forks_count, 0);
-    const languages = new Set<string>();
-    ownRepos.forEach(r => {
-      if (r.language) languages.add(r.language);
-    });
-
-    // Language distribution
-    const languageDistribution: Record<string, number> = {};
-    ownRepos.forEach(r => {
-      if (r.language) {
-        languageDistribution[r.language] = (languageDistribution[r.language] || 0) + 1;
-      }
-    });
-
-    // Recent activity
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const recentlyUpdated = ownRepos.filter(
-      r => new Date(r.pushed_at) > thirtyDaysAgo
-    ).length;
-
-    res.json({
-      success: true,
-      data: {
-        totalRepositories: ownRepos.length,
-        totalStars,
-        totalForks,
-        uniqueLanguages: languages.size,
-        languageDistribution,
-        recentlyUpdated,
-        topStarred: ownRepos
-          .sort((a, b) => b.stargazers_count - a.stargazers_count)
-          .slice(0, 5)
-          .map(r => ({ name: r.name, stars: r.stargazers_count })),
-      },
-    });
-  } catch (error: any) {
-    logger.error('Get repository stats error:', error.message);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch repository statistics',
-    });
+  const languageDistribution: Record<string, number> = {};
+  for (const r of ownRepos) {
+    if (r.language) languageDistribution[r.language] = (languageDistribution[r.language] || 0) + 1;
   }
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
+  res.json({
+    success: true,
+    data: {
+      totalRepositories: ownRepos.length,
+      privateRepositories: ownRepos.filter((r) => r.private).length,
+      totalStars: ownRepos.reduce((sum, r) => sum + r.stargazers_count, 0),
+      totalForks: ownRepos.reduce((sum, r) => sum + r.forks_count, 0),
+      uniqueLanguages: Object.keys(languageDistribution).length,
+      languageDistribution,
+      recentlyUpdated: ownRepos.filter((r) => new Date(r.pushed_at).getTime() > thirtyDaysAgo).length,
+      topStarred: [...ownRepos]
+        .sort((a, b) => b.stargazers_count - a.stargazers_count)
+        .slice(0, 5)
+        .map((r) => ({ name: r.name, stars: r.stargazers_count })),
+    },
+  });
 }

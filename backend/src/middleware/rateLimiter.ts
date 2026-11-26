@@ -4,6 +4,7 @@ import config from '../config';
 import { getRedisClient, isRedisAvailable } from '../config/redis';
 import { AuthenticatedRequest } from '../types';
 import logger from '../utils/logger';
+import { usesOwnKey } from '../services/userAIService';
 
 const DAILY_ANALYSIS_LIMIT = 3;
 const fallbackAnalysisCounters = new Map<string, { count: number; resetAt: number }>();
@@ -65,9 +66,9 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
-  },
+  // req.ip honours the "trust proxy" setting; reading X-Forwarded-For
+  // directly would let clients pick their own rate-limit bucket.
+  keyGenerator: (req) => req.ip || 'unknown',
 });
 
 //strict for auth
@@ -82,12 +83,45 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const AI_LIMIT_SERVER_KEY = parseInt(process.env.AI_RATE_LIMIT_PER_HOUR || '50', 10);
+const AI_LIMIT_OWN_KEY = parseInt(process.env.AI_RATE_LIMIT_OWN_KEY_PER_HOUR || '500', 10);
+
+/**
+ * AI requests, per user per hour. Users on their own API key pay for their
+ * own usage, so they get a much higher limit than users on the server key.
+ * Must run after authenticateToken.
+ */
 export const aiLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hr
-  max: 50,
+  max: (req) => {
+    const user = (req as AuthenticatedRequest).user;
+    return user && usesOwnKey(user) ? AI_LIMIT_OWN_KEY : AI_LIMIT_SERVER_KEY;
+  },
+  keyGenerator: (req) => (req as AuthenticatedRequest).userId || req.ip || 'unknown',
+  handler: (req, res, _next, options) => {
+    const user = (req as AuthenticatedRequest).user;
+    const own = !!user && usesOwnKey(user);
+    res.status(options.statusCode).json({
+      success: false,
+      error: own
+        ? `AI request limit reached (${AI_LIMIT_OWN_KEY}/hour). Please try again later.`
+        : `AI request limit reached (${AI_LIMIT_SERVER_KEY}/hour on the shared key). Add your own API key in Settings for a higher limit.`,
+      code: 'RATE_LIMITED',
+    });
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/** Connection tests and model listing in Settings. */
+export const aiTestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  keyGenerator: (req) => (req as AuthenticatedRequest).userId || req.ip || 'unknown',
   message: {
     success: false,
-    error: 'AI request limit reached, please try again later.',
+    error: 'Too many connection tests. Please wait a few minutes.',
+    code: 'RATE_LIMITED',
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -172,4 +206,18 @@ export const exportLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+});
+
+// Comparing runs a full analysis of another account, so keep it modest.
+export const compareLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hr
+  max: 15,
+  message: {
+    success: false,
+    error: 'Comparison limit reached (15 per hour). Please try again later.',
+    code: 'RATE_LIMITED',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => (req as AuthenticatedRequest).userId || req.ip || 'unknown',
 });

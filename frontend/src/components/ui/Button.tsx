@@ -26,20 +26,23 @@ const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const isLoadingState = isLoading || loading || false;
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-hidden focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  // Console controls: Host Grotesk 500, 6px radius, one 1px rule. Amber is the one
+  // primary action; everything else is the outline pair on paper-2.
+  const baseStyles =
+    'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium rounded-pill border transition-[background-color,color,border-color,transform,filter] duration-[120ms] ease-out active:translate-y-px disabled:active:translate-y-0 disabled:opacity-55 disabled:cursor-not-allowed after:absolute after:-inset-y-1 after:inset-x-0 after:content-[""] pointer-coarse:after:-inset-y-2';
 
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600 focus:ring-gray-500',
-    outline: 'border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 focus:ring-gray-500',
-    ghost: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-gray-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    primary: 'border-accent bg-accent text-accent-ink hover:not-disabled:brightness-[1.06]',
+    secondary: 'border-rule-2 bg-paper-2 text-ink hover:not-disabled:bg-paper-3 hover:not-disabled:border-muted',
+    outline: 'border-rule-2 bg-transparent text-ink hover:not-disabled:bg-paper-2 hover:not-disabled:border-muted',
+    ghost: 'border-transparent bg-transparent text-ink-2 hover:not-disabled:bg-paper-2 hover:not-disabled:text-ink',
+    danger: 'border-bad bg-transparent text-bad hover:not-disabled:bg-bad-soft',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-4 py-2 text-base',
-    lg: 'px-6 py-3 text-lg',
+    sm: 'h-8 px-3 text-sm',
+    md: 'h-9 px-3.5 text-sm',
+    lg: 'h-11 px-5 text-md',
   };
 
   return (
@@ -52,15 +55,16 @@ const Button: React.FC<ButtonProps> = ({
         className
       )}
       disabled={disabled || isLoadingState}
+      aria-busy={isLoadingState || undefined}
       {...props}
     >
       {isLoadingState ? (
-        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
       ) : (
-        leftIcon && <span className="mr-2">{leftIcon}</span>
+        leftIcon && <span aria-hidden="true" className="inline-flex">{leftIcon}</span>
       )}
       {children}
-      {!isLoadingState && rightIcon && <span className="ml-2">{rightIcon}</span>}
+      {!isLoadingState && rightIcon && <span aria-hidden="true" className="inline-flex">{rightIcon}</span>}
     </button>
   );
 };

@@ -1,231 +1,138 @@
 import React, { useState } from 'react';
-import { FileDown, Download, FileText, Settings } from 'lucide-react';
-import { useAnalysisStore } from '../../store/analysisStore';
+import { Link } from 'react-router-dom';
+import { FileText, Braces, Download } from 'lucide-react';
 import { analysisApi } from '../../api/analysis';
-import { Card, CardHeader, Button, Alert } from '../../components/ui';
+import { reportError, downloadBlob } from '../../lib/errors';
+import { toast } from '../../store/toastStore';
+import { useAuthStore } from '../../store/authStore';
+import { Button, PageHeader } from '../../components/ui';
+import AnalysisGate from '../../components/AnalysisGate';
+import { AnalysisReport } from '../../types';
 
-type ExportFormat = 'pdf' | 'json';
+const today = () => new Date().toISOString().slice(0, 10);
 
-interface ExportOption {
-  id: string;
-  label: string;
-  description: string;
-  checked: boolean;
-}
+/** The export formats. `embedded` drops the page header for the Settings tab. */
+const ExportContent: React.FC<{ analysis: AnalysisReport; embedded?: boolean }> = ({ analysis, embedded = false }) => {
+  const username = useAuthStore((s) => s.user?.username ?? 'portfolio');
+  const [busy, setBusy] = useState<'pdf' | 'json' | null>(null);
 
-const ExportPage: React.FC = () => {
-  const { currentReport } = useAnalysisStore();
-  const [format, setFormat] = useState<ExportFormat>('pdf');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
-  const [options, setOptions] = useState<ExportOption[]>([
-    { id: 'overview', label: 'Score Overview', description: 'Overall score and grade', checked: true },
-    { id: 'categories', label: 'Category Breakdown', description: 'Detailed category scores', checked: true },
-    { id: 'skills', label: 'Skills', description: 'Detected technical skills', checked: true },
-    { id: 'repositories', label: 'Repositories', description: 'Repository analysis', checked: true },
-    { id: 'badges', label: 'Badges', description: 'Earned achievements', checked: true },
-    { id: 'improvements', label: 'Improvements', description: 'Suggested improvements', checked: true },
-  ]);
-
-  const toggleOption = (id: string) => {
-    setOptions(
-      options.map((opt) =>
-        opt.id === id ? { ...opt, checked: !opt.checked } : opt
-      )
-    );
-  };
-
-  const handleExport = async () => {
-    if (!currentReport) return;
-
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
+  const exportPdf = async () => {
+    setBusy('pdf');
     try {
-      if (format === 'pdf') {
-        const blob = await analysisApi.exportToPDF();
-        
-        // Create blob and download
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `portfolio-report-${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } else {
-        // JSON export
-        const exportData = {
-          exportedAt: new Date().toISOString(),
-          ...currentReport.result,
-        };
-        
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-          type: 'application/json',
-        });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `portfolio-data-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }
-
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to export report');
+      const blob = await analysisApi.exportToPDF();
+      downloadBlob(blob, `gitvanta-report-${username}-${today()}.pdf`);
+      toast.success('PDF downloaded');
+    } catch (e) {
+      await reportError(e, 'PDF export failed');
     } finally {
-      setLoading(false);
+      setBusy(null);
     }
   };
 
-  if (!currentReport) {
-    return (
-      <Alert variant="info" title="No Analysis Found">
-        Run an analysis from the dashboard to export your report.
-      </Alert>
-    );
-  }
+  const exportJson = () => {
+    setBusy('json');
+    try {
+      const { _id, userId, ...report } = analysis as AnalysisReport & { _id: string; userId: string };
+      void _id;
+      void userId;
+      const payload = { format: 'gitvanta-analysis-v1', exportedAt: new Date().toISOString(), username, ...report };
+      downloadBlob(
+        new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
+        `gitvanta-analysis-${username}-${today()}.json`
+      );
+      toast.success('JSON downloaded');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const options = [
+    {
+      icon: FileText,
+      title: 'PDF report',
+      file: `gitvanta-report-${username}-${today()}.pdf`,
+      text: 'A printable report with your score, category breakdown, skills, badges and the improvements to make. Good for applications and interviews.',
+      action: (
+        <Button type="button" onClick={exportPdf} isLoading={busy === 'pdf'} leftIcon={<Download className="h-4 w-4" />}>
+          Download PDF
+        </Button>
+      ),
+    },
+    {
+      icon: Braces,
+      title: 'JSON data',
+      file: `gitvanta-analysis-${username}-${today()}.json`,
+      text: 'Your latest analysis exactly as GitVanta stores it: every score, metric, skill, badge, repository and suggestion. Good for your own tools or site.',
+      action: (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={exportJson}
+          isLoading={busy === 'json'}
+          leftIcon={<Download className="h-4 w-4" />}
+        >
+          Download JSON
+        </Button>
+      ),
+    },
+  ];
+
+  const analysedOn = (
+    <>
+      Download your analysis from{' '}
+      <span className="measured">
+        {new Date(analysis.generatedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+      </span>
+      .
+    </>
+  );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Export Report</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Download your portfolio analysis as a PDF or JSON file
-        </p>
-      </div>
-
-      {/* Format Selection */}
-      <Card>
-        <CardHeader
-          title="Export Format"
-          icon={<FileDown className="w-5 h-5 text-primary-600" />}
-        />
-        <div className="grid sm:grid-cols-2 gap-4">
-          <button
-            onClick={() => setFormat('pdf')}
-            className={`p-4 rounded-xl border-2 text-left transition-all ${
-              format === 'pdf'
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-            }`}
+      {embedded ? <p className="text-sm text-muted">{analysedOn}</p> : <PageHeader title="Export" description={analysedOn} />}
+      <ul className={embedded ? 'divide-y divide-rule border-y border-rule' : 'card divide-y divide-rule'} aria-label="Export formats">
+        {options.map((o) => (
+          <li
+            key={o.title}
+            className={
+              embedded
+                ? 'grid gap-4 py-5 min-[60rem]:grid-cols-[minmax(0,1fr)_auto] min-[60rem]:items-center min-[60rem]:gap-10'
+                : 'grid gap-4 p-5 sm:p-6 min-[60rem]:grid-cols-[minmax(0,1fr)_auto] min-[60rem]:items-center min-[60rem]:gap-10'
+            }
           >
-            <FileText
-              className={`w-8 h-8 mb-2 ${
-                format === 'pdf' ? 'text-primary-600' : 'text-gray-400'
-              }`}
-            />
-            <h3 className="font-semibold text-gray-900 dark:text-white">PDF Report</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Professional PDF document ready for sharing
-            </p>
-          </button>
-
-          <button
-            onClick={() => setFormat('json')}
-            className={`p-4 rounded-xl border-2 text-left transition-all ${
-              format === 'json'
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-            }`}
-          >
-            <Settings
-              className={`w-8 h-8 mb-2 ${
-                format === 'json' ? 'text-primary-600' : 'text-gray-400'
-              }`}
-            />
-            <h3 className="font-semibold text-gray-900 dark:text-white">JSON Data</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Raw data for integration or analysis
-            </p>
-          </button>
-        </div>
-      </Card>
-
-      {/* Export Options */}
-      <Card>
-        <CardHeader title="Include in Export" />
-        <div className="space-y-3">
-          {options.map((option) => (
-            <label
-              key={option.id}
-              className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-            >
-              <input
-                type="checkbox"
-                checked={option.checked}
-                onChange={() => toggleOption(option.id)}
-                className="mt-1 w-4 h-4 rounded-sm border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
-              />
-              <div>
-                <div className="font-medium text-gray-900 dark:text-white">{option.label}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">{option.description}</div>
+            <div className="flex min-w-0 gap-4">
+              <o.icon className="mt-0.5 h-5 w-5 shrink-0 text-muted" aria-hidden="true" />
+              <div className="min-w-0">
+                <h2 className="max-w-none text-md font-medium leading-snug tracking-[-0.01em] text-ink">{o.title}</h2>
+                <p className="mt-1 max-w-[68ch] text-sm text-muted">{o.text}</p>
+                <p className="measured mt-2 truncate text-xs text-ink-2">{o.file}</p>
               </div>
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      {/* Export Preview */}
-      <Card>
-        <CardHeader title="Export Preview" />
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6 text-center">
-          <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="font-semibold text-gray-900 dark:text-white">
-            Portfolio Analysis Report
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Score: {currentReport.result.score.overall}/100 •{' '}
-            {currentReport.result.repositories.length} repositories •{' '}
-            {currentReport.result.skills.length} skills
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-            Generated{' '}
-            {new Date(currentReport.createdAt).toLocaleDateString('en-US', {
-              dateStyle: 'long',
-            })}
-          </p>
-        </div>
-      </Card>
-
-      {/* Error */}
-      {error && (
-        <Alert variant="error" title="Export Failed">
-          {error}
-        </Alert>
-      )}
-
-      {/* Success */}
-      {success && (
-        <Alert variant="success" title="Export Complete">
-          Your report has been downloaded successfully.
-        </Alert>
-      )}
-
-      {/* Export Button */}
-      <div className="flex justify-end">
-        <Button
-          size="lg"
-          onClick={handleExport}
-          loading={loading}
-          leftIcon={loading ? undefined : <Download className="w-5 h-5" />}
+            </div>
+            <div className="pl-9 min-[60rem]:pl-0">{o.action}</div>
+          </li>
+        ))}
+      </ul>
+      <p className="text-sm text-muted">
+        Need everything, including your full analysis history and settings?{' '}
+        <Link
+          to="/dashboard/settings#account"
+          className="text-ink underline decoration-rule-2 underline-offset-[0.16em] transition-colors duration-[120ms] ease-out hover:text-accent"
         >
-          {loading
-            ? 'Generating...'
-            : `Export as ${format.toUpperCase()}`}
-        </Button>
-      </div>
+          {embedded ? 'Export all your data from the Account tab' : 'Export all your data from Settings'}
+        </Link>
+        .
+      </p>
     </div>
   );
 };
+
+/** The Export tab inside Settings. */
+export const ExportSection: React.FC = () => (
+  <AnalysisGate>{(a) => <ExportContent analysis={a} embedded />}</AnalysisGate>
+);
+
+const ExportPage: React.FC = () => (
+  <AnalysisGate header={<PageHeader title="Export" />}>{(a) => <ExportContent analysis={a} />}</AnalysisGate>
+);
 
 export default ExportPage;

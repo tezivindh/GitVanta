@@ -1,98 +1,64 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
-import { IAIProvider, AIResponse, AIMessage, AIModelConfig } from '../types';
-import logger from '../../utils/logger';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AIModelConfig, AIResponse, CompletionOptions, IAIProvider } from '../types';
+import { PROVIDERS } from '../catalog';
+import { AIProviderError, aiErrorFromStatus } from '../errors';
 
 export class GeminiProvider implements IAIProvider {
-  private client: GoogleGenerativeAI | null = null;
-  private model: GenerativeModel | null = null;
-  private modelName: string;
-  private apiKey: string;
+  readonly id = 'gemini' as const;
+  readonly label = PROVIDERS.gemini.label;
+  readonly model: string;
+  private readonly client: GoogleGenerativeAI;
+  private readonly maxTokens: number;
+  private readonly temperature: number;
 
   constructor(config: AIModelConfig) {
-    this.apiKey = config.apiKey;
-    this.modelName = config.model || 'gemini-2.0-flash';
-
-    if (this.apiKey) {
-      this.client = new GoogleGenerativeAI(this.apiKey);
-      this.model = this.client.getGenerativeModel({ model: this.modelName });
-      logger.info(`Gemini AI provider initialized with model: ${this.modelName}`);
-    }
+    this.model = config.model || PROVIDERS.gemini.defaultModel;
+    this.client = new GoogleGenerativeAI(config.apiKey);
+    this.maxTokens = config.maxTokens ?? 8192;
+    this.temperature = config.temperature ?? 0.7;
   }
 
-  isConfigured(): boolean {
-    return !!this.model;
-  }
-
-  getProviderName(): string {
-    return 'Gemini';
-  }
-
-  async generateContent(prompt: string): Promise<AIResponse> {
-    if (!this.model) {
-      throw new Error('Gemini model not initialized. Check your GOOGLE_API_KEY.');
-    }
+  async complete(prompt: string, options: CompletionOptions = {}): Promise<AIResponse> {
+    const model = this.client.getGenerativeModel(
+      {
+        model: this.model,
+        generationConfig: {
+          maxOutputTokens: options.maxTokens ?? this.maxTokens,
+          temperature: this.temperature,
+          ...(options.json ? { responseMimeType: 'application/json' } : {}),
+        },
+      },
+      { timeout: 120_000 }
+    );
 
     try {
-      const result = await this.model.generateContent(prompt);
-      const response = await result.response;
+      const result = await model.generateContent(prompt);
+      const response = result.response;
       const content = response.text();
-
+      if (!content.trim()) {
+        throw new AIProviderError('parse', 'Gemini returned an empty response.');
+      }
       return {
         content,
-        usage: response.usageMetadata ? {
-          promptTokens: response.usageMetadata.promptTokenCount || 0,
-          completionTokens: response.usageMetadata.candidatesTokenCount || 0,
-          totalTokens: response.usageMetadata.totalTokenCount || 0,
-        } : undefined,
+        usage: response.usageMetadata
+          ? {
+              promptTokens: response.usageMetadata.promptTokenCount || 0,
+              completionTokens: response.usageMetadata.candidatesTokenCount || 0,
+              totalTokens: response.usageMetadata.totalTokenCount || 0,
+            }
+          : undefined,
       };
     } catch (error: any) {
-      logger.error('Gemini generateContent error:', error.message);
-      throw new Error(`Gemini AI error: ${error.message}`);
-    }
-  }
-
-  async generateStructuredContent<T>(prompt: string): Promise<T> {
-    const jsonPrompt = `${prompt}
-
-IMPORTANT: Respond ONLY with valid JSON. No markdown, no code blocks, no explanations.`;
-
-    const response = await this.generateContent(jsonPrompt);
-    
-    try {
-      // remove markdown code blocks if present - cleaning the response
-      let cleanContent = response.content.trim();
-      if (cleanContent.startsWith('```json')) {
-        cleanContent = cleanContent.slice(7);
-      } else if (cleanContent.startsWith('```')) {
-        cleanContent = cleanContent.slice(3);
+      if (error instanceof AIProviderError) throw error;
+      const status: number | undefined = error?.status;
+      if (status) throw aiErrorFromStatus(this.label, status, error?.statusText);
+      if (/API key not valid/i.test(error?.message || '')) {
+        throw aiErrorFromStatus(this.label, 401);
       }
-      if (cleanContent.endsWith('```')) {
-        cleanContent = cleanContent.slice(0, -3);
+      if (/blocked|SAFETY/i.test(error?.message || '')) {
+        throw new AIProviderError('refusal', 'Gemini blocked this response for safety reasons.');
       }
-      cleanContent = cleanContent.trim();
-
-      return JSON.parse(cleanContent) as T;
-    } catch (error) {
-      logger.error('Failed to parse Gemini JSON response:', response.content);
-      throw new Error('Failed to parse AI response as JSON');
-    }
-  }
-
-  async chat(messages: AIMessage[]): Promise<AIResponse> {
-    if (!this.model) {
-      throw new Error('Gemini model not initialized. Check your GOOGLE_API_KEY.');
-    }
-
-    try {
-      //combine messages into a single prompt (for gemini)
-      const combinedPrompt = messages
-        .map(m => `${m.role.toUpperCase()}: ${m.content}`)
-        .join('\n\n');
-
-      return this.generateContent(combinedPrompt);
-    } catch (error: any) {
-      logger.error('Gemini chat error:', error.message);
-      throw new Error(`Gemini AI error: ${error.message}`);
+      throw new AIProviderError('network', `${this.label} request failed. Try again.`);
     }
   }
 }

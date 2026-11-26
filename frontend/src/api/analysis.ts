@@ -1,4 +1,4 @@
-import apiClient from './client';
+import apiClient, { SLOW_REQUEST_TIMEOUT } from './client';
 import {
   ApiResponse,
   AnalysisReport,
@@ -11,12 +11,15 @@ import {
   RepoInsight,
   ProfessionalProfile,
   ProfileComparison,
+  ScoreHistory,
 } from '../types';
 
 export const analysisApi = {
 
   async analyzePortfolio(): Promise<AnalysisReport> {
-    const response = await apiClient.post<ApiResponse<AnalysisReport>>('/analysis/analyze');
+    const response = await apiClient.post<ApiResponse<AnalysisReport>>('/analysis/analyze', {}, {
+      timeout: SLOW_REQUEST_TIMEOUT,
+    });
     return response.data.data!;
   },
 
@@ -71,13 +74,24 @@ export const analysisApi = {
     return response.data.data!;
   },
 
-  async getProfessionalProfile(): Promise<ProfessionalProfile> {
-    const response = await apiClient.get<ApiResponse<ProfessionalProfile>>('/analysis/professional-profile');
+  async getProfessionalProfile(refresh = false): Promise<ProfessionalProfile> {
+    const response = await apiClient.get<ApiResponse<ProfessionalProfile>>('/analysis/professional-profile', {
+      timeout: SLOW_REQUEST_TIMEOUT,
+      params: refresh ? { refresh: 'true' } : undefined,
+    });
     return response.data.data!;
   },
 
   async compareProfiles(username: string): Promise<ProfileComparison> {
-    const response = await apiClient.get<ApiResponse<ProfileComparison>>(`/analysis/compare/${username}`);
+    const response = await apiClient.get<ApiResponse<ProfileComparison>>(
+      `/analysis/compare/${encodeURIComponent(username)}`,
+      { timeout: SLOW_REQUEST_TIMEOUT }
+    );
+    return response.data.data!;
+  },
+
+  async getHistory(limit = 30): Promise<ScoreHistory> {
+    const response = await apiClient.get<ApiResponse<ScoreHistory>>('/analysis/history', { params: { limit } });
     return response.data.data!;
   },
 

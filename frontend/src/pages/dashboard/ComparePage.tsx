@@ -1,214 +1,219 @@
 import React, { useState } from 'react';
-import { GitCompare, ArrowRight, Trophy, AlertCircle } from 'lucide-react';
-import { useAnalysisStore } from '../../store/analysisStore';
+import { GitCompare } from 'lucide-react';
 import { analysisApi } from '../../api/analysis';
-import { Card, CardHeader, Button, Input, Alert, ScoreCircle, ProgressBar, Loader } from '../../components/ui';
+import { getApiError } from '../../api/client';
+import { Button, Card, ErrorState, LoadingRegion, PageHeader, Skeleton } from '../../components/ui';
+import { CategoryRadarChart } from '../../components/charts';
+import AnalysisGate from '../../components/AnalysisGate';
 import { ProfileComparison } from '../../types';
+import { CATEGORIES, toCategoryArray } from '../../lib/scoring';
+
+const USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/;
+
+const HEAD = 'max-w-none text-lg font-medium tracking-[-0.01em] text-ink';
+
+/** Series keys, matched to the radar: you are a solid amber line, they are a dashed cool one. */
+const Swatch: React.FC<{ who: 'you' | 'them' }> = ({ who }) => (
+  <span
+    aria-hidden="true"
+    className={
+      who === 'you'
+        ? 'mr-1.5 inline-block w-4 border-t-2 border-accent align-middle'
+        : 'mr-1.5 inline-block w-4 border-t-2 border-dashed border-cool align-middle'
+    }
+  />
+);
+
+const Signed: React.FC<{ d: number }> = ({ d }) => (
+  <span className={d > 0 ? 'text-ok' : d < 0 ? 'text-bad' : 'text-muted'}>{d > 0 ? `+${d}` : d < 0 ? `−${-d}` : d}</span>
+);
+
+const Results: React.FC<{ c: ProfileComparison }> = ({ c }) => {
+  const you = c.user1;
+  const them = c.user2;
+  const diff = you.overallScore - them.overallScore;
+
+  return (
+    <div className="space-y-6">
+      <div className="panels sm:grid-cols-2">
+        {[you, them].map((p, i) => (
+          <section key={p.username} className="p-6" aria-label={i === 0 ? `You (@${you.username})` : `@${them.username}`}>
+            <p className="text-sm text-muted">
+              <Swatch who={i === 0 ? 'you' : 'them'} />
+              {i === 0 ? `You (@${you.username})` : `@${them.username}`}
+            </p>
+            <p className="measured mt-2 text-[3.5rem] leading-none tracking-[-0.04em] text-ink">
+              {p.overallScore}
+              <span className="ml-1 text-xl tracking-normal text-muted">/100</span>
+            </p>
+            <h2 className="mt-6 max-w-none text-sm font-medium tracking-normal text-ink">
+              {i === 0 ? 'Your top skills' : `@${p.username}’s top skills`}
+            </h2>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-ink-2">
+              {p.topSkills.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+            <p className="mt-3 text-sm text-muted">
+              <span className="measured text-ink-2">{p.badges}</span> badges earned
+            </p>
+          </section>
+        ))}
+        <div className="px-6 py-4 sm:col-span-2">
+          <p className="text-sm font-medium text-ink">
+            {diff === 0 ? (
+              'Level'
+            ) : diff > 0 ? (
+              <>
+                You lead by <span className="measured rounded-chip bg-ok-soft px-1.5 text-ok">{diff}</span>
+              </>
+            ) : (
+              <>
+                @{them.username} leads by <span className="measured rounded-chip bg-bad-soft px-1.5 text-bad">{-diff}</span>
+              </>
+            )}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Both profiles are scored by the same engine. Theirs uses public repositories only; yours includes private ones.
+          </p>
+        </div>
+      </div>
+
+      <div className="panels lg:grid-cols-5">
+        <section className="p-6 lg:col-span-3" aria-labelledby="by-category-heading">
+          <h2 id="by-category-heading" className={HEAD}>By category</h2>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[20rem] text-left text-sm">
+              <caption className="sr-only">Category scores for you and @{them.username}</caption>
+              <thead className="text-muted">
+                <tr className="border-b border-rule-2">
+                  <th scope="col" className="py-2 font-medium whitespace-nowrap">Category</th>
+                  <th scope="col" className="py-2 text-right font-medium whitespace-nowrap">
+                    <Swatch who="you" />You
+                  </th>
+                  <th scope="col" className="py-2 text-right font-medium whitespace-nowrap">
+                    <Swatch who="them" />@{them.username}
+                  </th>
+                  <th scope="col" className="py-2 text-right font-medium whitespace-nowrap">Difference</th>
+                </tr>
+              </thead>
+              <tbody className="text-ink-2">
+                {CATEGORIES.map((cat) => {
+                  const a = you.categoryScores[cat.key];
+                  const b = them.categoryScores[cat.key];
+                  const d = a - b;
+                  return (
+                    <tr key={cat.key} className="border-b border-rule last:border-b-0">
+                      <th scope="row" className="py-2 font-normal text-ink">{cat.label}</th>
+                      <td className="measured py-2 text-right">{a}</td>
+                      <td className="measured py-2 text-right">{b}</td>
+                      <td className="measured py-2 text-right">
+                        <Signed d={d} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="p-6 lg:col-span-2" aria-labelledby="shape-heading">
+          <h2 id="shape-heading" className={HEAD}>Shape</h2>
+          <CategoryRadarChart
+            categoryScores={toCategoryArray(you.categoryScores)}
+            compareScores={toCategoryArray(them.categoryScores)}
+            seriesNames={['You', `@${them.username}`]}
+            height={300}
+          />
+        </section>
+      </div>
+    </div>
+  );
+};
 
 const ComparePage: React.FC = () => {
-  const { currentReport } = useAnalysisStore();
-  const [compareUsername, setCompareUsername] = useState('');
+  const [username, setUsername] = useState('');
   const [comparison, setComparison] = useState<ProfileComparison | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const handleCompare = async () => {
-    if (!compareUsername.trim()) {
-      setError('Please enter a GitHub username');
+  const compare = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const name = username.trim().replace(/^@/, '');
+    if (!USERNAME_RE.test(name)) {
+      setFieldError('Enter a valid GitHub username, for example “octocat”.');
       return;
     }
-
+    setFieldError(null);
     setLoading(true);
     setError(null);
-
     try {
-      const response = await analysisApi.compareProfiles(compareUsername.trim());
-      setComparison(response);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to compare profiles');
+      setComparison(await analysisApi.compareProfiles(name));
+    } catch (err) {
+      setError((await getApiError(err, 'The comparison didn’t finish. Check the username and try again.')).message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!currentReport) {
-    return (
-      <Alert variant="info" title="No Analysis Found">
-        Run an analysis from the dashboard first to compare profiles.
-      </Alert>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Compare Profiles</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          See how your portfolio stacks up against other developers
-        </p>
-      </div>
+    <AnalysisGate header={<PageHeader title="Compare" />}>
+      {() => (
+        <div className="space-y-8">
+          <PageHeader title="Compare" description="Score any public GitHub account with the same engine and see where you differ." />
 
-      {/* Compare Input */}
-      <Card>
-        <CardHeader
-          title="Compare with another developer"
-          icon={<GitCompare className="w-5 h-5 text-primary-600" />}
-        />
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Enter GitHub username"
-              value={compareUsername}
-              onChange={(e) => setCompareUsername(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCompare()}
-            />
-          </div>
-          <Button
-            onClick={handleCompare}
-            loading={loading}
-            leftIcon={<GitCompare className="w-4 h-4" />}
-          >
-            Compare
-          </Button>
-        </div>
-      </Card>
-
-      {/* Error */}
-      {error && (
-        <Alert variant="error" title="Comparison Failed">
-          {error}
-        </Alert>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <Card className="py-12">
-          <div className="flex flex-col items-center">
-            <Loader size="lg" />
-            <p className="mt-4 text-gray-600 dark:text-gray-400">Analyzing profiles...</p>
-          </div>
-        </Card>
-      )}
-
-      {/* Comparison Results */}
-      {comparison && !loading && (
-        <div className="space-y-6">
-          {/* Score Comparison */}
           <Card>
-            <CardHeader title="Overall Score Comparison" />
-            <div className="flex items-center justify-around py-8">
-              <div className="text-center">
-                <ScoreCircle
-                  score={comparison.yourScore.overall}
-                  size="lg"
-                  label="Your Score"
+            <form onSubmit={compare} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label htmlFor="compare-username" className="block text-sm font-medium text-ink">
+                  GitHub username
+                </label>
+                <input
+                  id="compare-username"
+                  className="input mt-1.5 h-9 px-3 text-sm"
+                  placeholder="octocat"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-invalid={!!fieldError}
+                  aria-describedby={fieldError ? 'compare-error' : 'compare-hint'}
                 />
-                <p className="mt-2 font-medium text-gray-900 dark:text-white">You</p>
               </div>
-
-              <div className="text-4xl text-gray-300 dark:text-gray-600">VS</div>
-
-              <div className="text-center">
-                <ScoreCircle
-                  score={comparison.theirScore.overall}
-                  size="lg"
-                  label="Their Score"
-                />
-                <p className="mt-2 font-medium text-gray-900 dark:text-white">
-                  {compareUsername}
-                </p>
-              </div>
-            </div>
-
-            {/* Winner indicator */}
-            <div className="text-center pb-4">
-              {comparison.yourScore.overall > comparison.theirScore.overall ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-                  <Trophy className="w-5 h-5" />
-                  You're ahead by {comparison.yourScore.overall - comparison.theirScore.overall} points!
-                </div>
-              ) : comparison.yourScore.overall < comparison.theirScore.overall ? (
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-full">
-                  <AlertCircle className="w-5 h-5" />
-                  They're ahead by {comparison.theirScore.overall - comparison.yourScore.overall} points
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full">
-                  It's a tie!
-                </div>
-              )}
-            </div>
+              <Button type="submit" isLoading={loading} leftIcon={<GitCompare className="h-4 w-4" />}>
+                Compare
+              </Button>
+            </form>
+            {fieldError ? (
+              <p id="compare-error" role="alert" className="mt-2 min-h-[1lh] text-sm text-bad">
+                {fieldError}
+              </p>
+            ) : (
+              <p id="compare-hint" className="mt-2 min-h-[1lh] text-sm text-muted">
+                Scoring another account takes up to a minute. You can run 15 comparisons an hour.
+              </p>
+            )}
           </Card>
 
-          {/* Category Comparison */}
-          <Card>
-            <CardHeader title="Category Breakdown" />
-            <div className="space-y-6">
-              {comparison.yourScore.categories.map((yourCat, index) => {
-                const theirCat = comparison.theirScore.categories[index];
-                const diff = yourCat.score - (theirCat?.score || 0);
-                return (
-                  <div key={yourCat.category} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {yourCat.category.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                      <span
-                        className={`text-sm font-medium ${
-                          diff > 0
-                            ? 'text-green-600'
-                            : diff < 0
-                            ? 'text-red-600'
-                            : 'text-gray-500 dark:text-gray-400'
-                        }`}
-                      >
-                        {diff > 0 ? `+${diff}` : diff}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">You</div>
-                        <ProgressBar
-                          value={yourCat.score}
-                          max={yourCat.maxScore}
-                          showValue
-                          size="sm"
-                        />
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{compareUsername}</div>
-                        <ProgressBar
-                          value={theirCat?.score || 0}
-                          max={theirCat?.maxScore || 20}
-                          showValue
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Insights */}
-          {comparison.insights && comparison.insights.length > 0 && (
-            <Card>
-              <CardHeader title="Comparison Insights" />
-              <ul className="space-y-3">
-                {comparison.insights.map((insight, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <ArrowRight className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
-                    <span className="text-gray-700 dark:text-gray-300">{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+          {loading && (
+            <LoadingRegion label="Scoring profile" className="space-y-4">
+              <div className="grid gap-px sm:grid-cols-2">
+                <Skeleton className="h-56 rounded-none sm:rounded-l-[10px]" />
+                <Skeleton className="h-56 rounded-none sm:rounded-r-[10px]" />
+              </div>
+              <div className="grid gap-4 lg:grid-cols-5">
+                <Skeleton className="h-72 lg:col-span-3" />
+                <Skeleton className="h-72 lg:col-span-2" />
+              </div>
+            </LoadingRegion>
           )}
+          {error && !loading && <ErrorState title="Comparison failed" message={error} onRetry={() => compare()} />}
+          {comparison && !loading && !error && <Results c={comparison} />}
         </div>
       )}
-    </div>
+    </AnalysisGate>
   );
 };
 

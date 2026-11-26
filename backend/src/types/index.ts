@@ -1,3 +1,4 @@
+import type { QuickWinsResult } from '../utils/quickWins';
 // GITVANTA - TYPE DEFINITIONS
 import { Request } from 'express';
 import { Document, Types } from 'mongoose';
@@ -19,8 +20,36 @@ export interface IUser extends Document {
   followers: number;
   following: number;
   accessToken: string;
+  aiSettings?: IUserAISettings;
+  profileSettings?: IUserProfileSettings;
+  /** Tokens issued before this moment are rejected ("sign out everywhere"). */
+  sessionsRevokedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** Which repositories appear on the public and professional profile. */
+export interface IUserProfileSettings {
+  /** Public repos the owner chose to hide. */
+  hiddenRepos: string[];
+  /** Private repos the owner chose to show (always without a link). */
+  shownPrivateRepos: string[];
+}
+
+/** A user's own AI provider ("bring your own key"). */
+export interface IUserAISettings {
+  /** When false the saved key is kept but the server key is used. */
+  enabled: boolean;
+  provider: string;
+  model: string;
+  baseUrl?: string;
+  /** AES-256-GCM ciphertext; never selected by default, never returned. */
+  encryptedKey?: string;
+  /** Masked form for display, e.g. "sk-…a1b2". */
+  keyHint?: string;
+  updatedAt?: Date;
+  lastTestedAt?: Date;
+  lastTestOk?: boolean;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -52,6 +81,8 @@ export interface GitHubRepository {
   has_issues: boolean;
   fork: boolean;
   archived: boolean;
+  private: boolean;
+  visibility?: 'public' | 'private' | 'internal';
   license: {
     key: string;
     name: string;
@@ -117,6 +148,10 @@ export interface AnalyzedRepository {
   stars: number;
   forks: number;
   topics: string[];
+  /** True for private repos. Never exposed publicly unless the owner opts in, and then without a URL. */
+  isPrivate: boolean;
+  homepage?: string | null;
+  pushedAt?: string;
 }
 
 export interface AnalysisReport extends Document {
@@ -130,8 +165,22 @@ export interface AnalysisReport extends Document {
   improvements: Improvement[];
   badges: Badge[];
   repositories: AnalyzedRepository[];
+  quickWins?: QuickWinsResult;
+  /** Cached AI ratings for each repository. */
+  aiRepoReviews?: {
+    items: import('../services/aiService').RepoReview[];
+    ai: import('../ai/types').AIMeta;
+    generatedAt: Date;
+  };
+  /** Cached AI headline/summary for the professional view. */
+  aiSummary?: {
+    headline: string;
+    summary: string;
+    highlights: string[];
+    ai: import('../ai/types').AIMeta;
+    generatedAt: Date;
+  };
   generatedAt: Date;
-  expiresAt: Date;
 }
 
 export interface CategoryScores {
@@ -301,19 +350,28 @@ export interface ProfessionalProfile {
   topProjects: ProfessionalProject[];
   badges: Badge[];
   strengths: string[];
+  highlights: string[];
   contact: {
     email: string;
     github: string;
     website: string;
   };
+  /** Which AI wrote the headline/summary; null when the plain fallback was used. */
+  ai: import('../ai/types').AIMeta | null;
+  summaryGeneratedAt: Date | null;
+  publicUrl: string;
 }
 
 export interface ProfessionalProject {
   name: string;
   description: string;
   technologies: string[];
+  language: string | null;
   stars: number;
-  url: string;
+  /** null for private repos: shown, but not linkable. */
+  url: string | null;
+  homepage: string | null;
+  isPrivate: boolean;
   highlights: string[];
 }
 

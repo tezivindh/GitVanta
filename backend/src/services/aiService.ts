@@ -1,8 +1,4 @@
-import {
-  generateContent,
-  generateStructuredContent,
-  isAIAvailable,
-} from "../ai";
+import { generateJson, generateText, ResolvedAI, AIProviderError } from "../ai";
 import {
   ReadmeEnhancement,
   ResumeBullet,
@@ -13,11 +9,14 @@ import {
 } from "../types";
 import logger from "../utils/logger";
 
-export function isAiAvailable(): boolean {
-  return isAIAvailable();
+/** Keep provider errors (already user-safe); wrap anything else. */
+function rethrow(error: unknown, fallback: string): never {
+  if (error instanceof AIProviderError) throw error;
+  throw new AIProviderError("unknown", fallback);
 }
 
 export async function enhanceReadme(
+  ai: ResolvedAI,
   repoName: string,
   currentReadme: string,
   repoDescription: string,
@@ -51,11 +50,11 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       enhancedContent: string;
       suggestions: string[];
       addedSections: string[];
-    }>(prompt);
+    }>(ai, prompt);
 
     return {
       originalContent: currentReadme,
@@ -65,11 +64,12 @@ Return your response in this JSON format:
     };
   } catch (error) {
     logger.error("Failed to enhance README:", error);
-    throw new Error("Failed to enhance README with AI");
+    rethrow(error, "Failed to enhance README with AI");
   }
 }
 
 export async function generateResumeBullets(
+  ai: ResolvedAI,
   repo: GitHubRepository,
   languages: Record<string, number>,
   readmeContent: string | null,
@@ -103,11 +103,11 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       bullets: string[];
       skills: string[];
       impact: string;
-    }>(prompt);
+    }>(ai, prompt);
 
     return {
       repoName: repo.name,
@@ -117,11 +117,12 @@ Return your response in this JSON format:
     };
   } catch (error) {
     logger.error("Failed to generate resume bullets:", error);
-    throw new Error("Failed to generate resume bullets with AI");
+    rethrow(error, "Failed to generate resume bullets with AI");
   }
 }
 
 export async function generatePortfolioSummary(
+  ai: ResolvedAI,
   username: string,
   repos: GitHubRepository[],
   skills: ExtractedSkill[],
@@ -166,13 +167,13 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       headline: string;
       summary: string;
       highlights: string[];
       technicalSkills: string[];
       softSkills: string[];
-    }>(prompt);
+    }>(ai, prompt);
 
     return {
       headline: result.headline,
@@ -183,11 +184,12 @@ Return your response in this JSON format:
     };
   } catch (error) {
     logger.error("Failed to generate portfolio summary:", error);
-    throw new Error("Failed to generate portfolio summary with AI");
+    rethrow(error, "Failed to generate portfolio summary with AI");
   }
 }
 
 export async function generateImprovementRoadmap(
+  ai: ResolvedAI,
   username: string,
   currentScore: number,
   skills: ExtractedSkill[],
@@ -233,15 +235,15 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<ImprovementRoadmap>(prompt);
+    const result = await generateJson<ImprovementRoadmap>(ai, prompt);
     return result;
   } catch (error) {
     logger.error("Failed to generate improvement roadmap:", error);
-    throw new Error("Failed to generate improvement roadmap with AI");
+    rethrow(error, "Failed to generate improvement roadmap with AI");
   }
 }
 
-export async function analyzeReadmeQuality(readmeContent: string): Promise<{
+export async function analyzeReadmeQuality(ai: ResolvedAI, readmeContent: string): Promise<{
   score: number;
   feedback: string[];
   missingElements: string[];
@@ -274,11 +276,11 @@ Return your response in this JSON format:
 }`;
 
   try {
-    const result = await generateStructuredContent<{
+    const result = await generateJson<{
       score: number;
       feedback: string[];
       missingElements: string[];
-    }>(prompt);
+    }>(ai, prompt);
     return result;
   } catch (error) {
     logger.error("Failed to analyze README:", error);
@@ -310,6 +312,7 @@ function calculateBasicReadmeScore(content: string): number {
 }
 
 export async function generateProjectDescription(
+  ai: ResolvedAI,
   repoName: string,
   languages: string[],
   topics: string[],
@@ -331,16 +334,91 @@ The description should:
 Return ONLY the description text, no JSON or formatting.`;
 
   try {
-    const description = await generateContent(prompt);
+    const description = await generateText(ai, prompt);
     return description.trim().substring(0, 160);
   } catch (error) {
     logger.error("Failed to generate project description:", error);
-    throw new Error("Failed to generate project description with AI");
+    rethrow(error, "Failed to generate project description with AI");
+  }
+}
+
+export interface RepoReviewInput {
+  name: string;
+  description: string | null;
+  language: string | null;
+  topics: string[];
+  stars: number;
+  hasReadme: boolean;
+  readmeLength: number;
+  readmeExcerpt: string;
+  hasLicense: boolean;
+  hasTests: boolean;
+  hasContributing: boolean;
+  lastPush: string | null;
+}
+
+export interface RepoReview {
+  name: string;
+  rating: number;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+}
+
+/**
+ * Rate many repositories in a single AI request (one call per analysis,
+ * instead of one per repo).
+ */
+export async function reviewRepositories(ai: ResolvedAI, repos: RepoReviewInput[]): Promise<RepoReview[]> {
+  const lines = repos.map((r) =>
+    JSON.stringify({
+      name: r.name,
+      description: r.description || '',
+      language: r.language || '',
+      topics: r.topics.slice(0, 6),
+      stars: r.stars,
+      readme: r.hasReadme ? `${r.readmeLength} chars: ${r.readmeExcerpt}` : 'none',
+      license: r.hasLicense,
+      tests: r.hasTests,
+      contributing: r.hasContributing,
+      lastPush: r.lastPush,
+    })
+  );
+
+  const prompt = `You are a senior engineer reviewing a developer's GitHub repositories as a hiring manager would.
+
+Rate each repository from 1 to 10 on how well it presents the developer's skills: clarity of purpose, documentation, signs of quality (tests, license), and how maintained it looks. Be honest and specific; a bare repo with no README should score low.
+
+Repositories (one JSON object per line):
+${lines.join('\n')}
+
+Return JSON only, in this exact shape, with one entry per repository and the same names:
+{
+  "reviews": [
+    {"name": "repo-name", "rating": 7, "summary": "one sentence verdict", "strengths": ["up to 2 short points"], "improvements": ["up to 3 short, concrete actions"]}
+  ]
+}`;
+
+  try {
+    const result = await generateJson<{ reviews: RepoReview[] }>(ai, prompt, { maxTokens: 8192 });
+    const known = new Set(repos.map((r) => r.name));
+    return (result.reviews ?? [])
+      .filter((r) => r && known.has(r.name))
+      .map((r) => ({
+        name: r.name,
+        rating: Math.min(10, Math.max(1, Math.round(Number(r.rating) || 1))),
+        summary: String(r.summary ?? '').slice(0, 300),
+        strengths: (r.strengths ?? []).slice(0, 2).map((x) => String(x).slice(0, 160)),
+        improvements: (r.improvements ?? []).slice(0, 3).map((x) => String(x).slice(0, 200)),
+      }));
+  } catch (error) {
+    logger.error("Failed to review repositories:", error);
+    rethrow(error, "Failed to review repositories with AI");
   }
 }
 
 export default {
-  isAiAvailable,
+  reviewRepositories,
   enhanceReadme,
   generateResumeBullets,
   generatePortfolioSummary,

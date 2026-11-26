@@ -39,32 +39,10 @@ const Badge: React.FC<BadgeProps> = ({
 }) => {
   const Icon = iconMap[icon];
 
-  const variants = {
-    gold: {
-      bg: 'bg-linear-to-br from-yellow-400 to-yellow-600',
-      border: 'border-yellow-500',
-      text: 'text-yellow-900',
-      glow: 'shadow-yellow-500/50',
-    },
-    silver: {
-      bg: 'bg-linear-to-br from-gray-300 to-gray-500',
-      border: 'border-gray-400',
-      text: 'text-gray-900',
-      glow: 'shadow-gray-500/50',
-    },
-    bronze: {
-      bg: 'bg-linear-to-br from-orange-400 to-orange-600',
-      border: 'border-orange-500',
-      text: 'text-orange-900',
-      glow: 'shadow-orange-500/50',
-    },
-    special: {
-      bg: 'bg-linear-to-br from-purple-400 to-purple-600',
-      border: 'border-purple-500',
-      text: 'text-purple-900',
-      glow: 'shadow-purple-500/50',
-    },
-  };
+  // One style for every badge: a chip in the Console language, tinted
+  // accent-soft because a badge is something the person earned.
+  void variant;
+  const tooltipId = React.useId();
 
   const sizes = {
     sm: { container: 'w-10 h-10', icon: 'w-5 h-5' },
@@ -72,36 +50,32 @@ const Badge: React.FC<BadgeProps> = ({
     lg: { container: 'w-20 h-20', icon: 'w-10 h-10' },
   };
 
-  const variantStyles = variants[variant];
   const sizeStyles = sizes[size];
 
   return (
-    <div className={clsx('relative group', className)}>
+    <div className={clsx('relative', className)}>
       <div
+        tabIndex={showTooltip ? 0 : undefined}
+        aria-label={showTooltip ? name : undefined}
+        aria-describedby={showTooltip ? tooltipId : undefined}
         className={clsx(
-          'rounded-full flex items-center justify-center',
-          'border-2 shadow-lg',
-          variantStyles.bg,
-          variantStyles.border,
-          variantStyles.glow,
-          sizeStyles.container,
-          'transform transition-transform hover:scale-110'
+          'peer flex items-center justify-center rounded-chip border border-rule bg-accent-soft',
+          sizeStyles.container
         )}
       >
-        <Icon className={clsx(sizeStyles.icon, variantStyles.text)} />
+        <Icon className={clsx(sizeStyles.icon, 'text-accent')} aria-hidden="true" />
       </div>
-      
-      {/* Tooltip */}
+
+      {/* Tooltip: waits on hover, shows at once on keyboard focus. */}
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-          <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap">
-            <div className="font-semibold">{name}</div>
-            {description && (
-              <div className="text-gray-300 mt-0.5">{description}</div>
-            )}
-          </div>
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
-            <div className="border-4 border-transparent border-t-gray-900" />
+        <div
+          id={tooltipId}
+          role="tooltip"
+          className="pointer-events-none absolute bottom-full left-1/2 z-[600] mb-2 -translate-x-1/2 opacity-0 transition-opacity delay-0 duration-[120ms] ease-out peer-hover:opacity-100 peer-hover:delay-[800ms] peer-focus-visible:opacity-100 peer-focus-visible:delay-0"
+        >
+          <div className="whitespace-nowrap rounded-pill border border-rule bg-paper-2 px-3 py-2 text-xs text-ink">
+            <div className="font-medium">{name}</div>
+            {description && <div className="mt-0.5 text-muted">{description}</div>}
           </div>
         </div>
       )}

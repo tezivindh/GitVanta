@@ -1,11 +1,38 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { Github, Shield, Zap, Lock } from 'lucide-react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Github, ShieldCheck, EyeOff, Trash2 } from 'lucide-react';
 import { useAuthStore } from '../store';
-import { Button, Card } from '../components/ui';
+import { Button, LogoMark } from '../components/ui';
+
+const ERROR_MESSAGES: Record<string, string> = {
+  session_expired: 'Your session ended. Sign in again to continue.',
+  auth_failed: 'GitHub sign-in did not complete. Please try again.',
+  no_code: 'GitHub did not return a sign-in code. Please try again.',
+};
+
+const POINTS = [
+  {
+    icon: ShieldCheck,
+    title: 'Sign in through GitHub',
+    text: 'Your GitHub password never reaches GitVanta.',
+  },
+  {
+    icon: EyeOff,
+    title: 'Private repos stay private',
+    text: 'They count towards your score but are only listed publicly if you turn them on.',
+  },
+  {
+    icon: Trash2,
+    title: 'Leave any time',
+    text: 'Export or delete all of your data from Settings.',
+  },
+];
 
 const LoginPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const [params] = useSearchParams();
+  const errorKey = params.get('error');
+  const errorMessage = errorKey ? ERROR_MESSAGES[errorKey] ?? ERROR_MESSAGES.auth_failed : null;
 
   // Redirect if already logged in
   if (isAuthenticated && !isLoading) {
@@ -19,74 +46,62 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-            <Github className="w-8 h-8 text-primary-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">GitVanta</h1>
-          <p className="text-gray-600 mt-2">Sign in to analyze your GitHub portfolio</p>
-        </div>
+    <div className="relative min-h-dvh bg-paper pt-[env(safe-area-inset-top)] text-ink">
+      {/* Corridor: one centred column, the head carries the page. */}
+      <main className="flex min-h-dvh items-center justify-center px-4 py-20">
+        <div className="w-full max-w-[44ch]">
+          <Link to="/" className="inline-flex rounded-pill focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus" aria-label="GitVanta home">
+            <LogoMark className="h-10 w-10" />
+          </Link>
+          <h1 className="mt-8 max-w-none font-display text-display-s font-medium leading-[1.02] tracking-[-0.03em] text-ink">
+            Sign in to GitVanta
+          </h1>
+          <p className="mt-4 text-lead leading-[1.45] text-ink-2">Score your GitHub portfolio and see what to improve.</p>
 
-        {/* Login Card */}
-        <Card className="p-8">
+          {errorMessage && (
+            <div
+              role="alert"
+              className="mt-8 rounded-pill border border-bad bg-bad-soft px-4 py-3 text-sm text-ink"
+            >
+              {errorMessage}
+            </div>
+          )}
+
           <Button
             onClick={handleGitHubLogin}
             variant="primary"
             size="lg"
             fullWidth
-            leftIcon={<Github className="w-5 h-5" />}
+            leftIcon={<Github className="h-5 w-5" />}
             loading={isLoading}
+            className="mt-8 h-12"
           >
             Continue with GitHub
           </Button>
 
-          <div className="mt-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
-                <Shield className="w-4 h-4 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">Secure Authentication</h3>
-                <p className="text-sm text-gray-500">
-                  We use GitHub OAuth - your credentials never touch our servers.
-                </p>
-              </div>
-            </div>
+          <ul className="mt-10 border-b border-rule">
+            {POINTS.map((p) => (
+              <li key={p.title} className="flex items-start gap-3 border-t border-rule py-4">
+                <p.icon className="mt-[3px] h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-ink">{p.title}</p>
+                  <p className="mt-0.5 text-sm text-muted">{p.text}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
 
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">Read-Only Access</h3>
-                <p className="text-sm text-gray-500">
-                  We only read your public repository data. No write access required.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">Instant Analysis</h3>
-                <p className="text-sm text-gray-500">
-                  Get your comprehensive portfolio score in minutes.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-6">
-          By signing in, you agree to our terms of service and privacy policy.
-        </p>
-      </div>
+          <p className="mt-6 text-sm text-muted">
+            GitHub will ask for access to your repositories. GitVanta only reads them.{' '}
+            <Link
+              to="/#faq"
+              className="text-ink-2 underline decoration-rule-2 underline-offset-4 transition-[color,text-decoration-color] duration-[120ms] ease-out hover:text-accent hover:decoration-accent"
+            >
+              Why this access?
+            </Link>
+          </p>
+        </div>
+      </main>
     </div>
   );
 };

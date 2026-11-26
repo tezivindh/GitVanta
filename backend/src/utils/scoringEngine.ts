@@ -23,7 +23,7 @@ import {
 // WEIGHT CONFIGURATION
 // =====================================================
 
-const CATEGORY_WEIGHTS = {
+export const CATEGORY_WEIGHTS = {
   codeQuality: 0.25,
   documentation: 0.20,
   activity: 0.20,
@@ -51,7 +51,19 @@ interface CodeQualityInput {
   languages: Record<string, number>[];
   hasTests: boolean[];
   hasLinting: boolean[];
-  avgCommitSize: number[];
+  /** First lines of the user's recent commit messages (sampled). */
+  commitMessages: string[];
+}
+
+const GENERIC_COMMIT = /^(update|updated|updates|fix|fixed|fixes|wip|changes|change|commit|test|tests|minor|misc|stuff|initial commit|first commit|init|done|final|temp|.)(\s+\S+)?$/i;
+
+/** A message that says what changed: 3+ words, 12+ chars, not generic. */
+export function isDescriptiveCommitMessage(message: string): boolean {
+  const first = message.split('\n')[0].trim();
+  if (first.length < 12) return false;
+  if (first.split(/\s+/).length < 3) return false;
+  if (/^Merge (branch|pull request)/i.test(first)) return false;
+  return !GENERIC_COMMIT.test(first);
 }
 
 export function scoreCodeQuality(input: CodeQualityInput): {
@@ -69,8 +81,8 @@ export function scoreCodeQuality(input: CodeQualityInput): {
     metric: 'Repository Portfolio Size',
     score: Math.round(sizeScore),
     maxScore: 25,
-    description: `${repoCount} public repositories`,
-    suggestion: repoCount < 10 ? 'Consider creating more public repositories to showcase your work' : undefined,
+    description: `${repoCount} repositories`,
+    suggestion: repoCount < 10 ? 'Consider building more projects to showcase your work' : undefined,
   });
   totalScore += sizeScore;
 
@@ -91,7 +103,9 @@ export function scoreCodeQuality(input: CodeQualityInput): {
 
   // 3. Testing Presence (25 points max)
   const reposWithTests = input.hasTests.filter(Boolean).length;
-  const testPercentage = repoCount > 0 ? (reposWithTests / repoCount) * 100 : 0;
+  // Only the repos that were inspected have test data, so divide by those.
+  const testedCount = input.hasTests.length;
+  const testPercentage = testedCount > 0 ? (reposWithTests / testedCount) * 100 : 0;
   const testScore = (testPercentage / 100) * 25;
   breakdown.push({
     metric: 'Test Coverage Presence',
@@ -102,23 +116,26 @@ export function scoreCodeQuality(input: CodeQualityInput): {
   });
   totalScore += testScore;
 
-  // 4. Commit Quality (25 points max)
-  const avgCommits = input.avgCommitSize.length > 0 
-    ? input.avgCommitSize.reduce((a, b) => a + b, 0) / input.avgCommitSize.length 
-    : 0;
-  // Ideal commit size is between 50-200 lines
-  let commitScore = 25;
-  if (avgCommits < 10) commitScore = 10;
-  else if (avgCommits > 500) commitScore = 15;
-  else if (avgCommits >= 50 && avgCommits <= 200) commitScore = 25;
-  else commitScore = 20;
-  
+  // 4. Commit message quality (25 points max)
+  // Share of recent commits whose message explains the change, rather than
+  // "update", "fix" or "wip".
+  const sampled = input.commitMessages.length;
+  const descriptive = input.commitMessages.filter(isDescriptiveCommitMessage).length;
+  const messagePct = sampled > 0 ? (descriptive / sampled) * 100 : 0;
+  const commitScore = (messagePct / 100) * 25;
+
   breakdown.push({
-    metric: 'Commit Quality',
+    metric: 'Commit Messages',
     score: Math.round(commitScore),
     maxScore: 25,
-    description: `Average commit size suggests ${commitScore >= 20 ? 'good' : 'improvable'} practices`,
-    suggestion: commitScore < 20 ? 'Make smaller, more focused commits' : undefined,
+    description:
+      sampled > 0
+        ? `${Math.round(messagePct)}% of ${sampled} recent commits have descriptive messages`
+        : 'No recent commits found to assess',
+    suggestion:
+      messagePct < 70
+        ? 'Write commit messages that say what changed and why, e.g. "Add retry to payment webhook"'
+        : undefined,
   });
   totalScore += commitScore;
 
@@ -151,7 +168,7 @@ export function scoreDocumentation(input: DocumentationInput): {
 
   // 1. README Presence (30 points max)
   const reposWithReadme = input.hasReadme.filter(Boolean).length;
-  const readmePercentage = (reposWithReadme / repoCount) * 100;
+  const readmePercentage = (reposWithReadme / (input.hasReadme.length || 1)) * 100;
   const readmePresenceScore = (readmePercentage / 100) * 30;
   breakdown.push({
     metric: 'README Presence',
@@ -184,7 +201,7 @@ export function scoreDocumentation(input: DocumentationInput): {
 
   // 3. License Presence (20 points max)
   const reposWithLicense = input.hasLicense.filter(Boolean).length;
-  const licensePercentage = (reposWithLicense / repoCount) * 100;
+  const licensePercentage = (reposWithLicense / (input.hasLicense.length || 1)) * 100;
   const licenseScore = (licensePercentage / 100) * 20;
   breakdown.push({
     metric: 'License Presence',
@@ -197,7 +214,7 @@ export function scoreDocumentation(input: DocumentationInput): {
 
   // 4. Contributing Guidelines (20 points max)
   const reposWithContributing = input.hasContributing.filter(Boolean).length;
-  const contributingPercentage = (reposWithContributing / repoCount) * 100;
+  const contributingPercentage = (reposWithContributing / (input.hasContributing.length || 1)) * 100;
   const contributingScore = (contributingPercentage / 100) * 20;
   breakdown.push({
     metric: 'Contributing Guidelines',
@@ -256,7 +273,7 @@ export function scoreActivity(input: ActivityInput): {
     metric: 'Commit Consistency',
     score: Math.round(consistencyScore),
     maxScore: 35,
-    description: `${uniqueCommitDays} unique days with commits`,
+    description: `${uniqueCommitDays} days with commits in the last year (sampled from your most active repos)`,
     suggestion: uniqueCommitDays < 50 ? 'Maintain a more consistent coding schedule' : undefined,
   });
   totalScore += consistencyScore;

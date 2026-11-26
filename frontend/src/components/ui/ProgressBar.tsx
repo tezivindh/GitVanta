@@ -24,48 +24,53 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 
   const getColor = () => {
     if (color !== 'auto') {
+      // A measured bar is cool; ok and bad are status; a warning is a deviation (amber).
       const colors = {
-        primary: 'bg-primary-500',
-        success: 'bg-green-500',
-        warning: 'bg-yellow-500',
-        danger: 'bg-red-500',
+        primary: 'ramp-cool',
+        success: 'bg-ok',
+        warning: 'bg-accent',
+        danger: 'bg-bad',
       };
       return colors[color];
     }
 
-    // Auto color based on percentage
-    if (percentage >= 80) return 'bg-green-500';
-    if (percentage >= 60) return 'bg-primary-500';
-    if (percentage >= 40) return 'bg-yellow-500';
-    return 'bg-red-500';
+    // One hue for magnitude; the number itself carries the value.
+    return 'ramp-cool';
   };
 
   const sizes = {
     sm: 'h-1.5',
-    md: 'h-2.5',
-    lg: 'h-4',
+    md: 'h-2',
+    lg: 'h-3',
   };
 
   return (
     <div className={className}>
       {(label || showValue) && (
-        <div className="flex justify-between mb-1">
-          {label && <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>}
+        <div className="mb-1.5 flex items-baseline justify-between gap-3">
+          {label && <span className="text-sm text-muted">{label}</span>}
           {showValue && (
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <span className="measured text-sm text-ink">
               {Math.round(percentage)}%
             </span>
           )}
         </div>
       )}
-      <div className={clsx('w-full bg-gray-200 dark:bg-gray-700 rounded-full', sizes[size])}>
+      <div
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(percentage)}
+        aria-label={label}
+        className={clsx('w-full overflow-hidden rounded-[2px] bg-paper-3', sizes[size])}
+      >
+        {/* Grows by scaleX from the left edge, never by width. */}
         <div
           className={clsx(
-            'rounded-full transition-all duration-300',
-            getColor(),
-            sizes[size]
+            'h-full w-full origin-left transition-transform duration-[220ms] ease-out',
+            getColor()
           )}
-          style={{ width: `${percentage}%` }}
+          style={{ transform: `scaleX(${percentage / 100})` }}
         />
       </div>
     </div>

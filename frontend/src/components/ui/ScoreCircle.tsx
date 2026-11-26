@@ -6,100 +6,38 @@ interface ScoreCircleProps {
   maxScore?: number;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   label?: string;
+  /** Kept for API compatibility; letter grades are no longer shown. */
   showGrade?: boolean;
   className?: string;
 }
 
-const ScoreCircle: React.FC<ScoreCircleProps> = ({
-  score,
-  maxScore = 100,
-  size = 'lg',
-  label,
-  showGrade = true,
-  className,
-}) => {
-  const percentage = Math.min(100, Math.max(0, (score / maxScore) * 100));
-  
+/**
+ * The score as a large number over a ten-cell meter, drawn in the same cells
+ * as the contribution graph. (Name kept so existing imports keep working.)
+ */
+const ScoreCircle: React.FC<ScoreCircleProps> = ({ score, maxScore = 100, size = 'lg', label, className }) => {
+  const pct = Math.min(100, Math.max(0, (score / maxScore) * 100));
+  const filled = Math.round(pct / 10);
+
   const sizes = {
-    sm: { container: 'w-16 h-16', stroke: 4, fontSize: 'text-lg' },
-    md: { container: 'w-24 h-24', stroke: 6, fontSize: 'text-2xl' },
-    lg: { container: 'w-32 h-32', stroke: 8, fontSize: 'text-3xl' },
-    xl: { container: 'w-40 h-40', stroke: 10, fontSize: 'text-4xl' },
-  };
-
-  const config = sizes[size];
-  const radius = 50 - config.stroke / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-  const getGrade = (): string => {
-    if (percentage >= 90) return 'A+';
-    if (percentage >= 80) return 'A';
-    if (percentage >= 70) return 'B';
-    if (percentage >= 60) return 'C';
-    if (percentage >= 50) return 'D';
-    return 'F';
-  };
-
-  const getColor = (): string => {
-    if (percentage >= 80) return 'text-green-500';
-    if (percentage >= 60) return 'text-primary-500';
-    if (percentage >= 40) return 'text-yellow-500';
-    return 'text-red-500';
-  };
-
-  const getStrokeColor = (): string => {
-    if (percentage >= 80) return 'stroke-green-500';
-    if (percentage >= 60) return 'stroke-primary-500';
-    if (percentage >= 40) return 'stroke-yellow-500';
-    return 'stroke-red-500';
-  };
+    sm: { num: 'text-[2rem]', cell: 'h-1.5 w-2.5', gap: 'gap-[2px]' },
+    md: { num: 'text-[2.75rem]', cell: 'h-2 w-3', gap: 'gap-[3px]' },
+    lg: { num: 'text-[4rem]', cell: 'h-2.5 w-4', gap: 'gap-[3px]' },
+    xl: { num: 'text-[5rem]', cell: 'h-3 w-5', gap: 'gap-1' },
+  }[size];
 
   return (
-    <div className={clsx('flex flex-col items-center', className)}>
-      <div className={clsx('relative', config.container)}>
-        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-          {/* Background circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            className="stroke-gray-200 dark:stroke-gray-700"
-            strokeWidth={config.stroke}
-            fill="none"
-          />
-          {/* Progress circle */}
-          <circle
-            cx="50"
-            cy="50"
-            r={radius}
-            className={clsx(getStrokeColor(), 'transition-all duration-1000 ease-out')}
-            strokeWidth={config.stroke}
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-          />
-        </svg>
-        
-        {/* Score display */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={clsx('font-bold', config.fontSize, getColor())}>
-            {Math.round(score)}
-          </span>
-          {showGrade && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              {getGrade()}
-            </span>
-          )}
-        </div>
+    <div className={clsx('inline-flex flex-col items-center', className)}>
+      <p className={clsx('reading', sizes.num)}>
+        {Math.round(score)}
+        <span className="sr-only"> out of {maxScore}</span>
+      </p>
+      <div className={clsx('mt-3 flex', sizes.gap)} aria-hidden="true">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <span key={i} className={clsx('rounded-[2px]', sizes.cell, i < filled ? 'bg-cool' : 'bg-heat-0')} />
+        ))}
       </div>
-      
-      {label && (
-        <span className="mt-2 text-sm text-gray-600 dark:text-gray-400 font-medium text-center">
-          {label}
-        </span>
-      )}
+      {label && <span className="mt-2.5 text-center text-sm text-muted">{label}</span>}
     </div>
   );
 };

@@ -1,15 +1,7 @@
-import React from 'react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
+import React, { useId } from 'react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { CategoryScore } from '../../types';
+import { tooltipStyle, useChartTheme } from '../../lib/chartTheme';
 
 interface ScoreBreakdownChartProps {
   categoryScores: CategoryScore[];
@@ -17,61 +9,29 @@ interface ScoreBreakdownChartProps {
   className?: string;
 }
 
-const ScoreBreakdownChart: React.FC<ScoreBreakdownChartProps> = ({
-  categoryScores,
-  height = 300,
-  className,
-}) => {
-  const data = categoryScores.map((category) => ({
-    name: category.category.replace(/([A-Z])/g, ' $1').trim(),
-    score: category.score,
-    maxScore: category.maxScore,
-    percentage: Math.round((category.score / category.maxScore) * 100),
-  }));
-
-  const getBarColor = (percentage: number): string => {
-    if (percentage >= 80) return '#22c55e'; // green
-    if (percentage >= 60) return '#6366f1'; // primary
-    if (percentage >= 40) return '#eab308'; // yellow
-    return '#ef4444'; // red
-  };
+/** Category scores as horizontal bars on a shared 0–100 scale. */
+const ScoreBreakdownChart: React.FC<ScoreBreakdownChartProps> = ({ categoryScores, height = 300, className }) => {
+  const t = useChartTheme();
+  const rampId = `bar-ramp-${useId().replace(/:/g, '')}`;
+  const data = categoryScores.map((c) => ({ name: c.category, score: c.score }));
 
   return (
     <div className={className} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis
-            type="number"
-            domain={[0, 100]}
-            tick={{ fontSize: 12, fill: '#6b7280' }}
-          />
-          <YAxis
-            dataKey="name"
-            type="category"
-            tick={{ fontSize: 12, fill: '#6b7280' }}
-            width={75}
-          />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#fff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-            }}
-            formatter={(value: number, _name: string, props: any) => [
-              `${props.payload.score}/${props.payload.maxScore} (${value}%)`,
-              'Score',
-            ]}
-          />
-          <Bar dataKey="percentage" radius={[0, 4, 4, 0]}>
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={getBarColor(entry.percentage)} />
-            ))}
+        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 36, bottom: 4, left: 8 }} barCategoryGap={10}>
+          {/* Data ramp: each bar brightens toward its score. */}
+          <defs>
+            <linearGradient id={rampId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={t.bar} stopOpacity={0.55} />
+              <stop offset="100%" stopColor={t.bar} stopOpacity={1} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke={t.grid} horizontal={false} />
+          <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12, fill: t.axis }} tickLine={false} axisLine={false} />
+          <YAxis type="category" dataKey="name" width={112} tick={{ fontSize: 12, fill: t.axis }} tickLine={false} axisLine={false} />
+          <Tooltip {...tooltipStyle(t)} cursor={{ fill: t.grid }} formatter={(v: number) => [`${v} / 100`, 'Score']} />
+          <Bar dataKey="score" fill={`url(#${rampId})`} radius={[0, 2, 2, 0]} isAnimationActive={false}>
+            <LabelList dataKey="score" position="right" style={{ fontSize: 12, fill: t.muted, fontFamily: t.mono, fontVariantNumeric: 'tabular-nums' }} />
           </Bar>
         </BarChart>
       </ResponsiveContainer>

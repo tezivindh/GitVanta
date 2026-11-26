@@ -25,15 +25,8 @@ export async function connectDatabase(): Promise<void> {
       logger.info('MongoDB reconnected');
     });
 
-    // Graceful shutdown
-    process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      logger.info('MongoDB connection closed due to app termination');
-      process.exit(0);
-    });
-
   } catch (error) {
-    logger.error('MongoDB connection failed:', error);
+    logger.error(`MongoDB connection failed: ${(error as Error).message}`);
     process.exit(1);
   }
 }
